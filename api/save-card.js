@@ -2,8 +2,6 @@
 import { query } from './db.js';
 
 export default async function saveCardHandler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
   if (req.method !== 'POST') {
     res.writeHead(405, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'POST only' }));

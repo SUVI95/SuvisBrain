@@ -2,8 +2,6 @@
 import { query } from './db.js';
 
 export default async function agentsHandler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
   if (req.method === 'GET') {
     try {
       const result = await query(`

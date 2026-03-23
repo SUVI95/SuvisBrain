@@ -2,8 +2,6 @@
 import { query } from './db.js';
 
 export default async function userDataHandler(req, res, pathname) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
   const match = pathname.match(/^\/api\/user-data\/(export|delete)$/);
   const action = match ? match[1] : null;
 

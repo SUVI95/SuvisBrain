@@ -51,6 +51,7 @@ SuvisBrain/
 npm install
 cp .env.example .env
 # Edit .env: add DATABASE_URL (Neon) and OPENAI_API_KEY (for Knuut voice)
+# Set teacher password (run once): npm run set-teacher-password [password]
 npm run dev
 ```
 

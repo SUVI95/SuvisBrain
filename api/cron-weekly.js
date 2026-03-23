@@ -63,8 +63,6 @@ async function sendWeeklyDigests() {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
   const auth = req.headers['authorization'] || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   if (CRON_SECRET && token !== CRON_SECRET) {

@@ -2,8 +2,6 @@
 import { query } from './db.js';
 
 export default async function learnersHandler(req, res, pathname) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
   const match = pathname.match(/^\/api\/learners\/([a-f0-9-]+)\/progress$/);
   const learnerId = match ? match[1] : null;
 

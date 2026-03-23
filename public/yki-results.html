@@ -186,7 +186,9 @@
         return;
       }
       try {
-        const res = await fetch(`/api/yki-score?episode=${episodeId}`);
+        const token = localStorage.getItem('sb_token') || localStorage.getItem('knuut_token');
+        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+        const res = await fetch(`/api/yki-score?episode=${episodeId}`, { headers });
         if (!res.ok) throw new Error('Failed to load');
         const score = await res.json();
 

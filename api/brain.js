@@ -2,8 +2,6 @@
 import { query } from './db.js';
 
 export default async function brainHandler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
   if (req.method === 'GET') {
     try {
       const [nodesResult, edgesResult, lastEpisode] = await Promise.all([

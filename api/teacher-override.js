@@ -2,8 +2,6 @@
 import { query } from './db.js';
 
 export default async function teacherOverrideHandler(req, res, pathname) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
   if (!req.user || req.user.role !== 'teacher') {
     res.writeHead(403, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Teacher access required' }));

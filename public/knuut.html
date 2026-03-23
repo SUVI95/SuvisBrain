@@ -940,7 +940,7 @@
           if (reviewWords.length > 0) sessionBody.review_words = reviewWords;
           const resp = await fetch(SERVER_URL + '/api/session', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...authHeaders() },
             body: JSON.stringify(sessionBody)
           });
 

@@ -11,6 +11,8 @@ import { join, extname } from 'path';
 import { fileURLToPath } from 'url';
 
 import { getTokenFromRequest, verifyToken } from './src/lib/auth.js';
+import { setSecurityHeaders, getClientIp, sendError } from './src/lib/security.js';
+import { checkLimit, LIMITS } from './src/lib/rate-limit.js';
 import brainHandler from './api/brain.js';
 import brainSkillsHandler from './api/brain-skills.js';
 import brainStatsHandler from './api/brain-stats.js';
@@ -65,20 +67,31 @@ async function handleVoice(pathname, req, res) {
 
   if ((pathname === '/session' || pathname === '/api/session') && req.method === 'POST') {
     try {
+      const token = getTokenFromRequest(req);
+      const user = token ? verifyToken(token) : null;
+      if (!user) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'Unauthorized', code: 'AUTH_REQUIRED' }));
+      }
       if (!process.env.OPENAI_API_KEY) {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        return res.end('Missing OPENAI_API_KEY');
+        sendError(res, 500);
+        return;
       }
       const contentType = req.headers['content-type'] || '';
       const rawBody = await collectBody(req);
       const body = contentType.includes('json') ? (JSON.parse(rawBody || '{}') || {}) : {};
       const offerSdp = body.sdp || rawBody;
       if (!offerSdp) {
-        res.writeHead(400, { 'Content-Type': 'text/plain' });
-        return res.end('Missing SDP offer');
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'Missing SDP offer' }));
       }
 
-      const learnerId = body.learner_id || null;
+      let learnerId = null;
+      if (user.role === 'learner') {
+        learnerId = user.id;
+      } else if (user.role === 'teacher' && body.learner_id) {
+        learnerId = body.learner_id;
+      }
       const mode = (body.mode || '').toLowerCase() === 'yki' ? 'yki' : 'regular';
       const dashboardMode = body.dashboard_mode || null;
       const reviewWords = Array.isArray(body.review_words) ? body.review_words : [];
@@ -168,10 +181,9 @@ async function handleVoice(pathname, req, res) {
       });
 
       if (!createResp.ok) {
-        const err = await createResp.text();
-        console.error('[voice] Session create failed:', err.slice(0, 200));
-        res.writeHead(createResp.status, { 'Content-Type': 'text/plain' });
-        return res.end(err);
+        console.error('[voice] Session create failed');
+        sendError(res, 500);
+        return;
       }
 
       const { id: sessionId } = await createResp.json();
@@ -187,10 +199,9 @@ async function handleVoice(pathname, req, res) {
       });
 
       if (!oaiResp.ok) {
-        const err = await oaiResp.text();
-        console.error('[voice] SDP exchange failed:', err.slice(0, 200));
-        res.writeHead(oaiResp.status, { 'Content-Type': 'text/plain' });
-        return res.end(err);
+        console.error('[voice] SDP exchange failed');
+        sendError(res, 500);
+        return;
       }
 
       const answerSdp = await oaiResp.text();
@@ -201,8 +212,7 @@ async function handleVoice(pathname, req, res) {
       res.end(JSON.stringify({ answer: answerSdp, instructions: systemPrompt }));
     } catch (err) {
       console.error('[voice]', err);
-      res.writeHead(500, { 'Content-Type': 'text/plain' });
-      res.end('Server error');
+      sendError(res, 500);
     }
     return true;
   }
@@ -225,6 +235,12 @@ async function handleApi(pathname, req, res, body) {
   };
 
   if (route === 'auth') {
+    const authLimit = checkLimit(getClientIp(req), 'auth', LIMITS.auth);
+    if (!authLimit.ok) {
+      res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': String(authLimit.retryAfter || 900) });
+      res.end(JSON.stringify({ error: 'Too many requests' }));
+      return true;
+    }
     await authHandler(wrappedReq, res);
     return true;
   }
@@ -247,8 +263,8 @@ async function handleApi(pathname, req, res, body) {
         },
       }));
     } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'db_error', error: err.message }));
+      console.error('health:', err);
+      sendError(res, 500);
     }
     return true;
   }
@@ -266,8 +282,8 @@ async function handleApi(pathname, req, res, body) {
           : null,
       }));
     } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: err.message }));
+      console.error('schema-check:', err);
+      sendError(res, 500);
     }
     return true;
   }
@@ -276,10 +292,6 @@ async function handleApi(pathname, req, res, body) {
     return true;
   }
   if (route === 'yki-score') {
-    if (req.method === 'GET') {
-      await ykiScoreHandler(req, res);
-      return true;
-    }
     const token = getTokenFromRequest(req);
     const user = token ? verifyToken(token) : null;
     if (!user) {
@@ -343,8 +355,7 @@ async function handleApi(pathname, req, res, body) {
     }
   } catch (err) {
     console.error('[api]', err);
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: err.message }));
+    sendError(res, 500);
     return true;
   }
 
@@ -353,9 +364,18 @@ async function handleApi(pathname, req, res, body) {
 }
 
 const server = createServer(async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  setSecurityHeaders(req, res);
   const url = new URL(req.url || '/', `http://localhost:${PORT}`);
   const pathname = url.pathname;
+  const ip = getClientIp(req);
+  const pathRoute = pathname.startsWith('/api') ? (pathname.split('/')[2] || 'api') : 'api';
+  const limitPath = pathRoute === 'auth' ? 'auth' : 'api';
+  const limit = checkLimit(ip, limitPath, LIMITS[limitPath]);
+  if (!limit.ok) {
+    res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': String(limit.retryAfter || 900) });
+    res.end(JSON.stringify({ error: 'Too many requests' }));
+    return;
+  }
 
   const voiceHandled = await handleVoice(pathname, req, res);
   if (voiceHandled) return;

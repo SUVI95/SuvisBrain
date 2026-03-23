@@ -1,5 +1,7 @@
 // Vercel single API entry — rewrite sends /api/auth, /api/brain, etc. to /api?path=auth
 import { getTokenFromRequest, verifyToken } from '../src/lib/auth.js';
+import { setSecurityHeaders, getClientIp, sendError } from '../src/lib/security.js';
+import { checkLimit, LIMITS } from '../src/lib/rate-limit.js';
 import brainHandler from './brain.js';
 import brainSkillsHandler from './brain-skills.js';
 import brainStatsHandler from './brain-stats.js';
@@ -65,12 +67,19 @@ function getPathParam(req) {
 
 export default async function handler(req, res) {
   try {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    setSecurityHeaders(req, res);
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     const pathParam = getPathParam(req);
     const pathSegs = (Array.isArray(pathParam) ? pathParam.join('/') : String(pathParam)).split('/').filter(Boolean);
     const route = pathSegs[0] || '';
+    const ip = getClientIp(req);
+    const limitPath = route === 'auth' ? 'auth' : 'api';
+    const limit = checkLimit(ip, limitPath, LIMITS[limitPath]);
+    if (!limit.ok) {
+      res.setHeader('Retry-After', String(limit.retryAfter || 900));
+      return res.status(429).json({ error: 'Too many requests' });
+    }
 
     const body = req.method === 'POST' ? await collectBody(req) : {};
     const wrappedReq = { method: req.method, headers: req.headers || {}, body, user: null, url: req.url || req.originalUrl || '' };
@@ -81,8 +90,12 @@ export default async function handler(req, res) {
       return;
     }
     if (route === 'session') {
+      const token = getTokenFromRequest(req);
+      const user = token ? verifyToken(token) : null;
+      if (!user) return res.status(401).json({ error: 'Unauthorized', code: 'AUTH_REQUIRED' });
+      wrappedReq.user = user;
       const sessionBody = req.method === 'POST' ? await collectBody(req) : {};
-      await sessionHandler(req, res, sessionBody);
+      await sessionHandler(wrappedReq, res, sessionBody);
       return;
     }
     if (route === 'health') {
@@ -103,7 +116,8 @@ export default async function handler(req, res) {
           },
         });
       } catch (err) {
-        return res.status(500).json({ status: 'db_error', error: err.message });
+        console.error('health:', err);
+        return sendError(res, 500);
       }
     }
     if (route === 'schema-check') {
@@ -119,14 +133,14 @@ export default async function handler(req, res) {
             : null,
         });
       } catch (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('schema-check:', err);
+        return sendError(res, 500);
       }
     }
-      if (route === 'cron-weekly') {
+    if (route === 'cron-weekly') {
       return weeklyEmailHandler(req, nres);
     }
     if (route === 'yki-score') {
-      if (req.method === 'GET') return ykiScoreHandler(req, nres);
       const token = getTokenFromRequest(req);
       const user = token ? verifyToken(token) : null;
       if (!user) return res.status(401).json({ error: 'Unauthorized' });
@@ -159,12 +173,12 @@ export default async function handler(req, res) {
       if (route === 'user-data') return userDataHandler(wrappedReq, nres, '/api/user-data/' + (pathSegs[1] || ''));
     } catch (err) {
       console.error('[api]', err);
-      return res.status(500).json({ error: err.message });
+      return sendError(res, 500);
     }
 
     return res.status(404).end();
   } catch (err) {
     console.error('[api] unhandled:', err);
-    return res.status(500).json({ error: err.message || 'Server error' });
+    return sendError(res, 500);
   }
 }

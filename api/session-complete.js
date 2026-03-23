@@ -97,8 +97,6 @@ Apply CEFR criteria: range, accuracy, fluency, interaction. Be strict but fair.`
 }
 
 export default async function sessionCompleteHandler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
   if (req.method !== 'POST') {
     res.writeHead(405, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'POST only' }));

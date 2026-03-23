@@ -2,7 +2,6 @@
 import { query } from '../../db.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
   const { id: learnerId } = req.query;
 
   if (req.method !== 'GET' || !learnerId) {

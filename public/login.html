@@ -176,10 +176,14 @@
       <form id="login-form">
         <label for="email">Email</label>
         <input type="email" id="email" name="email" placeholder="email@example.com" required autofocus>
+        <div id="password-wrap" style="display:none">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Password">
+        </div>
         <button type="submit" class="btn-primary" id="btn">Sign in</button>
       </form>
       <div class="error" id="error"></div>
-      <p class="hint">Learners: amira@test.fi, pavel@test.fi. Teachers: teacher@knuut.fi</p>
+      <p class="hint">Learners: email only. Teachers: teacher@knuut.fi + password (run: npm run set-teacher-password)</p>
     </div>
   </div>
   <script>
@@ -188,11 +192,16 @@
     const err = document.getElementById('error');
     const card = document.getElementById('form-card');
 
+    const pwWrap = document.getElementById('password-wrap');
+    const isTeacher = () => document.querySelector('.tab.active').dataset.role === 'teacher';
+
     document.querySelectorAll('.tab').forEach((tab) => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById('tab-slide').classList.toggle('teacher', tab.dataset.role === 'teacher');
+        pwWrap.style.display = tab.dataset.role === 'teacher' ? 'block' : 'none';
+        document.getElementById('password').required = tab.dataset.role === 'teacher';
         err.textContent = '';
       });
     });
@@ -205,11 +214,13 @@
       btn.classList.add('loading');
       btn.classList.remove('success');
       const email = form.email.value.trim();
+      const password = (form.password && form.password.value) || '';
+      const payload = isTeacher() ? { email, password } : { email };
       try {
         const res = await fetch('/api/auth', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify(payload),
         });
         let data;
         try { data = await res.json(); } catch (_) { data = { error: res.status === 404 ? 'API not found — check deployment' : 'Server error' }; }

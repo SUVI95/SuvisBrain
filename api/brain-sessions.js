@@ -2,7 +2,6 @@
 import { query } from './db.js';
 
 export default async function brainSessionsHandler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method !== 'GET') {
     res.writeHead(405, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ error: 'GET only' }));

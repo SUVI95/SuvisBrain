@@ -61,9 +61,12 @@ yki_result options: fail, pass, pass_with_distinction`;
 }
 
 export default async function ykiScoreHandler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
   if (req.method === 'GET') {
+    if (!req.user) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized', code: 'AUTH_REQUIRED' }));
+      return;
+    }
     const url = new URL(req.url || '/', 'http://localhost');
     const episodeId = url.searchParams.get('episode');
     if (!episodeId) {
@@ -85,6 +88,11 @@ export default async function ykiScoreHandler(req, res) {
         return;
       }
       const ep = r.rows[0];
+      if (req.user.role === 'learner' && ep.learner_id !== req.user.id) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Forbidden' }));
+        return;
+      }
       const meta = ep.metadata || {};
       const score = meta.yki_score;
       if (score) {
@@ -109,7 +117,7 @@ export default async function ykiScoreHandler(req, res) {
     } catch (err) {
       console.error('yki-score GET error:', err);
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: err.message }));
+      res.end(JSON.stringify({ error: 'Something went wrong' }));
     }
     return;
   }
@@ -138,7 +146,7 @@ export default async function ykiScoreHandler(req, res) {
     } catch (err) {
       console.error('yki-score POST error:', err);
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: err.message }));
+      res.end(JSON.stringify({ error: 'Something went wrong' }));
     }
     return;
   }

@@ -8,8 +8,6 @@ function sendJson(res, status, data) {
 }
 
 export default async function brainSkillsHandler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
   if (req.method !== 'GET') {
     return sendJson(res, 405, { error: 'GET only' });
   }

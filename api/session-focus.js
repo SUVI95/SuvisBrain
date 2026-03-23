@@ -2,16 +2,25 @@
 import { query } from './db.js';
 
 export default async function sessionFocusHandler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
   if (req.method !== 'GET') {
     res.writeHead(405, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'GET only' }));
     return;
   }
 
+  if (!req.user) {
+    res.writeHead(401, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Unauthorized', code: 'AUTH_REQUIRED' }));
+    return;
+  }
+
   const url = req.url || '';
-  const learnerId = (url.includes('?') ? new URLSearchParams(url.split('?')[1] || '').get('learner_id') : null) || null;
+  let learnerId = (url.includes('?') ? new URLSearchParams(url.split('?')[1] || '').get('learner_id') : null) || null;
+
+  if (req.user.role === 'learner') {
+    learnerId = req.user.id;
+  }
+  // Teachers may pass any learner_id
 
   try {
     const result = learnerId
@@ -68,6 +77,6 @@ export default async function sessionFocusHandler(req, res) {
   } catch (err) {
     console.error('session-focus error:', err);
     res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: err.message }));
+    res.end(JSON.stringify({ error: 'Something went wrong' }));
   }
 }

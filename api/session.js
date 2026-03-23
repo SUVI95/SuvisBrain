@@ -1,38 +1,41 @@
-// POST /session — OpenAI Realtime voice (Knuut AI)
-// VOICE: verse (masculine, calm)
-// Handles SDP exchange for WebRTC voice sessions
+// POST /api/session — OpenAI Realtime voice (Knuut AI). Requires auth.
 import { getSystemPrompt, langToIso } from './knuut-prompt.js';
 import { query } from './db.js';
 
 export default async function handler(req, res, body) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method !== 'POST') {
     res.status(405).end('Method not allowed');
     return;
   }
 
+  if (!req.user) {
+    res.status(401).json({ error: 'Unauthorized', code: 'AUTH_REQUIRED' });
+    return;
+  }
+
   try {
     if (!process.env.OPENAI_API_KEY) {
-      res.status(500).end('Missing OPENAI_API_KEY');
+      res.status(500).json({ error: 'Something went wrong' });
       return;
     }
 
-    var offerSdp = '';
-    if (body && typeof body === 'object' && body.sdp) {
-      offerSdp = String(body.sdp || '');
-    } else if (typeof body === 'string' && body) {
-      offerSdp = body;
-    }
+    const offerSdp = (body && body.sdp) ? String(body.sdp) : (typeof body === 'string' ? body : '');
     if (!offerSdp) {
-      res.status(400).end('Missing SDP offer');
+      res.status(400).json({ error: 'Missing SDP offer' });
       return;
     }
 
-    const learnerId = (body && body.learner_id) || null;
     const mode = ((body && body.mode) || 'regular').toLowerCase() === 'yki' ? 'yki' : 'regular';
     const dashboardMode = (body && body.dashboard_mode) || null;
     const reviewWords = Array.isArray(body && body.review_words) ? body.review_words : [];
     const focusTopics = Array.isArray(body && body.focusTopics) ? body.focusTopics : [];
+
+    let learnerId = null;
+    if (req.user.role === 'learner') {
+      learnerId = req.user.id;
+    } else if (req.user.role === 'teacher' && body && body.learner_id) {
+      learnerId = body.learner_id;
+    }
 
     let learnerCefr = null;
     let nativeLanguage = null;
@@ -120,7 +123,7 @@ export default async function handler(req, res, body) {
     if (!createResp.ok) {
       const err = await createResp.text();
       console.error('[voice] Session create failed:', err.slice(0, 200));
-      res.status(createResp.status).end(err);
+      res.status(createResp.status).json({ error: 'Something went wrong' });
       return;
     }
 
@@ -140,7 +143,7 @@ export default async function handler(req, res, body) {
     if (!oaiResp.ok) {
       const err = await oaiResp.text();
       console.error('[voice] SDP exchange failed:', err.slice(0, 200));
-      res.status(oaiResp.status).end(err);
+      res.status(oaiResp.status).json({ error: 'Something went wrong' });
       return;
     }
 
@@ -150,6 +153,6 @@ export default async function handler(req, res, body) {
     res.status(200).end(JSON.stringify({ answer: answerSdp, instructions: systemPrompt }));
   } catch (err) {
     console.error('[voice]', err);
-    res.status(500).end('Server error');
+    res.status(500).json({ error: 'Something went wrong' });
   }
 }

@@ -7,14 +7,17 @@
     "dev": "node server.js",
     "start": "node server.js",
     "seed": "node api/seed-brain.js",
+    "set-teacher-password": "node scripts/set-demo-teacher-password.js",
     "build": "echo 'Static + serverless'"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.9.0",
+    "bcrypt": "^5.1.1",
     "dotenv": "^17.3.1",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.20.0",
-    "resend": "^6.9.4"
+    "resend": "^6.9.4",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "vercel": "^38.0.0"
