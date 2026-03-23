@@ -33,12 +33,20 @@ async function collectBody(req) {
   try { return JSON.parse(raw || '{}'); } catch { return {}; }
 }
 
+function getPathParam(req) {
+  if (req.query?.path != null) return req.query.path;
+  const url = req.url || req.originalUrl || '';
+  const q = url.includes('?') ? url.split('?')[1] : '';
+  const params = new URLSearchParams(q);
+  return params.get('path') || '';
+}
+
 export default async function handler(req, res) {
   try {
     res.setHeader('Access-Control-Allow-Origin', '*');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    const pathParam = req.query?.path ?? '';
+    const pathParam = getPathParam(req);
     const pathSegs = (Array.isArray(pathParam) ? pathParam.join('/') : String(pathParam)).split('/').filter(Boolean);
     const route = pathSegs[0] || '';
 
