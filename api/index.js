@@ -104,6 +104,22 @@ export default async function handler(req, res) {
         return res.status(500).json({ status: 'db_error', error: err.message });
       }
     }
+    if (route === 'schema-check') {
+      try {
+        const cols = await query(`SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name IN ('episodes', 'brain_nodes') AND column_name = 'metadata'`);
+        const hasEpisodes = cols.rows.some((r) => r.table_name === 'episodes');
+        const hasBrainNodes = cols.rows.some((r) => r.table_name === 'brain_nodes');
+        return res.status(200).json({
+          episodes_has_metadata: hasEpisodes,
+          brain_nodes_has_metadata: hasBrainNodes,
+          fix: !hasEpisodes || !hasBrainNodes
+            ? 'Run in Neon SQL Editor: ALTER TABLE episodes ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT \'{}\'; ALTER TABLE brain_nodes ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT \'{}\';'
+            : null,
+        });
+      } catch (err) {
+        return res.status(500).json({ error: err.message });
+      }
+    }
       if (route === 'cron-weekly') {
       return weeklyEmailHandler(req, nres);
     }

@@ -250,6 +250,25 @@ async function handleApi(pathname, req, res, body) {
     }
     return true;
   }
+  if (route === 'schema-check') {
+    try {
+      const cols = await query(`SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name IN ('episodes', 'brain_nodes') AND column_name = 'metadata'`);
+      const hasEpisodes = cols.rows.some((r) => r.table_name === 'episodes');
+      const hasBrainNodes = cols.rows.some((r) => r.table_name === 'brain_nodes');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        episodes_has_metadata: hasEpisodes,
+        brain_nodes_has_metadata: hasBrainNodes,
+        fix: !hasEpisodes || !hasBrainNodes
+          ? "Run in Neon SQL Editor: ALTER TABLE episodes ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}'; ALTER TABLE brain_nodes ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}';"
+          : null,
+      }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return true;
+  }
   if (route === 'cron-weekly') {
     await weeklyEmailHandler(req, res);
     return true;

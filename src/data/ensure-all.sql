@@ -21,6 +21,9 @@ CREATE TABLE IF NOT EXISTS learners (
 -- 2. Episodes: metadata + learner_id (for learner-scoped sessions)
 ALTER TABLE episodes ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}';
 ALTER TABLE episodes ADD COLUMN IF NOT EXISTS learner_id uuid REFERENCES learners(id);
+
+-- 2b. Brain nodes: metadata (if table existed from older schema)
+ALTER TABLE brain_nodes ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}';
 CREATE INDEX IF NOT EXISTS idx_episodes_learner ON episodes(learner_id);
 
 -- 3. Brain nodes: confidence_history (for sparklines)

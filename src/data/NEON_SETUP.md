@@ -62,3 +62,11 @@ In Vercel: Project → Settings → Environment Variables → `DATABASE_URL`
 In local `.env`: `DATABASE_URL=postgresql://user:pass@host/db?sslmode=require`
 
 The connection string is in Neon: Project → Connection Details → Connection string.
+
+**Important:** Vercel must use the same Neon project/branch where you ran the schema. If you get "column metadata does not exist", the app is likely connected to a different database.
+
+## 6. Debug: schema-check (no auth required)
+
+Open in browser: `https://your-app.vercel.app/api/schema-check`
+
+Returns whether `episodes` and `brain_nodes` have the `metadata` column in the DB your app connects to. If `episodes_has_metadata` or `brain_nodes_has_metadata` is false, run the `fix` SQL shown in the response in the **same** Neon project that `DATABASE_URL` points to.
