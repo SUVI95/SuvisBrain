@@ -105,9 +105,9 @@ export default async function handler(req, res, body) {
     }
 
     const answerSdp = await oaiResp.text();
-    res.setHeader('Content-Type', 'application/sdp');
+    res.setHeader('Content-Type', 'application/json');
     res.setHeader('X-Session-Id', sessionId);
-    res.status(200).end(answerSdp);
+    res.status(200).end(JSON.stringify({ answer: answerSdp, instructions: systemPrompt }));
   } catch (err) {
     console.error('[voice]', err);
     res.status(500).end('Server error');

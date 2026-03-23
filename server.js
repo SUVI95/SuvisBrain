@@ -149,10 +149,10 @@ async function handleVoice(pathname, req, res) {
 
       const answerSdp = await oaiResp.text();
       res.writeHead(200, {
-        'Content-Type': 'application/sdp',
+        'Content-Type': 'application/json',
         'X-Session-Id': sessionId,
       });
-      res.end(answerSdp);
+      res.end(JSON.stringify({ answer: answerSdp, instructions: systemPrompt }));
     } catch (err) {
       console.error('[voice]', err);
       res.writeHead(500, { 'Content-Type': 'text/plain' });

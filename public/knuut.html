@@ -547,16 +547,25 @@
           sessionTranscript = '';
           sessionStartTime = Date.now();
 
+          let sessionInstructions = '';
           const channel = pc.createDataChannel('oai-events');
-          channel.onopen = async () => {
+          channel.onopen = function() {
+            if (sessionInstructions) {
+              try {
+                channel.send(JSON.stringify({
+                  type: 'session.update',
+                  session: { instructions: sessionInstructions }
+                }));
+              } catch (e) {}
+            }
             try {
-                  channel.send(JSON.stringify({
+              channel.send(JSON.stringify({
                 type: 'response.create',
                 response: { modalities: ['audio','text'], conversation: 'auto' }
               }));
             } catch (e) {}
           };
-          channel.onmessage = (event) => {
+          channel.onmessage = function(event) {
             try {
               const obj = JSON.parse(event.data || '{}');
               const t = obj.transcript || obj.item?.transcript;
@@ -594,7 +603,9 @@
             throw new Error('Session failed: ' + errText);
           }
 
-          const answerSdp = await resp.text();
+          const data = await resp.json();
+          const answerSdp = typeof data.answer === 'string' ? data.answer : (data.sdp || '');
+          sessionInstructions = data.instructions || '';
           await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
           try { await remoteAudioEl.play(); } catch {}
 
