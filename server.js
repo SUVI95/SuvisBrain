@@ -19,6 +19,7 @@ import authHandler from './api/auth.js';
 import weeklyEmailHandler from './api/cron-weekly.js';
 import ykiScoreHandler from './api/yki-score.js';
 import { query } from './api/db.js';
+import { getSystemPrompt, langToIso } from './api/knuut-prompt.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PORT = 3000;
@@ -55,69 +56,55 @@ async function handleVoice(pathname, req, res) {
     return true;
   }
 
-  if (pathname === '/session' && req.method === 'POST') {
+  if ((pathname === '/session' || pathname === '/api/session') && req.method === 'POST') {
     try {
       if (!process.env.OPENAI_API_KEY) {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
         return res.end('Missing OPENAI_API_KEY');
       }
       const contentType = req.headers['content-type'] || '';
-      const body = await collectBody(req);
-      const offerSdp = contentType.includes('json') ? (JSON.parse(body || '{}').sdp || '') : body;
+      const rawBody = await collectBody(req);
+      const body = contentType.includes('json') ? (JSON.parse(rawBody || '{}') || {}) : {};
+      const offerSdp = body.sdp || rawBody;
       if (!offerSdp) {
         res.writeHead(400, { 'Content-Type': 'text/plain' });
         return res.end('Missing SDP offer');
       }
 
-      const focusFragment = req.headers['x-session-focus'] || '';
-      const examMode = (req.headers['x-exam-mode'] || '').toLowerCase() === 'true';
+      const learnerId = body.learner_id || null;
+      const mode = (body.mode || '').toLowerCase() === 'yki' ? 'yki' : 'regular';
+      const focusTopics = Array.isArray(body.focusTopics) ? body.focusTopics : [];
 
-      const LANG_TEACHER_PROMPT = examMode
-        ? `You are now running a YKI (Yleinen kielitutkinto) B1 level mock exam.
-Strictly follow these rules:
+      let learnerCefr = null;
+      let nativeLanguage = null;
+      let isFirstSession = false;
 
-1. SPEAKING SECTION (5 minutes):
-   Give the learner 2 speaking tasks typical of YKI B1:
-   - Task 1: Describe a situation (e.g. "You need to call a doctor. Explain your symptoms in Finnish.")
-   - Task 2: Give an opinion (e.g. "What do you think about public transport in Finnish cities?")
-   Assess: fluency, vocabulary range, grammatical accuracy, pronunciation.
+      if (learnerId) {
+        try {
+          const learnerResult = await query(
+            `SELECT cefr_level, mother_tongue,
+                    (SELECT COUNT(*) FROM episodes WHERE learner_id = $1) AS session_count
+             FROM learners WHERE id = $2`,
+            [learnerId, learnerId]
+          );
+          if (learnerResult.rows && learnerResult.rows[0]) {
+            const row = learnerResult.rows[0];
+            learnerCefr = row.cefr_level || null;
+            nativeLanguage = row.mother_tongue ? langToIso(row.mother_tongue) : null;
+            isFirstSession = parseInt(row.session_count, 10) === 0;
+          }
+        } catch (err) {
+          console.error('[voice] Could not fetch learner profile:', err.message);
+        }
+      }
 
-2. INTERACTION SECTION (5 minutes):
-   Role-play a realistic Finnish conversation scenario:
-   - e.g. Renting an apartment, job interview, pharmacy visit
-   Respond naturally as the other person in the scenario.
-   Gently correct major errors by repeating correctly.
-
-3. FEEDBACK SECTION (5 minutes):
-   After the exam tasks, give structured feedback:
-   - Overall CEFR level demonstrated: A1 / A2 / B1 / B2
-   - Strongest area
-   - Biggest weakness
-   - 3 specific things to practice before the real exam
-   - Predicted YKI score: Fail / Pass / Pass with distinction
-
-Do NOT break character during the exam sections.
-Do NOT switch to English unless the learner is completely lost.
-Keep strict time — move to the next section after 5 minutes.
-${focusFragment ? '\n' + focusFragment : ''}`
-        : `You are Knuut, a friendly, patient language teacher who can speak and teach ANY language. You adapt to the user's target language immediately.
-
-CRITICAL: NEVER speak while the user speaks. Wait until they fully stop. After they stop, pause 1 second before responding. Keep responses SHORT — max 2-3 sentences. Never monologue.
-
-YOUR ROLE:
-- Speak the same language the user is learning (or the one they request)
-- Correct gently: repeat the right form without shaming
-- Encourage: "Hyvä!" "Bra!" "Good!" etc.
-- Ask simple follow-up questions to practice
-- Use clear, natural speech at a learner-friendly pace
-
-CONVERSATION FLOW:
-1. Greet warmly in the target language (ask which language if unclear)
-2. Practice: basic phrases, vocabulary, or free conversation
-3. Correct errors kindly: "Almost! We say [correct form]"
-4. Keep turns short so the user practices speaking
-
-NEVER: Speak over the user, give long grammar lessons, use complex vocabulary, rush. You are calm, warm, patient, and human-like.${focusFragment ? '\n\n' + focusFragment : ''}`;
+      const systemPrompt = getSystemPrompt({
+        mode,
+        focusTopics,
+        learnerCefr,
+        nativeLanguage,
+        isFirstSession,
+      });
 
       const createResp = await fetch('https://api.openai.com/v1/realtime/sessions', {
         method: 'POST',
@@ -127,10 +114,10 @@ NEVER: Speak over the user, give long grammar lessons, use complex vocabulary, r
         },
         body: JSON.stringify({
           model: 'gpt-4o-realtime-preview',
-          voice: 'verse',
+          voice: 'echo',
           input_audio_format: 'pcm16',
           output_audio_format: 'pcm16',
-          instructions: LANG_TEACHER_PROMPT,
+          instructions: systemPrompt,
         }),
       });
 
