@@ -357,6 +357,8 @@ const MODE_CONTEXTS = {
   conversation: 'LEARNER CAME FROM: Conversation Practice. Warm, natural dialogue. Do NOT ask why they came — start the conversation.',
   review: 'LEARNER CAME FROM: Review Mistakes. They want to practice words they got wrong. Use the provided review words. Do NOT ask why they came — start reviewing.',
   yki: 'LEARNER CAME FROM: YKI Exam Practice. Act as exam trainer. Do NOT ask why they came — start exam practice.',
+  writing: 'LEARNER CAME FROM: Writing Practice. They wrote about a topic. Ask to expand verbally, discuss what they wrote, or practice related phrases. Use focus topics if provided.',
+  learn: 'LEARNER CAME FROM: Learn (theory). They read about a grammar topic. Practice it in conversation. Use focus topics if provided.',
 };
 
 const FIRST_SESSION = `

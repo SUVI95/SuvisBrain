@@ -105,7 +105,7 @@
     /* MODE GRID — 2 cols mobile, 3 cols tablet, 5 cols desktop */
     .mode-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
     @media(min-width:600px) { .mode-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media(min-width:900px) { .mode-grid { grid-template-columns: repeat(5, 1fr); } }
+    @media(min-width:900px) { .mode-grid { grid-template-columns: repeat(4, 1fr); } }
     .mode-card {
       background: #fff; border: 2px solid #e9e7fd; border-radius: 18px;
       padding: 18px 16px 16px; cursor: pointer; transition: all 0.18s; text-align: left;
@@ -288,6 +288,21 @@
         <div class="mode-title">Talk with Knuut</div>
         <div class="mode-sub">Real conversation</div>
       </div>
+      <div class="mode-card" data-mode="quiz" data-route="/quiz.html">
+        <span class="mode-icon">🧩</span>
+        <div class="mode-title">Quick Quiz</div>
+        <div class="mode-sub">Multiple choice & fill-in</div>
+      </div>
+      <div class="mode-card" data-mode="writing" data-route="/writing.html">
+        <span class="mode-icon">✍️</span>
+        <div class="mode-title">Writing</div>
+        <div class="mode-sub">Practice writing</div>
+      </div>
+      <div class="mode-card" data-mode="learn" data-route="/learn.html">
+        <span class="mode-icon">📖</span>
+        <div class="mode-title">Learn</div>
+        <div class="mode-sub">Short theory bites</div>
+      </div>
       <div class="mode-card" data-mode="vocab">
         <span class="mode-icon">📚</span>
         <div class="mode-title">Vocabulary</div>
@@ -400,7 +415,11 @@
     function startMode(mode) { window.location.href = '/knuut.html?mode=' + encodeURIComponent(mode); }
     function reviewMistakes() { localStorage.setItem('sb_review_words', JSON.stringify(window.__mistakeWords||[])); window.location.href = '/knuut.html?mode=review'; }
     function continueWhereLeftOff() { window.location.href = '/knuut.html'; }
-    document.querySelectorAll('.mode-card').forEach(el => el.addEventListener('click', () => startMode(el.dataset.mode)));
+    document.querySelectorAll('.mode-card').forEach(el => el.addEventListener('click', () => {
+      const route = el.dataset.route;
+      if (route) window.location.href = route;
+      else startMode(el.dataset.mode);
+    }));
 
     const STORAGE_KEY = 'sb_skill_scores_' + LEARNER_ID;
     function getStoredScores() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); } catch { return {}; } }

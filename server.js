@@ -368,7 +368,9 @@ const server = createServer(async (req, res) => {
   const apiHandled = await handleApi(pathname, req, res, body);
   if (apiHandled) return;
 
-  if (!serveStatic(pathname, res)) {
+  const routeRewrites = { '/quiz': 'quiz.html', '/writing': 'writing.html', '/learn': 'learn.html' };
+  const staticPath = routeRewrites[pathname] || pathname;
+  if (!serveStatic(staticPath, res)) {
     res.writeHead(404).end('Not found');
   }
 });

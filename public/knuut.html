@@ -925,11 +925,16 @@
           await pc.setLocalDescription(offer);
 
           const focusData = await getSessionFocus();
+          let focusTopics = focusData.focusTopics || [];
+          const urlTopic = params.get('topic');
+          if ((dashboardMode === 'writing' || dashboardMode === 'learn') && urlTopic) {
+            focusTopics = [decodeURIComponent(urlTopic)].concat(focusTopics.filter(function(t) { return t !== urlTopic; })).slice(0, 5);
+          }
           const sessionBody = {
             sdp: offer.sdp || '',
             learner_id: learnerId || undefined,
             mode: examMode ? 'yki' : 'regular',
-            focusTopics: focusData.focusTopics || []
+            focusTopics: focusTopics
           };
           if (dashboardMode) sessionBody.dashboard_mode = dashboardMode;
           if (reviewWords.length > 0) sessionBody.review_words = reviewWords;

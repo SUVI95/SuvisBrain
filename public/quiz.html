@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knuut — Quick Quiz</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { colors: { knuut: '#6C63FF', knuutDark: '#5046e5' } } } }</script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0EFFE; }
+    .option { transition: all 0.25s ease; }
+    .option:hover { border-color: #6C63FF; background: rgba(108,99,255,0.04); transform: translateY(-1px); }
+    .option.correct { border-color: #22c55e; background: #dcfce7; animation: flashGreen 0.4s ease; }
+    .option.incorrect { border-color: #ef4444; background: #fee2e2; animation: flashRed 0.4s ease; }
+    .option.selected { border-color: #6C63FF; background: rgba(108,99,255,0.1); }
+    @keyframes flashGreen { 0%{box-shadow: 0 0 0 0 rgba(34,197,94,0.5)} 70%{box-shadow: 0 0 0 8px rgba(34,197,94,0)} 100%{box-shadow: none} }
+    @keyframes flashRed { 0%{box-shadow: 0 0 0 0 rgba(239,68,68,0.5)} 70%{box-shadow: 0 0 0 8px rgba(239,68,68,0)} 100%{box-shadow: none} }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-slide-in { animation: slideIn 0.35s ease-out both; }
+    .animate-delay-1 { animation-delay: 0.05s; }
+    .animate-delay-2 { animation-delay: 0.1s; }
+    .animate-delay-3 { animation-delay: 0.15s; }
+  </style>
+</head>
+<body class="min-h-screen text-gray-800">
+  <nav class="bg-white border-b border-purple-100 px-4 py-3 flex items-center gap-2 sticky top-0 z-50">
+    <a href="student-dashboard.html" class="text-knuut font-extrabold tracking-wider">KNUUT</a>
+    <a href="student-dashboard.html" class="ml-auto text-sm text-gray-500 hover:text-knuut">← Dashboard</a>
+  </nav>
+
+  <main class="max-w-2xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">🧩 Quick Quiz</h1>
+    <p class="text-gray-600 mb-8">Test your Finnish knowledge. AI suggestions only — final decisions are made by your teacher.</p>
+
+    <!-- Progress -->
+    <div class="mb-8 animate-slide-in">
+      <div class="flex justify-between text-sm text-gray-500 mb-2">
+        <span id="progress-text">1 / 5</span>
+      </div>
+      <div class="h-2 bg-gray-200 rounded-full overflow-hidden transition-all duration-500">
+        <div id="progress-fill" class="h-full bg-knuut rounded-full transition-all duration-500 ease-out" style="width: 20%"></div>
+      </div>
+    </div>
+
+    <!-- Question card -->
+    <div id="quiz-area" class="transition-all duration-200">
+      <div id="question-card" class="bg-white rounded-2xl shadow-sm border-2 border-purple-100 p-6 md:p-8 animate-slide-in animate-delay-1 transition-opacity duration-300">
+        <p id="question-text" class="text-lg font-semibold mb-6"></p>
+        <div id="options-area"></div>
+        <div id="fill-area" class="hidden">
+          <input type="text" id="fill-input" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-lg focus:border-knuut focus:outline-none" placeholder="Type your answer..." />
+          <button id="fill-submit" class="mt-4 w-full py-3 bg-knuut text-white font-bold rounded-xl hover:bg-knuutDark transition">Submit</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result card -->
+    <div id="result-card" class="hidden bg-white rounded-2xl shadow-sm border-2 border-purple-100 p-6 md:p-8 text-center animate-slide-in">
+      <h2 class="text-xl font-bold mb-4">You answered <span id="correct-count">0</span> / <span id="total-count">5</span> correctly</h2>
+      <div id="mistakes-list" class="text-left mb-6 text-sm text-gray-600"></div>
+      <a id="practice-btn" href="knuut.html" class="inline-flex items-center gap-2 w-full justify-center py-4 bg-knuut text-white font-bold rounded-xl hover:bg-knuutDark transition">
+        Practice mistakes with Knuut →
+      </a>
+      <a href="student-dashboard.html" class="block mt-4 text-gray-500 hover:text-knuut text-sm">Back to Dashboard</a>
+    </div>
+  </main>
+
+  <script>
+    const SAMPLE_QUIZ = [
+      { question: 'What does "Hyvää päivää" mean?', type: 'multiple_choice', options: ['Goodbye', 'Good day', 'Good night', 'Thank you'], correctAnswer: 'Good day' },
+      { question: 'Fill in the blank: Minä ____ opiskelija. (I am a student)', type: 'fill_blank', correctAnswer: 'olen' },
+      { question: 'How do you say "thank you" in Finnish?', type: 'multiple_choice', options: ['Hei', 'Kiitos', 'Moi', 'Näkemiin'], correctAnswer: 'Kiitos' },
+      { question: 'Fill in the blank: ____ nimi on Anna. (My name is Anna)', type: 'fill_blank', correctAnswer: 'Minun' },
+      { question: 'What is the Finnish word for "house"?', type: 'multiple_choice', options: ['Talo', 'Auto', 'Kissa', 'Koira'], correctAnswer: 'Talo' },
+    ];
+
+    let quizData = [...SAMPLE_QUIZ];
+    let currentIndex = 0;
+    let correctCount = 0;
+    let mistakes = [];
+    const STORAGE_KEY = 'knuut_quiz_mistakes';
+
+    function getStoredMistakes() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
+    }
+    function saveMistakes(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
+
+    function renderProgress() {
+      document.getElementById('progress-text').textContent = `${currentIndex + 1} / ${quizData.length}`;
+      document.getElementById('progress-fill').style.width = `${((currentIndex + 1) / quizData.length) * 100}%`;
+    }
+
+    function showFeedback(correct, userAnswer, correctAnswer) {
+      const opts = document.querySelectorAll('.option');
+      opts.forEach(o => {
+        o.classList.remove('selected');
+        if (o.dataset.value === userAnswer || o.textContent.trim() === userAnswer) {
+          o.classList.add(correct ? 'correct' : 'incorrect', 'selected');
+        } else if (o.dataset.value === correctAnswer) {
+          o.classList.add('correct');
+        }
+      });
+      const fillArea = document.getElementById('fill-area');
+      if (fillArea && !fillArea.classList.contains('hidden')) {
+        const input = document.getElementById('fill-input');
+        input.disabled = true;
+        const feedback = document.createElement('p');
+        feedback.className = 'mt-4 text-sm ' + (correct ? 'text-green-600' : 'text-red-600');
+        feedback.textContent = correct ? '✓ Correct!' : `✓ Correct answer: ${correctAnswer}`;
+        fillArea.appendChild(feedback);
+      }
+      setTimeout(nextOrFinish, 1500);
+    }
+
+    function nextOrFinish() {
+      currentIndex++;
+      if (currentIndex >= quizData.length) {
+        showResult();
+      } else {
+        renderQuestion();
+      }
+    }
+
+    function showResult() {
+      document.getElementById('quiz-area').style.opacity = '0';
+      document.getElementById('quiz-area').style.transform = 'translateY(-8px)';
+      setTimeout(() => {
+        document.getElementById('quiz-area').classList.add('hidden');
+        document.getElementById('result-card').classList.remove('hidden');
+      }, 200);
+      document.getElementById('correct-count').textContent = correctCount;
+      document.getElementById('total-count').textContent = quizData.length;
+      const list = document.getElementById('mistakes-list');
+      if (mistakes.length > 0) {
+        list.innerHTML = '<p class="font-semibold text-gray-700 mb-2">Practice these with Knuut:</p>' +
+          mistakes.map(m => `<p class="py-1">• ${m}</p>`).join('');
+        const stored = getStoredMistakes();
+        const merged = [...new Set([...stored, ...mistakes])];
+        saveMistakes(merged.slice(-20));
+        const wordsToPractice = mistakes.map(m => m.split(' → ')[1] || m).filter(Boolean);
+        localStorage.setItem('sb_review_words', JSON.stringify(wordsToPractice));
+        const reviewParam = encodeURIComponent(JSON.stringify(wordsToPractice));
+        document.getElementById('practice-btn').href = 'knuut.html?mode=review&review_words=' + reviewParam;
+      } else {
+        list.innerHTML = '<p class="text-green-600">Well done! 🎉</p>';
+        document.getElementById('practice-btn').textContent = 'Practice more with Knuut →';
+      }
+    }
+
+    function renderQuestion() {
+      renderProgress();
+      const q = quizData[currentIndex];
+      const card = document.getElementById('question-card');
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(8px)';
+      document.getElementById('question-text').textContent = q.question;
+
+      const optionsArea = document.getElementById('options-area');
+      const fillArea = document.getElementById('fill-area');
+      optionsArea.classList.add('hidden');
+      fillArea.classList.add('hidden');
+      fillArea.querySelectorAll('p').forEach(p => p.remove());
+      const input = document.getElementById('fill-input');
+      input.disabled = false;
+      input.value = '';
+
+      if (q.type === 'multiple_choice') {
+        optionsArea.classList.remove('hidden');
+        optionsArea.innerHTML = (q.options || []).map((opt, i) => `
+          <button class="option block w-full text-left border-2 border-gray-200 rounded-xl px-4 py-3 mb-3" data-value="${opt}" style="animation: slideIn 0.3s ease-out ${i * 0.05}s both">
+            ${opt}
+          </button>
+        `).join('');
+        optionsArea.querySelectorAll('.option').forEach(btn => {
+          btn.addEventListener('click', function() {
+            if (this.classList.contains('correct') || this.classList.contains('incorrect')) return;
+            const val = this.dataset.value;
+            const ok = optEquals(val, q.correctAnswer);
+            if (!ok) mistakes.push(q.question + ' → ' + q.correctAnswer);
+            correctCount += ok ? 1 : 0;
+            showFeedback(ok, val, q.correctAnswer);
+          });
+        });
+      } else {
+        fillArea.classList.remove('hidden');
+        document.getElementById('fill-submit').onclick = () => {
+          const val = (document.getElementById('fill-input').value || '').trim();
+          const ok = optEquals(val, q.correctAnswer);
+          if (!ok) mistakes.push(q.question + ' → ' + q.correctAnswer);
+          correctCount += ok ? 1 : 0;
+          showFeedback(ok, val, q.correctAnswer);
+        };
+      }
+      requestAnimationFrame(() => {
+        card.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+        requestAnimationFrame(() => {
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        });
+      });
+    }
+
+    function optEquals(a, b) {
+      return (a || '').toLowerCase().trim() === (b || '').toLowerCase().trim();
+    }
+
+    renderQuestion();
+  </script>
+</body>
+</html>
