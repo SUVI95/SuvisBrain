@@ -385,12 +385,20 @@
       const urlLearnerId = params.get('learner_id');
       const learnerId = urlLearnerId || (user?.role === 'learner' ? user?.id : null);
       const dashboardMode = params.get('mode') || null;
-      const reviewWordsParam = params.get('review_words');
+      const topicParam = params.get('topic') || null;
       let reviewWords = [];
       if (dashboardMode === 'review') {
+        const reviewWordsParam = params.get('review_words');
+        const wordsParam = params.get('words');
         try {
-          reviewWords = reviewWordsParam ? JSON.parse(decodeURIComponent(reviewWordsParam)) : JSON.parse(localStorage.getItem('sb_review_words') || '[]');
+          if (reviewWordsParam) reviewWords = JSON.parse(decodeURIComponent(reviewWordsParam));
+          else if (wordsParam) reviewWords = decodeURIComponent(wordsParam).split(',').map(w => w.trim()).filter(Boolean);
+          else reviewWords = JSON.parse(localStorage.getItem('sb_review_words') || '[]');
         } catch (e) { reviewWords = []; }
+      }
+      let writingSample = '';
+      if (dashboardMode === 'writing') {
+        try { writingSample = localStorage.getItem('sb_writing_sample') || ''; } catch (e) {}
       }
 
       function authHeaders() {
@@ -926,18 +934,20 @@
 
           const focusData = await getSessionFocus();
           let focusTopics = focusData.focusTopics || [];
-          const urlTopic = params.get('topic');
-          if ((dashboardMode === 'writing' || dashboardMode === 'learn') && urlTopic) {
-            focusTopics = [decodeURIComponent(urlTopic)].concat(focusTopics.filter(function(t) { return t !== urlTopic; })).slice(0, 5);
+          if ((dashboardMode === 'writing' || dashboardMode === 'learn') && topicParam) {
+            const decodedTopic = decodeURIComponent(topicParam);
+            focusTopics = [decodedTopic].concat(focusTopics.filter(function(t) { return t !== decodedTopic; })).slice(0, 5);
           }
           const sessionBody = {
             sdp: offer.sdp || '',
             learner_id: learnerId || undefined,
             mode: examMode ? 'yki' : 'regular',
-            focusTopics: focusTopics
+            dashboard_mode: dashboardMode || undefined,
+            focusTopics: focusTopics,
+            topic: topicParam ? decodeURIComponent(topicParam) : undefined,
+            review_words: reviewWords.length > 0 ? reviewWords : undefined,
+            writing_sample: writingSample || undefined
           };
-          if (dashboardMode) sessionBody.dashboard_mode = dashboardMode;
-          if (reviewWords.length > 0) sessionBody.review_words = reviewWords;
           const resp = await fetch(SERVER_URL + '/api/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...authHeaders() },

@@ -140,7 +140,8 @@
         const wordsToPractice = mistakes.map(m => m.split(' → ')[1] || m).filter(Boolean);
         localStorage.setItem('sb_review_words', JSON.stringify(wordsToPractice));
         const reviewParam = encodeURIComponent(JSON.stringify(wordsToPractice));
-        document.getElementById('practice-btn').href = 'knuut.html?mode=review&review_words=' + reviewParam;
+        const wordsParam = encodeURIComponent(wordsToPractice.join(','));
+        document.getElementById('practice-btn').href = 'knuut.html?mode=review&review_words=' + reviewParam + '&words=' + wordsParam;
       } else {
         list.innerHTML = '<p class="text-green-600">Well done! 🎉</p>';
         document.getElementById('practice-btn').textContent = 'Practice more with Knuut →';

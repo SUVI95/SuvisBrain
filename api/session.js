@@ -27,8 +27,10 @@ export default async function handler(req, res, body) {
 
     const mode = ((body && body.mode) || 'regular').toLowerCase() === 'yki' ? 'yki' : 'regular';
     const dashboardMode = (body && body.dashboard_mode) || null;
+    const topic = (body && body.topic) ? String(body.topic).slice(0, 500) : null;
     const reviewWords = Array.isArray(body && body.review_words) ? body.review_words : [];
     const focusTopics = Array.isArray(body && body.focusTopics) ? body.focusTopics : [];
+    const writingSample = (body && body.writing_sample) ? String(body.writing_sample).slice(0, 2000) : null;
 
     let learnerId = null;
     if (req.user.role === 'learner') {
@@ -95,8 +97,10 @@ export default async function handler(req, res, body) {
     const systemPrompt = getSystemPrompt({
       mode,
       dashboardMode,
+      topic,
       reviewWords,
       focusTopics,
+      writingSample,
       learnerCefr,
       nativeLanguage,
       learnerName,

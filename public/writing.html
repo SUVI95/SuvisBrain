@@ -76,6 +76,7 @@
 
       const practiceBtn = document.getElementById('practice-knuut-btn');
       const promptText = PROMPTS[promptIndex] || PROMPTS[0];
+      try { localStorage.setItem('sb_writing_sample', text.slice(0, 2000)); } catch (e) {}
       practiceBtn.href = 'knuut.html?mode=writing&topic=' + encodeURIComponent(promptText);
     });
 

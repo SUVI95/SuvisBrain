@@ -402,12 +402,18 @@ function learnerMemoryAddendum(learnerName, lastEpisode) {
   return parts.length > 0 ? '\n' + parts.join(' ') + '\n' : '';
 }
 
-function modeContextAddendum(dashboardMode, reviewWords) {
+function modeContextAddendum(dashboardMode, reviewWords, topic, writingSample) {
   if (!dashboardMode || !MODE_CONTEXTS[dashboardMode]) return '';
   let out = '\n' + MODE_CONTEXTS[dashboardMode] + '\n';
   if (dashboardMode === 'review' && reviewWords && reviewWords.length > 0) {
     const words = reviewWords.slice(0, 15).map((w) => (typeof w === 'string' ? w : w.word)).join(', ');
     out += 'REVIEW THESE WORDS (focus on these): ' + words + '\n';
+  }
+  if ((dashboardMode === 'writing' || dashboardMode === 'learn') && topic) {
+    out += 'TOPIC/FOCUS: ' + topic + '\n';
+  }
+  if (dashboardMode === 'writing' && writingSample) {
+    out += 'LEARNER WROTE THIS (discuss it, help them improve): "' + writingSample.replace(/"/g, "'").slice(0, 1500) + '"\n';
   }
   return out;
 }
@@ -441,6 +447,8 @@ export function getSystemPrompt(opts) {
   const dashboardMode = options.dashboardMode || null;
   const reviewWords = options.reviewWords || [];
   const focusTopics = options.focusTopics || [];
+  const topic = options.topic || null;
+  const writingSample = options.writingSample || null;
   const learnerCefr = options.learnerCefr || null;
   const nativeLanguage = options.nativeLanguage || null;
   const learnerName = options.learnerName || null;
@@ -470,7 +478,7 @@ export function getSystemPrompt(opts) {
     MOTIVATION,
     REAL_LIFE,
     modePrompt,
-    modeContextAddendum(dashboardMode, reviewWords),
+    modeContextAddendum(dashboardMode, reviewWords, topic, writingSample),
     isFirstSession ? FIRST_SESSION : '',
     learnerMemoryAddendum(learnerName, lastEpisode),
     brainAddendum(brainNodes),

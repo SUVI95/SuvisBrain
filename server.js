@@ -94,8 +94,10 @@ async function handleVoice(pathname, req, res) {
       }
       const mode = (body.mode || '').toLowerCase() === 'yki' ? 'yki' : 'regular';
       const dashboardMode = body.dashboard_mode || null;
+      const topic = body.topic ? String(body.topic).slice(0, 500) : null;
       const reviewWords = Array.isArray(body.review_words) ? body.review_words : [];
       const focusTopics = Array.isArray(body.focusTopics) ? body.focusTopics : [];
+      const writingSample = body.writing_sample ? String(body.writing_sample).slice(0, 2000) : null;
 
       let learnerCefr = null;
       let nativeLanguage = null;
@@ -155,8 +157,10 @@ async function handleVoice(pathname, req, res) {
       const systemPrompt = getSystemPrompt({
         mode,
         dashboardMode,
+        topic,
         reviewWords,
         focusTopics,
+        writingSample,
         learnerCefr,
         nativeLanguage,
         learnerName,
