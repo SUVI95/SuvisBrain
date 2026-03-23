@@ -1,4 +1,4 @@
-// api/session-focus.js — what to teach NEXT session
+// api/session-focus.js — what to teach NEXT session (learner-specific brain)
 import { query } from './db.js';
 
 export default async function sessionFocusHandler(req, res) {
@@ -10,19 +10,35 @@ export default async function sessionFocusHandler(req, res) {
     return;
   }
 
+  const url = req.url || '';
+  const learnerId = (url.includes('?') ? new URLSearchParams(url.split('?')[1] || '').get('learner_id') : null) || null;
+
   try {
-    const result = await query(`
-      SELECT label, type,
-             (metadata->>'confidence_score')::float as confidence_score,
-             updated_at
-      FROM brain_nodes
-      WHERE type IN ('Skill', 'Memory')
-        AND COALESCE((metadata->>'confidence_score')::float, 0.5) < 0.85
-      ORDER BY 
-        COALESCE((metadata->>'confidence_score')::float, 0.5) ASC,
-        updated_at ASC NULLS FIRST
-      LIMIT 5
-    `);
+    const result = learnerId
+      ? await query(
+          `SELECT label, type,
+                  (metadata->>'confidence_score')::float as confidence_score,
+                  updated_at
+           FROM brain_nodes
+           WHERE type IN ('Skill', 'Memory')
+             AND COALESCE((metadata->>'confidence_score')::float, 0.5) < 0.85
+             AND (metadata->>'learner_id' = $1 OR metadata->>'learner_id' IS NULL)
+           ORDER BY COALESCE((metadata->>'confidence_score')::float, 0.5) ASC,
+                    updated_at ASC NULLS FIRST
+           LIMIT 5`,
+          [learnerId]
+        )
+      : await query(`
+          SELECT label, type,
+                 (metadata->>'confidence_score')::float as confidence_score,
+                 updated_at
+          FROM brain_nodes
+          WHERE type IN ('Skill', 'Memory')
+            AND COALESCE((metadata->>'confidence_score')::float, 0.5) < 0.85
+          ORDER BY COALESCE((metadata->>'confidence_score')::float, 0.5) ASC,
+                   updated_at ASC NULLS FIRST
+          LIMIT 5
+        `);
 
     const focusTopics = result.rows.map((r) => ({
       label: r.label,

@@ -68,7 +68,7 @@ export default async function handler(req, res) {
     const route = pathSegs[0] || '';
 
     const body = req.method === 'POST' ? await collectBody(req) : {};
-    const wrappedReq = { method: req.method, headers: req.headers || {}, body, user: null };
+    const wrappedReq = { method: req.method, headers: req.headers || {}, body, user: null, url: req.url || req.originalUrl || '' };
     const nres = toNodeRes(res);
 
     if (route === 'auth') {

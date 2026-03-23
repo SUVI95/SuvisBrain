@@ -149,15 +149,16 @@ export default async function sessionCompleteHandler(req, res) {
     }
 
     if (!is_mock_exam) {
-    for (const topic of analysis.topics_practiced || []) {
-      const delta = topic.confidence_delta;
-      await query(
-        `UPDATE brain_nodes
-         SET metadata = jsonb_set(
-             COALESCE(metadata, '{}'),
-             '{confidence_score}',
-             to_jsonb(LEAST(1.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1))
-           ),
+    const learnerFilter = learner_id
+      ? ` AND (metadata->>'learner_id' = $3 OR metadata->>'learner_id' IS NULL)`
+      : '';
+    const learnerIdWrap = (inner) =>
+      learner_id ? `jsonb_set(${inner}, '{learner_id}', to_jsonb($3::text))` : inner;
+    const practicedParams = (delta, label) => (learner_id ? [delta, `%${label}%`, learner_id] : [delta, `%${label}%`]);
+    const practicedMeta = `jsonb_set(COALESCE(metadata, '{}'), '{confidence_score}', to_jsonb(LEAST(1.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1)))`;
+    const struggledMeta = `jsonb_set(COALESCE(metadata, '{}'), '{confidence_score}', to_jsonb(GREATEST(0.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1)))`;
+    const updatePracticed = `UPDATE brain_nodes
+         SET metadata = ${learnerIdWrap(practicedMeta)},
            confidence_history = (
              SELECT jsonb_agg(e ORDER BY (e->>'date') ASC)
              FROM (
@@ -174,20 +175,9 @@ export default async function sessionCompleteHandler(req, res) {
              ) t(e)
            ),
            updated_at = NOW()
-         WHERE label ILIKE $2`,
-        [delta, `%${topic.label}%`]
-      );
-    }
-
-    for (const topic of analysis.topics_struggled || []) {
-      const delta = topic.confidence_delta;
-      await query(
-        `UPDATE brain_nodes
-         SET metadata = jsonb_set(
-             COALESCE(metadata, '{}'),
-             '{confidence_score}',
-             to_jsonb(GREATEST(0.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1))
-           ),
+         WHERE label ILIKE $2${learnerFilter}`;
+    const updateStruggled = `UPDATE brain_nodes
+         SET metadata = ${learnerIdWrap(struggledMeta)},
            confidence_history = (
              SELECT jsonb_agg(e ORDER BY (e->>'date') ASC)
              FROM (
@@ -204,16 +194,30 @@ export default async function sessionCompleteHandler(req, res) {
              ) t(e)
            ),
            updated_at = NOW()
-         WHERE label ILIKE $2`,
-        [delta, `%${topic.label}%`]
-      );
+         WHERE label ILIKE $2${learnerFilter}`;
+
+    for (const topic of analysis.topics_practiced || []) {
+      await query(updatePracticed, practicedParams(topic.confidence_delta, topic.label));
+    }
+    for (const topic of analysis.topics_struggled || []) {
+      await query(updateStruggled, practicedParams(topic.confidence_delta, topic.label));
+    }
     }
 
-    }
+    const newTopicMeta = (topic) =>
+      JSON.stringify({
+        confidence_score: 0.3,
+        source: 'session',
+        ...(learner_id && { learner_id }),
+      });
     for (const topic of analysis.new_topics || []) {
+      const existingWhere = learner_id
+        ? `label ILIKE $1 AND metadata->>'learner_id' = $2`
+        : `label ILIKE $1`;
+      const existingParams = learner_id ? [`%${topic.label}%`, learner_id] : [`%${topic.label}%`];
       const existing = await query(
-        `SELECT id FROM brain_nodes WHERE label ILIKE $1`,
-        [`%${topic.label}%`]
+        `SELECT id FROM brain_nodes WHERE ${existingWhere}`,
+        existingParams
       );
       if (existing.rows.length === 0) {
         const newNode = await query(
@@ -222,7 +226,7 @@ export default async function sessionCompleteHandler(req, res) {
           [
             topic.label,
             topic.type || 'Skill',
-            JSON.stringify({ confidence_score: 0.3, source: 'session' }),
+            newTopicMeta(topic),
           ]
         );
         const core = await query(`SELECT id FROM brain_nodes WHERE type = 'Core' LIMIT 1`);

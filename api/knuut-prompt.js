@@ -391,6 +391,20 @@ function learnerMemoryAddendum(learnerName, lastEpisode) {
   return parts.length > 0 ? '\n' + parts.join(' ') + '\n' : '';
 }
 
+function brainAddendum(brainNodes) {
+  if (!brainNodes || brainNodes.length === 0) return '';
+  const weak = brainNodes.filter((n) => (n.confidence || 0.5) < 0.6).map((n) => n.label);
+  const strong = brainNodes.filter((n) => (n.confidence || 0.5) >= 0.7).map((n) => n.label);
+  const skills = brainNodes.filter((n) => n.type === 'Skill').map((n) => n.label);
+  const memories = brainNodes.filter((n) => n.type === 'Memory' || n.type === 'Conversation').map((n) => n.label);
+  const parts = [];
+  if (skills.length > 0) parts.push('Skills learned: ' + skills.slice(0, 15).join(', ') + (skills.length > 15 ? '...' : ''));
+  if (weak.length > 0) parts.push('NEEDS PRACTICE (focus here): ' + weak.slice(0, 8).join(', '));
+  if (strong.length > 0) parts.push('Strong: ' + strong.slice(0, 8).join(', '));
+  if (memories.length > 0) parts.push('Memories: ' + memories.slice(0, 5).join(', '));
+  return parts.length > 0 ? '\nBRAIN — What you know about this learner. Use it to personalize. ' + parts.join('. ') + '\n' : '';
+}
+
 const LANG_TO_ISO = {
   english: 'en', arabic: 'ar', russian: 'ru', somali: 'so', mandarin: 'zh',
   chinese: 'zh', spanish: 'es', french: 'fr', german: 'de', estonian: 'et',
@@ -408,6 +422,7 @@ export function getSystemPrompt(opts) {
   const nativeLanguage = options.nativeLanguage || null;
   const learnerName = options.learnerName || null;
   const lastEpisode = options.lastEpisode || null;
+  const brainNodes = options.brainNodes || [];
   const isFirstSession = options.isFirstSession || false;
 
   const modePrompt = mode === 'yki' ? YKI_MODE : REGULAR_MODE;
@@ -433,6 +448,7 @@ export function getSystemPrompt(opts) {
     modePrompt,
     isFirstSession ? FIRST_SESSION : '',
     learnerMemoryAddendum(learnerName, lastEpisode),
+    brainAddendum(brainNodes),
     focusAddendum(focusTopics),
     levelAddendum(learnerCefr),
     nativeLanguageAddendum(nativeLanguage),

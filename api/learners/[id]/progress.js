@@ -13,13 +13,15 @@ export default async function handler(req, res) {
   try {
     const [learnerResult, nodesResult, episodesResult] = await Promise.all([
       query(`SELECT * FROM learners WHERE id = $1`, [learnerId]),
-      query(`
-        SELECT label, type,
-               (metadata->>'confidence_score')::float as confidence
-        FROM brain_nodes
-        WHERE type IN ('Skill','Memory')
-        ORDER BY COALESCE((metadata->>'confidence_score')::float, 0.5) ASC
-      `),
+      query(
+        `SELECT label, type,
+                (metadata->>'confidence_score')::float as confidence
+         FROM brain_nodes
+         WHERE type IN ('Skill','Memory')
+           AND (metadata->>'learner_id' = $1 OR metadata->>'learner_id' IS NULL)
+         ORDER BY COALESCE((metadata->>'confidence_score')::float, 0.5) ASC`,
+        [learnerId]
+      ),
       query(`
         SELECT title, summary, duration_s, created_at
         FROM episodes

@@ -20,6 +20,7 @@ async function sendWeeklyDigests() {
            COUNT(e.id)::int as session_count,
            (SELECT bn.label FROM brain_nodes bn
             WHERE bn.type IN ('Skill','Memory')
+              AND (bn.metadata->>'learner_id' = l.id::text OR bn.metadata->>'learner_id' IS NULL)
             ORDER BY COALESCE((bn.metadata->>'confidence_score')::float, 0.5) ASC
             LIMIT 1) as weakest_topic
     FROM learners l

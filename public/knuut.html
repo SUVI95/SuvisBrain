@@ -652,7 +652,8 @@
 
       async function getSessionFocus() {
         try {
-          const res = await fetch('/api/session-focus', { headers: authHeaders() });
+          const url = learnerId ? '/api/session-focus?learner_id=' + encodeURIComponent(learnerId) : '/api/session-focus';
+          const res = await fetch(url, { headers: authHeaders() });
           const data = await res.json();
           return {
             fragment: data.system_prompt_fragment || '',

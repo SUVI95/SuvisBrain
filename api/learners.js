@@ -43,14 +43,16 @@ export default async function learnersHandler(req, res, pathname) {
     try {
       const [learnerResult, nodesResult, episodesResult] = await Promise.all([
         query(`SELECT * FROM learners WHERE id = $1`, [learnerId]),
-        query(`
-          SELECT label, type,
-                 (metadata->>'confidence_score')::float as confidence,
-                 COALESCE(confidence_history, '[]'::jsonb) as confidence_history
-          FROM brain_nodes
-          WHERE type IN ('Skill','Memory')
-          ORDER BY (metadata->>'confidence_score')::float ASC NULLS FIRST
-        `),
+        query(
+          `SELECT label, type,
+                  (metadata->>'confidence_score')::float as confidence,
+                  COALESCE(confidence_history, '[]'::jsonb) as confidence_history
+           FROM brain_nodes
+           WHERE type IN ('Skill','Memory')
+             AND (metadata->>'learner_id' = $1 OR metadata->>'learner_id' IS NULL)
+           ORDER BY (metadata->>'confidence_score')::float ASC NULLS FIRST`,
+          [learnerId]
+        ),
         query(
           `SELECT id, title, summary, duration_s, created_at, metadata
            FROM episodes

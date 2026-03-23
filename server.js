@@ -82,10 +82,11 @@ async function handleVoice(pathname, req, res) {
       let learnerName = null;
       let isFirstSession = false;
       let lastEpisode = null;
+      let brainNodes = [];
 
       if (learnerId) {
         try {
-          const [learnerResult, lastEpisodeResult] = await Promise.all([
+          const [learnerResult, lastEpisodeResult, brainResult] = await Promise.all([
             query(
               `SELECT name, cefr_level, mother_tongue,
                       (SELECT COUNT(*) FROM episodes WHERE learner_id = $1) AS session_count
@@ -95,6 +96,16 @@ async function handleVoice(pathname, req, res) {
             query(
               `SELECT title, summary, raw_transcript, created_at
                FROM episodes WHERE learner_id = $1 ORDER BY created_at DESC LIMIT 1`,
+              [learnerId]
+            ),
+            query(
+              `SELECT label, type,
+                      (metadata->>'confidence_score')::float as confidence_score,
+                      metadata
+               FROM brain_nodes
+               WHERE type IN ('Skill', 'Memory', 'Conversation')
+                 AND (metadata->>'learner_id' = $1 OR metadata->>'learner_id' IS NULL)
+               ORDER BY COALESCE((metadata->>'confidence_score')::float, 0.5) ASC`,
               [learnerId]
             ),
           ]);
@@ -108,6 +119,14 @@ async function handleVoice(pathname, req, res) {
           if (lastEpisodeResult.rows && lastEpisodeResult.rows[0]) {
             lastEpisode = lastEpisodeResult.rows[0];
           }
+          if (brainResult.rows && brainResult.rows.length > 0) {
+            brainNodes = brainResult.rows.map((r) => ({
+              label: r.label,
+              type: r.type,
+              confidence: r.confidence_score != null ? r.confidence_score : 0.5,
+              metadata: r.metadata || {},
+            }));
+          }
         } catch (err) {
           console.error('[voice] Could not fetch learner profile:', err.message);
         }
@@ -120,6 +139,7 @@ async function handleVoice(pathname, req, res) {
         nativeLanguage,
         learnerName,
         lastEpisode,
+        brainNodes,
         isFirstSession,
       });
 

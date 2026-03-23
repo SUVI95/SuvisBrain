@@ -38,10 +38,16 @@ export default async function saveCardHandler(req, res) {
       last_seen: new Date().toISOString(),
     };
 
-    const existing = await query(
-      `SELECT id FROM brain_nodes WHERE label = $1 AND type = 'Skill' AND metadata->>'source' = 'interactive_card' LIMIT 1`,
-      [word.trim()]
-    );
+    const existing =
+      learnerId
+        ? await query(
+            `SELECT id FROM brain_nodes WHERE label = $1 AND type = 'Skill' AND metadata->>'source' = 'interactive_card' AND metadata->>'learner_id' = $2 LIMIT 1`,
+            [word.trim(), learnerId]
+          )
+        : await query(
+            `SELECT id FROM brain_nodes WHERE label = $1 AND type = 'Skill' AND metadata->>'source' = 'interactive_card' AND metadata->>'learner_id' IS NULL LIMIT 1`,
+            [word.trim()]
+          );
 
     if (existing.rows && existing.rows.length > 0) {
       const row = existing.rows[0];
