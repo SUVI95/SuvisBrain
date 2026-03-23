@@ -258,6 +258,7 @@
     .learning-card h3 { font-size: 14px; color: #6B7280; margin-bottom: 8px; font-weight: 600; }
     .learning-card .card-word { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
     .learning-card .card-hint { font-size: 13px; color: #6B7280; margin-bottom: 12px; }
+    .learning-card .card-hint-wrap { margin-bottom: 8px; }
     .learning-card input {
       width: 100%;
       border: 1px solid #e5e7eb;
@@ -285,6 +286,33 @@
     .learning-card .btn-close:hover { background: #e5e7eb; }
     .learning-card.feedback-correct input { border-color: #22c55e; }
     .learning-card.feedback-wrong input { border-color: #ef4444; }
+    .learning-card .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .learning-card .btn-repeat {
+      padding: 6px 10px;
+      font-size: 12px;
+      background: rgba(167,139,250,0.2);
+      border: 1px solid #a78bfa;
+      border-radius: 8px;
+      color: #a78bfa;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .learning-card .btn-repeat:hover { background: rgba(167,139,250,0.3); }
+    .learning-card .btn-reveal {
+      padding: 6px 12px;
+      font-size: 12px;
+      background: transparent;
+      border: 1px dashed #9ca3af;
+      border-radius: 6px;
+      color: #6B7280;
+      cursor: pointer;
+      font-family: inherit;
+      margin-bottom: 8px;
+    }
+    .learning-card .btn-reveal:hover { background: #f3f4f6; }
+    .learning-card .card-feedback { margin-bottom: 10px; font-size: 14px; }
+    .learning-card .card-feedback.feedback-correct { color: #22c55e; font-weight: 600; }
+    .learning-card .card-feedback.feedback-wrong { color: #6B7280; }
     @media (max-width: 768px) {
       h1 { font-size: 2.2rem; }
       .subtitle { font-size: 0.95rem; }
@@ -367,9 +395,12 @@
       let activeCards = [];
       let shownCardWords = {};
       var cardIdCounter = 0;
+      var knuutTranscriptBuffer = '';
+      var oaiChannel = null;
 
       function extractCard(text) {
         if (!text || typeof text !== 'string') return null;
+        if (text.indexOf('[[END_CARD]]') === -1) return null;
         var match = text.match(/\[\[CARD\]\]([\s\S]*?)\[\[END_CARD\]\]/);
         if (!match) return null;
         var content = match[1];
@@ -385,6 +416,7 @@
 
       function extractCloseCard(text) {
         if (!text || typeof text !== 'string') return null;
+        if (text.indexOf('[[END_CLOSE]]') === -1) return null;
         var match = text.match(/\[\[CLOSE_CARD\]\]([\s\S]*?)\[\[END_CLOSE\]\]/);
         if (!match) return null;
         var word = (match[1].match(/word:\s*(.+?)(?:\n|$)/) || [])[1];
@@ -415,6 +447,10 @@
         }
       }
 
+      function normalizeForCompare(s) {
+        return (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      }
+
       function renderLearningCard(id, card) {
         var container = document.getElementById('learning-cards-container');
         if (!container) return;
@@ -424,17 +460,60 @@
         wrap.setAttribute('data-card-word', card.word);
         wrap.innerHTML = '<div class="learning-card-inner"></div>';
         var inner = wrap.querySelector('.learning-card-inner');
-        inner.innerHTML = '<h3>New word</h3><div class="card-word">' + escapeHtml(card.word) + '</div>' +
-          (card.translation_hint ? '<div class="card-hint">Hint: ' + escapeHtml(card.translation_hint) + '</div>' : '') +
+        var hintHtml = card.translation_hint
+          ? '<div class="card-hint-wrap"><div class="card-hint" style="display:none">' + escapeHtml(card.translation_hint) + '</div><button type="button" class="btn-reveal">Reveal hint</button></div>'
+          : '';
+        inner.innerHTML = '<div class="card-header"><h3>New word</h3><button type="button" class="btn-repeat" title="Repeat after me">Repeat</button></div>' +
+          '<div class="card-word">' + escapeHtml(card.word) + '</div>' +
+          hintHtml +
           '<input type="text" placeholder="What does this mean?" data-card-input />' +
-          '<div class="card-actions"><button class="btn-save">Save</button><button class="btn-close">Close</button></div>';
+          '<div class="card-feedback" style="display:none"></div>' +
+          '<div class="card-actions"><button class="btn-check">Check</button><button class="btn-save" style="display:none">Save</button><button class="btn-close">Close</button></div>';
         var input = inner.querySelector('input');
+        var btnCheck = inner.querySelector('.btn-check');
         var btnSave = inner.querySelector('.btn-save');
         var btnClose = inner.querySelector('.btn-close');
+        var btnRepeat = inner.querySelector('.btn-repeat');
+        var feedbackEl = inner.querySelector('.card-feedback');
+        var hintEl = inner.querySelector('.card-hint');
+        var revealBtn = inner.querySelector('.btn-reveal');
         btnClose.onclick = function() { closeLearningCard(id); };
+        if (btnRepeat) btnRepeat.onclick = function() { requestRepeat(card.word); };
+        if (revealBtn && hintEl) {
+          revealBtn.onclick = function() {
+            if (hintEl.style.display === 'none') {
+              hintEl.style.display = 'block';
+              hintEl.style.marginTop = '6px';
+              revealBtn.textContent = 'Hide hint';
+            } else {
+              hintEl.style.display = 'none';
+              revealBtn.textContent = 'Reveal hint';
+            }
+          };
+        }
+        btnCheck.onclick = function() {
+          var answer = input ? input.value.trim() : '';
+          var hintNorm = normalizeForCompare(card.translation_hint);
+          var ansNorm = normalizeForCompare(answer);
+          var correct = hintNorm && ansNorm && (hintNorm.indexOf(ansNorm) !== -1 || ansNorm.indexOf(hintNorm) !== -1 || hintNorm === ansNorm);
+          feedbackEl.style.display = 'block';
+          if (correct) {
+            feedbackEl.textContent = 'Correct!';
+            feedbackEl.className = 'card-feedback feedback-correct';
+          } else {
+            feedbackEl.innerHTML = 'Answer: <strong>' + escapeHtml(card.translation_hint || 'N/A') + '</strong>';
+            feedbackEl.className = 'card-feedback feedback-wrong';
+          }
+          requestCardFeedback(card.word, answer);
+          btnCheck.style.display = 'none';
+          btnSave.style.display = 'inline-block';
+        };
         btnSave.onclick = function() {
           var answer = input ? input.value.trim() : '';
-          saveCardToBrain({ word: card.word, answer: answer, translation_hint: card.translation_hint, type: card.type }, id);
+          var hintNorm = normalizeForCompare(card.translation_hint);
+          var ansNorm = normalizeForCompare(answer);
+          var correct = hintNorm && ansNorm && (hintNorm.indexOf(ansNorm) !== -1 || ansNorm.indexOf(hintNorm) !== -1 || hintNorm === ansNorm);
+          saveCardToBrain({ word: card.word, answer: answer, translation_hint: card.translation_hint, type: card.type, correct: correct }, id);
         };
         container.appendChild(wrap);
       }
@@ -451,7 +530,7 @@
           var res = await fetch(SERVER_URL + '/api/save-card', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('sb_token') || localStorage.getItem('knuut_token') || '') },
-            body: JSON.stringify({ word: data.word, answer: data.answer, translation_hint: data.translation_hint, type: data.type, learner_id: learnerId })
+            body: JSON.stringify({ word: data.word, answer: data.answer, translation_hint: data.translation_hint, type: data.type, correct: data.correct, learner_id: learnerId })
           });
           var result = await res.json();
           if (result.success) {
@@ -471,10 +550,49 @@
 
       function checkTranscriptForCards(text) {
         if (!text) return;
-        var closeWord = extractCloseCard(text);
+        knuutTranscriptBuffer += text;
+        if (knuutTranscriptBuffer.length > 10000) knuutTranscriptBuffer = knuutTranscriptBuffer.slice(-8000);
+        var closeWord = extractCloseCard(knuutTranscriptBuffer);
         if (closeWord) closeLearningCard(closeWord);
-        var card = extractCard(text);
+        var card = extractCard(knuutTranscriptBuffer);
         if (card) showLearningCard(card);
+      }
+
+      function requestCardFeedback(word, userAnswer) {
+        if (!oaiChannel || oaiChannel.readyState !== 'open') return;
+        try {
+          var msg = 'Kortin vastaus: sana "' + word + '", opiskelija kirjoitti "' + (userAnswer || '') + '". Anna lyhyt palaute.';
+          oaiChannel.send(JSON.stringify({
+            type: 'conversation.item.create',
+            item: {
+              type: 'message',
+              role: 'user',
+              content: [{ type: 'input_text', text: msg }]
+            }
+          }));
+          oaiChannel.send(JSON.stringify({
+            type: 'response.create',
+            response: { modalities: ['audio', 'text'], conversation: 'auto' }
+          }));
+        } catch (e) { console.error('Card feedback send failed:', e); }
+      }
+
+      function requestRepeat(word) {
+        if (!oaiChannel || oaiChannel.readyState !== 'open') return;
+        try {
+          oaiChannel.send(JSON.stringify({
+            type: 'conversation.item.create',
+            item: {
+              type: 'message',
+              role: 'user',
+              content: [{ type: 'input_text', text: 'Sano uudestaan: ' + word }]
+            }
+          }));
+          oaiChannel.send(JSON.stringify({
+            type: 'response.create',
+            response: { modalities: ['audio', 'text'], conversation: 'auto' }
+          }));
+        } catch (e) { console.error('Repeat send failed:', e); }
       }
       let ykiTimeLeft = 15 * 60;
       let ykiTimerInterval = null;
@@ -712,11 +830,13 @@
           sessionStartTime = Date.now();
           activeCards = [];
           shownCardWords = {};
+          knuutTranscriptBuffer = '';
           var cc = document.getElementById('learning-cards-container');
           if (cc) cc.innerHTML = '';
 
           let sessionInstructions = '';
-          const channel = pc.createDataChannel('oai-events');
+          oaiChannel = pc.createDataChannel('oai-events');
+          const channel = oaiChannel;
           channel.onopen = function() {
             if (sessionInstructions) {
               try {

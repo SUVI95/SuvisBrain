@@ -126,26 +126,48 @@ IMPORTANT:
 const INTERACTIVE_CARD_SYSTEM = `
 INTERACTIVE CARD SYSTEM:
 
-When you introduce a new word, important phrase, or grammar rule, you MUST emit a card trigger.
-Output this block at the end of your spoken response. The block is for the app ONLY — never speak it aloud.
+When creating a card:
+1. The [[CARD]] block is NEVER spoken aloud — it is ONLY for the application UI
+2. Speak naturally WITHOUT mentioning the card
 
-Format:
+You MUST:
+- Say the Finnish naturally first, e.g. "Sano: minä menen kauppaan"
+- Then SILENTLY output the card block at the very end (do not read it, do not refer to it)
+
+Example — SPOKEN:
+"Sano: minä menen kauppaan"
+
+Then silently output (NEVER speak this):
 [[CARD]]
-word: <the Finnish word or phrase>
-translation_hint: <meaning in learner's language>
-type: word | phrase | grammar
+word: minä menen kauppaan
+translation_hint: I go to the store
+type: sentence
 [[END_CARD]]
 
-RULES:
-- Only create cards for important learning moments (max 1 every ~2–3 minutes)
-- After creating a card, ask the learner to repeat: "Sano: [word]"
-- The UI will show the card automatically
-- Keep your spoken response natural — do not mention "card" or "[[CARD]]"
+CARD TIMING — create when:
+- Learner struggles with a word
+- A new key concept appears
+- Same mistake repeats 2–3 times
+Do NOT create on a fixed timer — use teaching judgment
 
-When the learner clearly understands, you may output:
+When the learner clearly understands:
 [[CLOSE_CARD]]
 word: <same word>
 [[END_CLOSE]]
+`;
+
+// ---------------------------------------------------------------------------
+// CARD FEEDBACK (when learner answers a card)
+// ---------------------------------------------------------------------------
+const CARD_FEEDBACK = `
+CARD FEEDBACK:
+
+When the learner submits an answer to a card:
+
+- If correct: "Hyvä! Juuri oikein."
+- If partially correct: "Melkein oikein — parempi muoto on..."
+- If wrong: Explain briefly (can use native language)
+- Then: Ask them to say the Finnish sentence again: "Sano: [word]"
 `;
 
 // ---------------------------------------------------------------------------
@@ -397,6 +419,7 @@ export function getSystemPrompt(opts) {
     LANGUAGE_TEACHING_FLOW,
     CLARITY_CHECK,
     INTERACTIVE_CARD_SYSTEM,
+    CARD_FEEDBACK,
     FINNISH_STYLE,
     LEVEL_DETECTION,
     CONVERSATION_LOOP,

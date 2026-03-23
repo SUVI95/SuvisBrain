@@ -18,7 +18,7 @@ export default async function saveCardHandler(req, res) {
       return;
     }
 
-    const { word, answer, translation_hint, type, learner_id } = req.body || {};
+    const { word, answer, translation_hint, type, learner_id, correct } = req.body || {};
     if (!word || typeof word !== 'string' || !word.trim()) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'word is required' }));
@@ -33,6 +33,9 @@ export default async function saveCardHandler(req, res) {
       card_type: type || 'word',
       source: 'interactive_card',
       learner_id: learnerId,
+      correct: correct === true || correct === 'true',
+      repetition_count: 1,
+      last_seen: new Date().toISOString(),
     };
 
     const existing = await query(
@@ -41,9 +44,17 @@ export default async function saveCardHandler(req, res) {
     );
 
     if (existing.rows && existing.rows.length > 0) {
+      const row = existing.rows[0];
+      const prevMeta = await query(
+        `SELECT metadata FROM brain_nodes WHERE id = $1`,
+        [row.id]
+      );
+      const prev = (prevMeta.rows[0] && prevMeta.rows[0].metadata) || {};
+      const repCount = (prev.repetition_count || 0) + 1;
+      meta.repetition_count = repCount;
       await query(
         `UPDATE brain_nodes SET metadata = metadata || $2::jsonb, updated_at = now() WHERE id = $1`,
-        [existing.rows[0].id, JSON.stringify(meta)]
+        [row.id, JSON.stringify(meta)]
       );
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, updated: true }));
