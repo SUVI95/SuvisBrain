@@ -479,7 +479,16 @@
             location.replace('/login.html?next=' + encodeURIComponent(location.pathname + location.search));
             return;
           }
-          const msg = progressRes.status === 404 ? 'Profile not found.' : 'Progress fetch failed (' + progressRes.status + ').';
+          let msg = 'Progress fetch failed (' + progressRes.status + ').';
+          try {
+            const raw = await progressRes.text();
+            try {
+              const errBody = JSON.parse(raw);
+              if (errBody && errBody.error) msg = errBody.error;
+            } catch (_) {
+              if (raw && raw.length < 200) msg = raw;
+            }
+          } catch (_) {}
           throw new Error(msg);
         }
         const { learner, nodes, episodes, yki_episodes } = await progressRes.json();

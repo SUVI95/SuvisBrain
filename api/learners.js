@@ -44,13 +44,12 @@ export default async function learnersHandler(req, res, pathname) {
       const [learnerResult, nodesResult, episodesResult] = await Promise.all([
         query(`SELECT * FROM learners WHERE id = $1`, [learnerId]),
         query(
-          `SELECT label, type,
-                  (metadata->>'confidence_score')::float as confidence,
-                  COALESCE(confidence_history, '[]'::jsonb) as confidence_history
+          `SELECT label, type, metadata,
+                  (metadata->>'confidence_score')::float as confidence
            FROM brain_nodes
            WHERE type IN ('Skill','Memory')
              AND (metadata->>'learner_id' = $1 OR metadata->>'learner_id' IS NULL)
-           ORDER BY (metadata->>'confidence_score')::float ASC NULLS FIRST`,
+           ORDER BY COALESCE((metadata->>'confidence_score')::float, 0.5) ASC NULLS FIRST`,
           [learnerId]
         ),
         query(
@@ -70,14 +69,11 @@ export default async function learnersHandler(req, res, pathname) {
       }
 
       const nodes = (nodesResult.rows || []).map((r) => {
-        const hist = Array.isArray(r.confidence_history)
-          ? r.confidence_history
-          : (r.confidence_history && typeof r.confidence_history === 'object')
-            ? Object.values(r.confidence_history)
-            : [];
+        const ch = r.confidence_history ?? (r.metadata && r.metadata.confidence_history);
+        const hist = Array.isArray(ch) ? ch : (ch && typeof ch === 'object' ? Object.values(ch) : []);
         const history = hist.map((h) => ({
           score: typeof (h && h.score) === 'number' ? h.score : (h && h.c != null ? h.c : 0.5),
-          date: (h && h.date) || (h && h.t && h.t.slice(0, 10)) || new Date().toISOString().slice(0, 10),
+          date: (h && h.date) || (h && h.t && String(h.t).slice(0, 10)) || new Date().toISOString().slice(0, 10),
         }));
         return {
           label: r.label,
