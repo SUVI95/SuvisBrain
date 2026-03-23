@@ -336,6 +336,8 @@
     }
     const LEARNER_ID = user?.id;
 
+    const API_BASE = window.location.origin;
+
     function authHeaders() {
       return { 'Authorization': 'Bearer ' + (localStorage.getItem('sb_token') || localStorage.getItem('knuut_token') || '') };
     }
@@ -466,13 +468,20 @@
 
       try {
         const [progressRes, focusRes, skillsRes, statsRes] = await Promise.all([
-          fetch('/api/learners/' + LEARNER_ID + '/progress', { headers: authHeaders() }),
-          fetch('/api/session-focus?learner_id=' + encodeURIComponent(LEARNER_ID), { headers: authHeaders() }),
-          fetch('/api/brain/skills', { headers: authHeaders() }),
-          fetch('/api/brain/stats', { headers: authHeaders() }),
+          fetch(API_BASE + '/api/learners/' + LEARNER_ID + '/progress', { headers: authHeaders() }),
+          fetch(API_BASE + '/api/session-focus?learner_id=' + encodeURIComponent(LEARNER_ID), { headers: authHeaders() }),
+          fetch(API_BASE + '/api/brain/skills', { headers: authHeaders() }),
+          fetch(API_BASE + '/api/brain/stats', { headers: authHeaders() }),
         ]);
 
-        if (!progressRes.ok) throw new Error('Progress fetch failed');
+        if (!progressRes.ok) {
+          if (progressRes.status === 401) {
+            location.replace('/login.html?next=' + encodeURIComponent(location.pathname + location.search));
+            return;
+          }
+          const msg = progressRes.status === 404 ? 'Profile not found.' : 'Progress fetch failed (' + progressRes.status + ').';
+          throw new Error(msg);
+        }
         const { learner, nodes, episodes, yki_episodes } = await progressRes.json();
 
         const skillsData = skillsRes.ok ? await skillsRes.json() : [];
@@ -491,7 +500,7 @@
           reviewBtn.style.display = 'inline-block';
           reviewBtn.onclick = reviewMistakes;
         } else {
-          vocabMistakes.innerHTML = '<span style="color:#6B7280">No mistakes to review yet. Keep practicing!</span>';
+          vocabMistakes.innerHTML = '<p style="color:#6B7280;margin:0">No mistakes yet. Practice with Knuut and save flashcards — words you get wrong will appear here.</p><p style="margin-top:12px"><a href="/knuut.html?mode=vocab" class="nav-link" style="display:inline-block">Start vocabulary practice →</a></p>';
         }
 
         const stats = statsRes.ok ? await statsRes.json() : {};
@@ -554,8 +563,17 @@
           skillGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#6B7280;padding:24px">No skills yet. Practice with Knuut!</div>';
         }
 
-        const focusData = await focusRes.json();
-        const topics = (focusData.focus_topics || []).slice(0, 3);
+        let topics = [];
+        try {
+          const focusData = focusRes.ok ? await focusRes.json() : {};
+          topics = (focusData.focus_topics || []).slice(0, 3);
+        } catch (e) { topics = []; }
+        if (topics.length === 0 && nodes && nodes.length > 0) {
+          topics = nodes
+            .filter((n) => (n.confidence ?? 0.5) < 0.8)
+            .slice(0, 3)
+            .map((n) => ({ label: n.label, confidence: n.confidence }));
+        }
         const focusEl = document.getElementById('focus-cards');
         if (topics.length > 0) {
           focusEl.innerHTML = topics.map((t) => {
@@ -567,7 +585,7 @@
                 <div class="focus-card-head">
                   <div class="focus-icon">${letters}</div>
                   <div>
-                    <div class="focus-name">${t.label}</div>
+                    <div class="focus-name">${escapeHtml(t.label || '')}</div>
                     <div class="focus-needs">needs practice</div>
                   </div>
                 </div>
@@ -576,7 +594,7 @@
               </div>`;
           }).join('');
         } else {
-          focusEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#6B7280;padding:16px">All topics mastered. Try advanced practice!</div>';
+          focusEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#6B7280;padding:16px">Complete a session with Knuut to get personalized focus topics. <a href="/knuut.html" style="color:#6C63FF;font-weight:600">Start now →</a></div>';
         }
 
         const sessionsEl = document.getElementById('sessions-list');
@@ -585,11 +603,11 @@
           sessionsEl.innerHTML = recent.map((e) => `
             <div class="session-item">
               <div class="session-date">${new Date(e.created_at).toLocaleDateString('fi-FI')}<span class="session-duration-badge">${e.duration_s || 0} min</span></div>
-              <div class="session-summary">${e.summary || '—'}</div>
+              <div class="session-summary">${escapeHtml(e.summary || '—')}</div>
             </div>
           `).join('');
         } else {
-          sessionsEl.innerHTML = '<div style="color:#6B7280;padding:20px">No sessions yet. Start practicing!</div>';
+          sessionsEl.innerHTML = '<div style="color:#6B7280;padding:20px">No sessions yet. Click "Talk with Knuut" to start your first practice — sessions will appear here after you finish.</div><p style="padding:0 20px 20px"><a href="/knuut.html" class="nav-link" style="display:inline-block">Start session →</a></p>';
         }
 
         const ykiCard = document.getElementById('yki-card');
@@ -612,11 +630,18 @@
               </div>`;
           }).join('');
         } else {
-          ykiCard.innerHTML = '<div style="color:#6B7280;padding:20px">No mock exams yet. Try YKI mode in Knuut!</div>';
+          ykiCard.innerHTML = '<div style="color:#6B7280;padding:20px">No mock exams yet. Enable YKI mode in Knuut and complete a practice exam to see results here.</div><p style="padding:0 20px 20px"><a href="/knuut.html" class="nav-link" style="display:inline-block">Try YKI mode →</a></p>';
         }
       } catch (err) {
         console.error(err);
-        document.getElementById('skill-grid').innerHTML = '<div style="grid-column:1/-1;color:#FF4B4B;padding:24px">Could not load. Is the server running?</div>';
+        const msg = err.message || 'Could not load.';
+        const hint = (msg.includes('fetch') || msg.includes('Failed to fetch') || msg.includes('NetworkError'))
+          ? ' Make sure the server is running (e.g. node server.js) and you access via http://localhost:3000'
+          : '';
+        const target = document.getElementById('skill-cards') || document.getElementById('skill-grid');
+        if (target) {
+          target.innerHTML = '<div style="grid-column:1/-1;color:#FF4B4B;padding:24px">' + escapeHtml(msg) + hint + '</div>';
+        }
       }
     }
 
