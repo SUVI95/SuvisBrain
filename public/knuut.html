@@ -12,7 +12,11 @@
       color: #e0e0f0;
       overflow-x: hidden;
       min-height: 100vh;
+      transition: background 0.3s;
     }
+    body.yki-mode { background: #FFFBF0; color: #1a1a1a; }
+    body.yki-mode .nav-link, body.yki-mode .subtitle { color: rgba(0,0,0,0.7); }
+    body.yki-mode .nav-link:hover { color: #000; }
     .container {
       position: relative;
       width: 100vw;
@@ -134,16 +138,83 @@
     .status-text.active {
       color: #1d9e75;
     }
-    .exam-toggle {
+    .mode-tabs {
       display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.6);
-      margin-bottom: 12px;
-      cursor: pointer;
+      gap: 0;
+      background: rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 4px;
+      margin-bottom: 16px;
     }
-    .exam-toggle input { cursor: pointer; }
+    body.yki-mode .mode-tabs { background: rgba(0,0,0,0.08); }
+    .mode-tab {
+      padding: 8px 20px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      font-family: inherit;
+    }
+    body.yki-mode .mode-tab { color: rgba(0,0,0,0.5); }
+    .mode-tab.active {
+      background: linear-gradient(135deg, #a78bfa, #1d9e75);
+      color: #fff;
+    }
+    body.yki-mode .mode-tab.active { background: #6C63FF; }
+    .mode-tab:not(.active):hover { color: #fff; }
+    body.yki-mode .mode-tab:not(.active):hover { color: #000; }
+    .yki-banner {
+      display: none;
+      background: linear-gradient(135deg, #6C63FF, #5a52e0);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .yki-banner.visible { display: flex; flex-wrap: wrap; }
+    .yki-banner .timer { font-size: 20px; font-weight: bold; }
+    .yki-banner .timer.warn { color: #FF4B4B; animation: pulse 1s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .session-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .session-overlay.visible { display: flex; }
+    .overlay-card {
+      background: #1a1a2e;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 400px;
+      text-align: center;
+    }
+    .overlay-card h2 { font-size: 20px; margin-bottom: 12px; }
+    .overlay-card .badge { font-size: 32px; font-weight: bold; color: #6C63FF; margin: 16px 0; }
+    .overlay-card .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      margin: 8px;
+      border-radius: 10px;
+      background: #6C63FF;
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+    }
+    .overlay-card .btn:hover { opacity: 0.9; }
     @media (max-width: 768px) {
       h1 { font-size: 2.2rem; }
       .subtitle { font-size: 0.95rem; }
@@ -168,11 +239,25 @@
         <div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div>
         <div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div>
       </div>
-      <label class="exam-toggle">
-        <input type="checkbox" id="exam-mode-cb"> YKI exam mode
-      </label>
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="free">Free practice</button>
+        <button class="mode-tab" data-mode="yki">YKI exam mode</button>
+      </div>
+      <div class="yki-banner" id="yki-banner">
+        <span>YKI Exam Mode — B1 level</span>
+        <span class="timer" id="yki-timer">15:00</span>
+      </div>
       <button id="knuut-talk-btn" class="talk-button">Talk with Knuut</button>
       <div id="status-text" class="status-text"></div>
+    </div>
+  </div>
+
+  <div class="session-overlay" id="session-overlay">
+    <div class="overlay-card">
+      <h2 id="overlay-title">Session complete!</h2>
+      <p id="overlay-summary"></p>
+      <div class="badge" id="overlay-badge"></div>
+      <div id="overlay-buttons"></div>
     </div>
   </div>
 
@@ -203,11 +288,38 @@
       let sessionTranscript = '';
       let sessionStartTime = 0;
       let examMode = false;
+      let ykiTimeLeft = 15 * 60;
+      let ykiTimerInterval = null;
       const SERVER_URL = window.location.origin;
 
-      document.getElementById('exam-mode-cb')?.addEventListener('change', (e) => {
-        examMode = e.target.checked;
+      document.querySelectorAll('.mode-tab').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (isActive) return;
+          document.querySelectorAll('.mode-tab').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          examMode = btn.dataset.mode === 'yki';
+          document.body.classList.toggle('yki-mode', examMode);
+          document.getElementById('yki-banner').classList.toggle('visible', examMode && isActive);
+        });
       });
+
+      function updateTimerDisplay(secs) {
+        const m = Math.floor(secs / 60);
+        const s = secs % 60;
+        const el = document.getElementById('yki-timer');
+        if (el) {
+          el.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+          el.classList.toggle('warn', secs <= 120);
+        }
+      }
+
+      function showToast(msg, type) {
+        const t = document.createElement('div');
+        t.textContent = msg;
+        t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2500);
+      }
 
       async function getSessionFocus() {
         try {
@@ -228,7 +340,8 @@
             transcript: sessionTranscript,
             duration_s: duration,
             learner_language: 'fi',
-            is_mock_exam: examMode
+            is_mock_exam: examMode,
+            is_yki_exam: examMode
           };
           if (learnerId) body.learner_id = learnerId;
 
@@ -239,16 +352,62 @@
           });
           const result = await res.json();
           console.log('Session saved:', result.summary);
-          if (result.cefr_score) {
-            updateStatus('YKI mock exam scored: ' + result.cefr_score, true);
+
+          if (examMode) {
+            let ykiResult = null;
+            try {
+              const scoreRes = await fetch('/api/yki-score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                body: JSON.stringify({ transcript: sessionTranscript, learner_id: learnerId, episode_id: result.episode_id })
+              });
+              ykiResult = await scoreRes.json();
+            } catch (e) { console.error('YKI score failed:', e); }
+
+            showSessionOverlay(true, result, ykiResult);
+          } else {
+            showSessionOverlay(false, result, null);
           }
           if (result.topics_updated || result.new_nodes_created) {
             console.log('Brain updated:', result.topics_updated, 'nodes,', result.new_nodes_created, 'new');
           }
         } catch (err) {
           console.error('Failed to save session:', err);
+          showSessionOverlay(false, { summary: 'Error saving session' }, null);
         }
         sessionTranscript = '';
+      }
+
+      function showSessionOverlay(isYki, result, ykiScore) {
+        const overlay = document.getElementById('session-overlay');
+        const title = document.getElementById('overlay-title');
+        const summary = document.getElementById('overlay-summary');
+        const badge = document.getElementById('overlay-badge');
+        const buttons = document.getElementById('overlay-buttons');
+        overlay.classList.add('visible');
+        if (isYki && ykiScore) {
+          const res = ykiScore.yki_result || ykiScore.cefr_level;
+          const passed = (ykiScore.yki_result || '').includes('pass') && !(ykiScore.yki_result || '').includes('fail');
+          title.textContent = 'Exam complete! Your result: ' + (passed ? 'PASS' : 'FAIL');
+          summary.textContent = result.summary || '';
+          badge.textContent = (ykiScore.cefr_level || ykiScore.overall_score || '-') + (ykiScore.overall_score != null ? ' (' + ykiScore.overall_score + '/100)' : '');
+          buttons.innerHTML = `
+            <a href="/yki-results.html?episode=${result.episode_id}" class="btn">See full report</a>
+            <a href="/knuut.html" class="btn">Practice weak areas</a>
+          `;
+        } else {
+          title.textContent = 'Session complete!';
+          summary.textContent = result.summary || '';
+          badge.textContent = result.cefr_level || '';
+          buttons.innerHTML = '<a href="/knuut.html" class="btn">Practice again</a><button class="btn overlay-close" style="background:rgba(255,255,255,0.2)">Close</button>';
+        }
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay || e.target.classList.contains('overlay-close')) overlay.classList.remove('visible');
+        });
+      }
+
+      function hideSessionOverlay() {
+        document.getElementById('session-overlay').classList.remove('visible');
       }
 
       function updateStatus(text, isActive = false) {
@@ -260,7 +419,11 @@
 
       async function startKnuut(){
         if (isActive || isStarting) return;
-        examMode = document.getElementById('exam-mode-cb')?.checked ?? false;
+        examMode = document.querySelector('.mode-tab[data-mode="yki"]')?.classList.contains('active');
+        document.body.classList.toggle('yki-mode', examMode);
+        document.getElementById('yki-banner').classList.toggle('visible', examMode);
+        ykiTimeLeft = 15 * 60;
+        updateTimerDisplay(ykiTimeLeft);
         isStarting = true;
         btn.disabled = true;
         updateStatus(examMode ? 'Connecting (YKI exam mode)...' : 'Connecting...');
@@ -398,6 +561,18 @@
           btn.textContent = 'Stop Knuut';
           btn.classList.add('active');
           updateStatus('Ready to talk', true);
+
+          if (examMode) {
+            ykiTimerInterval = setInterval(() => {
+              ykiTimeLeft--;
+              updateTimerDisplay(ykiTimeLeft);
+              if (ykiTimeLeft === 120) showToast('2 minutes remaining', 'warning');
+              if (ykiTimeLeft <= 0) {
+                clearInterval(ykiTimerInterval);
+                stopKnuut();
+              }
+            }, 1000);
+          }
         } catch (e) {
           console.error(e);
           stopKnuut();
@@ -410,6 +585,9 @@
       }
 
       function stopKnuut(){
+        if (ykiTimerInterval) { clearInterval(ykiTimerInterval); ykiTimerInterval = null; }
+        document.getElementById('yki-banner').classList.remove('visible');
+        document.body.classList.remove('yki-mode');
         onSessionEnd();
         isActive = false;
         btn.textContent = 'Talk with Knuut';

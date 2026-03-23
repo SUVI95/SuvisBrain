@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knuut — Language Assessment Report</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 40px 24px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .no-print { margin-bottom: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn {
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      border: 1px solid #6C63FF;
+      background: #6C63FF;
+      color: #fff;
+      font-family: inherit;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn-outline { background: transparent; color: #6C63FF; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #E5E7EB;
+    }
+    .logo { font-size: 18px; font-weight: bold; color: #6C63FF; }
+    .report-date { font-size: 14px; color: #6b7280; }
+    .cefr-badge {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: #6C63FF;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 32px auto;
+    }
+    .cefr-badge .level { font-size: 48px; font-weight: bold; }
+    .cefr-badge .label { font-size: 11px; opacity: 0.9; margin-top: 4px; }
+    .section { margin-bottom: 32px; }
+    .section h2 { font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+    .bar-wrap { margin-bottom: 14px; }
+    .bar-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: #374151; }
+    .bar-track {
+      height: 12px;
+      background: #E5E7EB;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: #6C63FF;
+      border-radius: 6px;
+      transition: width 0.6s ease;
+    }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+    .strength-item, .weakness-item {
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      background: #f9fafb;
+      border-radius: 8px;
+      font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .strength-item::before { content: '✓'; color: #58CC02; font-weight: bold; }
+    .weakness-item::before { content: '→'; color: #f59e0b; font-weight: bold; }
+    .rec-list { list-style: none; }
+    .rec-list li {
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      background: rgba(108,99,255,0.06);
+      border: 1px solid rgba(108,99,255,0.15);
+      border-radius: 10px;
+      font-size: 14px;
+      color: #374151;
+      counter-increment: rec;
+    }
+    .rec-list li::before {
+      content: counter(rec) ". ";
+      font-weight: bold;
+      color: #6C63FF;
+    }
+    .rec-list { counter-reset: rec; }
+    footer {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid #E5E7EB;
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .disclaimer { margin-top: 16px; font-size: 11px; opacity: 0.8; }
+    .qr-placeholder {
+      width: 80px;
+      height: 80px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff; }
+      .cefr-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <button class="btn" id="copy-btn">Copy link to results</button>
+    <button class="btn btn-outline" id="print-btn">Print</button>
+  </div>
+
+  <header>
+    <div>
+      <span class="logo">Knuut — Language Assessment Report</span>
+      <div id="learner-name" style="font-size:14px;color:#6b7280;margin-top:4px;"></div>
+    </div>
+    <span class="report-date" id="report-date">—</span>
+  </header>
+
+  <div class="cefr-badge">
+    <span class="level" id="cefr-level">—</span>
+    <span class="label">Common European Framework of Reference</span>
+  </div>
+
+  <section class="section">
+    <h2>Score breakdown</h2>
+    <div id="score-bars"></div>
+  </section>
+
+  <section class="section two-col">
+    <div>
+      <h2>Strengths</h2>
+      <div id="strengths"></div>
+    </div>
+    <div>
+      <h2>Areas to improve</h2>
+      <div id="weaknesses"></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Recommendations</h2>
+    <ul class="rec-list" id="recommendations"></ul>
+  </section>
+
+  <footer>
+    <div>Generated by Knuut AI — SuvisBrain</div>
+    <div class="disclaimer">This assessment is AI-generated and intended as practice feedback. It does not replace an official YKI examination.</div>
+    <div class="qr-placeholder"></div>
+  </footer>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const episodeId = params.get('episode');
+
+    async function loadResults() {
+      if (!episodeId) {
+        document.body.innerHTML = '<p style="padding:40px">No episode specified. Use the link from your session.</p>';
+        return;
+      }
+      try {
+        const res = await fetch(`/api/yki-score?episode=${episodeId}`);
+        if (!res.ok) throw new Error('Failed to load');
+        const score = await res.json();
+
+        document.getElementById('report-date').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const nameEl = document.getElementById('learner-name');
+        if (score.learner_name) nameEl.textContent = score.learner_name;
+        document.getElementById('cefr-level').textContent = score.cefr_level || '—';
+
+        const sectionScores = score.section_scores || {};
+        const names = { fluency: 'Fluency', vocabulary: 'Vocabulary', grammar: 'Grammar', pronunciation: 'Pronunciation', task_completion: 'Task completion' };
+        document.getElementById('score-bars').innerHTML = Object.entries(names).map(([key, label]) => {
+          const v = sectionScores[key] ?? 0;
+          return `
+            <div class="bar-wrap">
+              <div class="bar-label"><span>${label}</span><span>${v}%</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:${v}%"></div></div>
+            </div>`;
+        }).join('');
+
+        const strengths = score.strengths || [];
+        document.getElementById('strengths').innerHTML = strengths.length
+          ? strengths.map(s => `<div class="strength-item">${s}</div>`).join('')
+          : '<p style="color:#6b7280;font-size:13px">No data</p>';
+
+        const weaknesses = score.weaknesses || [];
+        document.getElementById('weaknesses').innerHTML = weaknesses.length
+          ? weaknesses.map(w => `<div class="weakness-item">${w}</div>`).join('')
+          : '<p style="color:#6b7280;font-size:13px">No data</p>';
+
+        const recs = score.recommendations || [];
+        document.getElementById('recommendations').innerHTML = recs.length
+          ? recs.map(r => `<li>${r}</li>`).join('')
+          : '<li>Keep practicing with Knuut!</li>';
+      } catch (err) {
+        document.body.innerHTML = '<p style="padding:40px">Could not load results. The episode may not have a YKI score yet.</p>';
+      }
+    }
+
+    document.getElementById('copy-btn').addEventListener('click', () => {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        const btn = document.getElementById('copy-btn');
+        const prev = btn.textContent;
+        btn.textContent = 'Link copied!';
+        setTimeout(() => { btn.textContent = prev; }, 2000);
+      });
+    });
+
+    document.getElementById('print-btn').addEventListener('click', () => {
+      window.print();
+    });
+
+    loadResults();
+  </script>
+</body>
+</html>

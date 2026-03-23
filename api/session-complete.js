@@ -102,7 +102,7 @@ export default async function sessionCompleteHandler(req, res) {
     return;
   }
 
-  const { transcript, agent_id, duration_s, learner_language, learner_id, is_mock_exam } = req.body || {};
+  const { transcript, agent_id, duration_s, learner_language, learner_id, is_mock_exam, is_yki_exam } = req.body || {};
 
   if (!transcript || transcript.length < 50) {
     res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -136,11 +136,14 @@ export default async function sessionCompleteHandler(req, res) {
       ]
     );
     const episodeId = episodeResult.rows[0].id;
-    if (is_mock_exam && cefrScore) {
+    const isYki = is_yki_exam || is_mock_exam;
+    if (isYki) {
       try {
+        const meta = { mock_exam: true, is_yki_exam: true };
+        if (cefrScore) meta.cefr_score = cefrScore;
         await query(
-          `UPDATE episodes SET metadata = $1::jsonb WHERE id = $2`,
-          [JSON.stringify({ mock_exam: true, cefr_score: cefrScore }), episodeId]
+          `UPDATE episodes SET metadata = jsonb_set(COALESCE(metadata, '{}'), '{is_yki_exam}', 'true') WHERE id = $1`,
+          [episodeId]
         );
       } catch (_) { /* metadata column may not exist */ }
     }
@@ -151,15 +154,26 @@ export default async function sessionCompleteHandler(req, res) {
       await query(
         `UPDATE brain_nodes
          SET metadata = jsonb_set(
-           COALESCE(metadata, '{}'),
-           '{confidence_score}',
-           to_jsonb(LEAST(1.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1))
-         ),
-         confidence_history = COALESCE(confidence_history, '[]'::jsonb) || jsonb_build_array(
-           jsonb_build_object('t', to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
-             'c', LEAST(1.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1))
-         ),
-         updated_at = NOW()
+             COALESCE(metadata, '{}'),
+             '{confidence_score}',
+             to_jsonb(LEAST(1.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1))
+           ),
+           confidence_history = (
+             SELECT jsonb_agg(e ORDER BY (e->>'date') ASC)
+             FROM (
+               SELECT e FROM jsonb_array_elements(
+                 COALESCE(confidence_history, '[]'::jsonb) || jsonb_build_array(
+                   jsonb_build_object(
+                     'score', LEAST(1.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1),
+                     'date', NOW()::date
+                   )
+                 )
+               ) AS e
+               OFFSET GREATEST(0, jsonb_array_length(COALESCE(confidence_history, '[]'::jsonb)) - 29)
+               LIMIT 30
+             ) t(e)
+           ),
+           updated_at = NOW()
          WHERE label ILIKE $2`,
         [delta, `%${topic.label}%`]
       );
@@ -170,15 +184,26 @@ export default async function sessionCompleteHandler(req, res) {
       await query(
         `UPDATE brain_nodes
          SET metadata = jsonb_set(
-           COALESCE(metadata, '{}'),
-           '{confidence_score}',
-           to_jsonb(GREATEST(0.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1))
-         ),
-         confidence_history = COALESCE(confidence_history, '[]'::jsonb) || jsonb_build_array(
-           jsonb_build_object('t', to_char(NOW(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
-             'c', GREATEST(0.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1))
-         ),
-         updated_at = NOW()
+             COALESCE(metadata, '{}'),
+             '{confidence_score}',
+             to_jsonb(GREATEST(0.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1))
+           ),
+           confidence_history = (
+             SELECT jsonb_agg(e ORDER BY (e->>'date') ASC)
+             FROM (
+               SELECT e FROM jsonb_array_elements(
+                 COALESCE(confidence_history, '[]'::jsonb) || jsonb_build_array(
+                   jsonb_build_object(
+                     'score', GREATEST(0.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1),
+                     'date', NOW()::date
+                   )
+                 )
+               ) AS e
+               OFFSET GREATEST(0, jsonb_array_length(COALESCE(confidence_history, '[]'::jsonb)) - 29)
+               LIMIT 30
+             ) t(e)
+           ),
+           updated_at = NOW()
          WHERE label ILIKE $2`,
         [delta, `%${topic.label}%`]
       );

@@ -49,14 +49,14 @@ export default async function learnersHandler(req, res, pathname) {
                  COALESCE(confidence_history, '[]'::jsonb) as confidence_history
           FROM brain_nodes
           WHERE type IN ('Skill','Memory')
-          ORDER BY COALESCE((metadata->>'confidence_score')::float, 0.5) ASC
+          ORDER BY (metadata->>'confidence_score')::float ASC NULLS FIRST
         `),
         query(
-          `SELECT title, summary, duration_s, created_at
+          `SELECT id, title, summary, duration_s, created_at, metadata
            FROM episodes
            WHERE learner_id = $1
            ORDER BY created_at DESC
-           LIMIT 10`,
+           LIMIT 20`,
           [learnerId]
         ),
       ]);
@@ -67,12 +67,36 @@ export default async function learnersHandler(req, res, pathname) {
         return;
       }
 
+      const nodes = (nodesResult.rows || []).map((r) => {
+        const hist = Array.isArray(r.confidence_history)
+          ? r.confidence_history
+          : (r.confidence_history && typeof r.confidence_history === 'object')
+            ? Object.values(r.confidence_history)
+            : [];
+        const history = hist.map((h) => ({
+          score: typeof h?.score === 'number' ? h.score : (h?.c ?? 0.5),
+          date: h?.date || h?.t?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+        }));
+        return {
+          label: r.label,
+          type: r.type,
+          confidence: r.confidence ?? 0.5,
+          history,
+        };
+      });
+
+      const episodes = episodesResult.rows || [];
+      const ykiEpisodes = episodes.filter(
+        (e) => e.metadata && (e.metadata?.is_yki_exam || e.metadata?.yki_score)
+      );
+
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(
         JSON.stringify({
           learner: learnerResult.rows[0],
-          nodes: nodesResult.rows,
-          episodes: episodesResult.rows,
+          nodes,
+          episodes,
+          yki_episodes: ykiEpisodes,
         })
       );
     } catch (err) {

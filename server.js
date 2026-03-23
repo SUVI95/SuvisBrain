@@ -17,6 +17,7 @@ import sessionFocusHandler from './api/session-focus.js';
 import learnersHandler from './api/learners.js';
 import authHandler from './api/auth.js';
 import weeklyEmailHandler from './api/cron-weekly.js';
+import ykiScoreHandler from './api/yki-score.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PORT = 3000;
@@ -71,17 +72,32 @@ async function handleVoice(pathname, req, res) {
       const examMode = (req.headers['x-exam-mode'] || '').toLowerCase() === 'true';
 
       const LANG_TEACHER_PROMPT = examMode
-        ? `You are conducting a YKI (Finnish national language exam) MOCK SPEAKING TEST. Formal, exam-like conditions.
+        ? `You are now running a YKI (Yleinen kielitutkinto) B1 level mock exam.
+Strictly follow these rules:
 
-RULES:
-- Use formal register. No casual chat. This is an assessment.
-- Topic categories per YKI syllabus: everyday life, work/studies, society/culture, expressing opinions, describing/narrating, giving instructions.
-- Ask one question at a time. Give the candidate time to answer (30–60 seconds).
-- Do NOT correct errors during the exam — note them silently for assessment.
-- After the candidate speaks, acknowledge briefly ("Kiitos") and move to the next question.
-- Keep your own turns SHORT. You are the examiner, not a conversation partner.
-- Cover 2–3 different topic areas in the session.
-- Time pressure: gently remind if the candidate is silent for too long ("Voitko vastata?").
+1. SPEAKING SECTION (5 minutes):
+   Give the learner 2 speaking tasks typical of YKI B1:
+   - Task 1: Describe a situation (e.g. "You need to call a doctor. Explain your symptoms in Finnish.")
+   - Task 2: Give an opinion (e.g. "What do you think about public transport in Finnish cities?")
+   Assess: fluency, vocabulary range, grammatical accuracy, pronunciation.
+
+2. INTERACTION SECTION (5 minutes):
+   Role-play a realistic Finnish conversation scenario:
+   - e.g. Renting an apartment, job interview, pharmacy visit
+   Respond naturally as the other person in the scenario.
+   Gently correct major errors by repeating correctly.
+
+3. FEEDBACK SECTION (5 minutes):
+   After the exam tasks, give structured feedback:
+   - Overall CEFR level demonstrated: A1 / A2 / B1 / B2
+   - Strongest area
+   - Biggest weakness
+   - 3 specific things to practice before the real exam
+   - Predicted YKI score: Fail / Pass / Pass with distinction
+
+Do NOT break character during the exam sections.
+Do NOT switch to English unless the learner is completely lost.
+Keep strict time — move to the next section after 5 minutes.
 ${focusFragment ? '\n' + focusFragment : ''}`
         : `You are Knuut, a friendly, patient language teacher who can speak and teach ANY language. You adapt to the user's target language immediately.
 
@@ -180,6 +196,22 @@ async function handleApi(pathname, req, res, body) {
   }
   if (route === 'cron-weekly') {
     await weeklyEmailHandler(req, res);
+    return true;
+  }
+  if (route === 'yki-score') {
+    if (req.method === 'GET') {
+      await ykiScoreHandler(req, res);
+      return true;
+    }
+    const token = getTokenFromRequest(req);
+    const user = token ? verifyToken(token) : null;
+    if (!user) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return true;
+    }
+    wrappedReq.user = user;
+    await ykiScoreHandler(wrappedReq, res);
     return true;
   }
 
