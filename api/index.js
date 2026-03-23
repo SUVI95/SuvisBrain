@@ -28,6 +28,21 @@ function toNodeRes(res) {
   };
 }
 
+function getRawBody(req) {
+  return new Promise(function(resolve) {
+    if (req.body != null) {
+      if (typeof req.body === 'string') return resolve(req.body);
+      if (Buffer.isBuffer(req.body)) return resolve(req.body.toString('utf8'));
+      if (req.body && req.body.sdp) return resolve(req.body.sdp);
+    }
+    if (typeof req.text === 'function') return req.text().then(function(t) { resolve(t || ''); }).catch(function() { resolve(''); });
+    var chunks = [];
+    req.on('data', function(chunk) { chunks.push(chunk); });
+    req.on('end', function() { resolve(Buffer.concat(chunks).toString('utf8')); });
+    req.on('error', function() { resolve(''); });
+  });
+}
+
 async function collectBody(req) {
   if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) return req.body;
   const raw = typeof req.body === 'string' ? req.body : (req.text ? await req.text() : '') || '';
@@ -60,7 +75,8 @@ export default async function handler(req, res) {
       return;
     }
     if (route === 'session') {
-      await sessionHandler(req, res);
+      const rawBody = await getRawBody(req);
+      await sessionHandler(req, res, rawBody);
       return;
     }
     if (route === 'health') {

@@ -576,14 +576,14 @@
 
           const focusFragment = await getSessionFocus();
           const headers = {
-            'Content-Type': 'application/sdp',
+            'Content-Type': 'application/json',
             'X-Session-Focus': focusFragment || '',
             'X-Exam-Mode': examMode ? 'true' : 'false'
           };
           const resp = await fetch(SERVER_URL + '/api/session', {
             method: 'POST',
             headers,
-            body: offer.sdp || ''
+            body: JSON.stringify({ sdp: offer.sdp || '' })
           });
 
           if (!resp.ok) {

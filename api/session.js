@@ -1,6 +1,6 @@
 // POST /session — OpenAI Realtime voice (Knuut AI)
 // Handles SDP exchange for WebRTC voice sessions
-export default async function handler(req, res) {
+export default async function handler(req, res, rawBody) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method !== 'POST') {
     res.status(405).end('Method not allowed');
@@ -13,18 +13,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    let body = '';
-    if (req.body != null) {
-      if (typeof req.body === 'string') body = req.body;
-      else if (req.body && req.body.sdp) body = req.body.sdp;
-      else if (Buffer.isBuffer(req.body)) body = req.body.toString('utf8');
-    }
-    if (!body && typeof req.text === 'function') {
-      body = await req.text() || '';
-    }
-
-    const contentType = (req.headers && req.headers['content-type']) || '';
-    const offerSdp = contentType.includes('json') ? (JSON.parse(body || '{}').sdp || '') : body;
+    var offerSdp = (typeof rawBody === 'string' ? rawBody : '') || '';
     if (!offerSdp) {
       res.status(400).end('Missing SDP offer');
       return;
