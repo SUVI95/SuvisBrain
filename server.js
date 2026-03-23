@@ -18,6 +18,7 @@ import brainSkillsHandler from './api/brain-skills.js';
 import brainStatsHandler from './api/brain-stats.js';
 import brainSessionsHandler from './api/brain-sessions.js';
 import agentsHandler from './api/agents.js';
+import agentPromptHandler from './api/agent-prompt.js';
 import sessionCompleteHandler from './api/session-complete.js';
 import sessionFocusHandler from './api/session-focus.js';
 import saveCardHandler from './api/save-card.js';
@@ -337,6 +338,11 @@ async function handleApi(pathname, req, res, body) {
       return true;
     }
     if (route === 'agents') {
+      const pathSegs = path.split('/').filter(Boolean);
+      if (req.method === 'POST' && pathSegs[1] && pathSegs[2] === 'prompt') {
+        await agentPromptHandler(wrappedReq, res, pathSegs[1]);
+        return true;
+      }
       await agentsHandler(wrappedReq, res);
       return true;
     }

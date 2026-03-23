@@ -57,6 +57,27 @@
     .metric-key { font-size:9px; color:rgba(255,255,255,0.3); margin-top:2px; }
     .agent-footer { margin-top:12px; display:flex; justify-content:space-between; font-size:10px; color:rgba(255,255,255,0.25); }
 
+    .agent-prompt { margin-top:12px; display:flex; gap:6px; align-items:center; }
+    .agent-prompt input {
+      flex:1; padding:8px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.05); color:#e0e0f0; font-size:12px; font-family:inherit;
+    }
+    .agent-prompt input::placeholder { color:rgba(255,255,255,0.35); }
+    .agent-prompt button {
+      padding:8px 16px; border-radius:6px; border:1px solid rgba(167,139,250,0.4);
+      background:rgba(167,139,250,0.2); color:#a78bfa; font-size:12px; font-family:inherit;
+      cursor:pointer; white-space:nowrap;
+    }
+    .agent-prompt button:hover:not(:disabled) { background:rgba(167,139,250,0.3); }
+    .agent-prompt button:disabled { opacity:0.6; cursor:not-allowed; }
+    .agent-response {
+      margin-top:10px; padding:10px 12px; border-radius:6px; font-size:11px;
+      background:rgba(255,255,255,0.03); border-left:2px solid; line-height:1.5;
+      display:none;
+    }
+    .agent-response.error { color:#ff6b6b; border-left-color:#ff6b6b; }
+    .agent-response:not(.error) { color:rgba(255,255,255,0.8); }
+
     .pulse { animation: pulse 2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
   </style>
@@ -114,9 +135,9 @@
 <div class="agent-grid" id="agent-grid"></div>
 
 <script>
-const token = localStorage.getItem('knuut_token');
+const token = localStorage.getItem('sb_token') || localStorage.getItem('knuut_token');
 if (!token) location.replace('/login.html?next=' + encodeURIComponent(location.pathname || '/dashboard.html'));
-function authHdrs() { return { 'Authorization': 'Bearer ' + (localStorage.getItem('knuut_token') || '') }; }
+function authHdrs() { return { 'Authorization': 'Bearer ' + (localStorage.getItem('sb_token') || localStorage.getItem('knuut_token') || ''), 'Content-Type': 'application/json' }; }
 
 async function loadDashboard() {
   let agentData = [];
@@ -167,13 +188,53 @@ async function loadDashboard() {
           <span class="ok-badge">${a.status || 'active'}</span>
         </div>
         <div class="agent-metrics">
-          <div class="metric"><div class="metric-val">${a.episode_count ?? 0}</div><div class="metric-key">sessions</div></div>
+          <div class="metric"><div class="metric-val" data-episode-count>${a.episode_count ?? 0}</div><div class="metric-key">sessions</div></div>
           <div class="metric"><div class="metric-val">${a.node_count ?? 0}</div><div class="metric-key">nodes</div></div>
         </div>
+        <div class="agent-prompt">
+          <input type="text" placeholder="Ask ${a.name} something..." data-agent-id="${a.id}" data-agent-name="${a.name}" maxlength="500">
+          <button type="button" data-agent-id="${a.id}" data-run>Run</button>
+        </div>
+        <div class="agent-response" data-agent-id="${a.id}" style="border-left-color:${a.color || '#888'}"></div>
         <div class="agent-footer">
           <span>last active: ${lastActive}</span>
         </div>
       </div>`;
+  });
+
+  document.querySelectorAll('[data-run]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const agentId = btn.dataset.agentId;
+      const card = btn.closest('.agent-card');
+      const input = card.querySelector('input[data-agent-id]');
+      const responseEl = card.querySelector('.agent-response');
+      const episodeCountEl = card.querySelector('[data-episode-count]');
+      const msg = (input.value || '').trim();
+      if (!msg) return;
+      btn.disabled = true;
+      btn.textContent = 'Thinking...';
+      responseEl.style.display = 'none';
+      responseEl.classList.remove('error');
+      try {
+        const res = await fetch(`/api/agents/${agentId}/prompt`, {
+          method: 'POST',
+          headers: authHdrs(),
+          body: JSON.stringify({ message: msg }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Request failed');
+        responseEl.textContent = data.reply || '';
+        responseEl.style.display = 'block';
+        if (episodeCountEl) episodeCountEl.textContent = String(parseInt(episodeCountEl.textContent || '0', 10) + 1);
+        input.value = '';
+      } catch (err) {
+        responseEl.textContent = 'Something went wrong — try again';
+        responseEl.classList.add('error');
+        responseEl.style.display = 'block';
+      }
+      btn.disabled = false;
+      btn.textContent = 'Run';
+    });
   });
 }
 

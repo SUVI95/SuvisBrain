@@ -7,6 +7,7 @@ import brainSkillsHandler from './brain-skills.js';
 import brainStatsHandler from './brain-stats.js';
 import brainSessionsHandler from './brain-sessions.js';
 import agentsHandler from './agents.js';
+import agentPromptHandler from './agent-prompt.js';
 import sessionCompleteHandler from './session-complete.js';
 import sessionFocusHandler from './session-focus.js';
 import saveCardHandler from './save-card.js';
@@ -166,7 +167,12 @@ export default async function handler(req, res) {
         if (sub === 'sessions') return await brainSessionsHandler(wrappedReq, nres);
         return brainHandler(wrappedReq, nres);
       }
-      if (route === 'agents') return agentsHandler(wrappedReq, nres);
+      if (route === 'agents') {
+        if (req.method === 'POST' && pathSegs[1] && pathSegs[2] === 'prompt') {
+          return await agentPromptHandler(wrappedReq, nres, pathSegs[1]);
+        }
+        return agentsHandler(wrappedReq, nres);
+      }
       if (route === 'session-complete') return sessionCompleteHandler(wrappedReq, nres);
       if (route === 'session-focus') return sessionFocusHandler(wrappedReq, nres);
       if (route === 'save-card') return saveCardHandler(wrappedReq, nres);

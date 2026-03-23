@@ -145,94 +145,121 @@ if (!token || !user) {
 }
 function authHdrs() { return { 'Authorization': 'Bearer ' + (localStorage.getItem('sb_token') || localStorage.getItem('knuut_token') || '') }; }
 
+// ── DEMO FALLBACK (offline / API failure) ─────────────────────────────
+const DEMO_GRAPH = {
+  nodes: [
+    { id: 'Finnish Basics', type: 'Core', confidence_score: 0.9 },
+    { id: 'Greetings', type: 'Skill', confidence_score: 0.85 },
+    { id: 'Numbers 1-10', type: 'Skill', confidence_score: 0.7 },
+    { id: 'Prefers voice', type: 'Memory', confidence_score: 0.6 },
+    { id: 'Trial lesson', type: 'Conversation', confidence_score: 0.5 },
+  ],
+  links: [
+    { source: 'Finnish Basics', target: 'Greetings', value: 1 },
+    { source: 'Finnish Basics', target: 'Numbers 1-10', value: 1 },
+    { source: 'Finnish Basics', target: 'Prefers voice', value: 1 },
+    { source: 'Greetings', target: 'Trial lesson', value: 1 },
+  ],
+};
+
 // ── LOAD FROM API ────────────────────────────────────────────────────
 let nodes = [];
 let links = [];
 let uid = 0;
 
 async function loadBrainData() {
+  const containerEl = document.getElementById('svg-container');
+  containerEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,0.4);font-size:14px;">Loading brain...</div>';
+
+  let data = { nodes: [], links: [], last_session: null };
   try {
     const res = await fetch('/api/brain', { headers: authHdrs() });
     if (!res.ok) throw new Error(`API returned ${res.status}`);
-    const data = await res.json();
-    nodes = data.nodes || [];
-    links = data.links || [];
-    uid = nodes.length;
-
-    if (nodes.length === 0) {
-      document.getElementById('svg-container').innerHTML = `
-        <div style="
-          display:flex; flex-direction:column; align-items:center;
-          justify-content:center; height:100%; gap:16px;
-          color:rgba(255,255,255,0.4); font-family:system-ui;
-        ">
-          <div style="font-size:48px">🧠</div>
-          <div style="font-size:18px; font-weight:600">Brain is empty</div>
-          <div style="font-size:13px; text-align:center; max-width:300px; line-height:1.6">
-            No nodes in Neon yet. Run the seed script to populate
-            the initial brain, then Knuut will grow it automatically
-            after each session.
-          </div>
-          <div style="
-            background:rgba(108,99,255,0.2); border:1px solid #6C63FF;
-            border-radius:8px; padding:12px 20px; font-size:12px;
-            font-family:monospace; color:#A89CFF;
-          ">node api/seed-brain.js</div>
-          <button onclick="loadBrainData()" style="
-            margin-top:8px; background:#6C63FF; color:white;
-            border:none; border-radius:8px; padding:10px 20px;
-            font-size:14px; cursor:pointer;
-          ">Retry</button>
-        </div>
-      `;
-      document.getElementById('brain-stats').innerHTML = '0 nodes · 0 links';
-      document.getElementById('last-session').textContent =
-        'No sessions yet — brain grows after first Knuut session';
-      return;
-    }
-
-    const containerEl = document.getElementById('svg-container');
-    if (!document.getElementById('brain-svg')) {
-      containerEl.innerHTML = '<svg id="brain-svg"></svg>';
-      const svgEl = d3.select('#brain-svg');
-      const gEl = svgEl.append('g');
-      svgEl.call(d3.zoom().scaleExtent([0.2, 6]).on('zoom', e => gEl.attr('transform', e.transform)));
-      linkSel = gEl.append('g').attr('class','links');
-      nodeSel = gEl.append('g').attr('class','nodes');
-      labelSel = gEl.append('g').attr('class','labels');
-    }
-
-    sim.nodes(nodes);
-    sim.force('link').links(links);
-    sim.alpha(1).restart();
-    render();
-
-    const mastered = nodes.filter(n => (n.confidence_score ?? 0) >= 0.85).length;
-    const learning = nodes.filter(n => {
-      const c = n.confidence_score ?? 0;
-      return c >= 0.4 && c < 0.85;
-    }).length;
-    const struggling = nodes.filter(n => (n.confidence_score ?? 0) < 0.4).length;
-    document.getElementById('brain-stats').innerHTML = `
-      <span>${nodes.length} nodes · ${links.length} connections</span>
-      <span style="color:#58CC02">● ${mastered} mastered</span>
-      <span style="color:#FFC800">● ${learning} learning</span>
-      <span style="color:#FF4B4B">● ${struggling} needs work</span>
-    `;
-
-    if (data.last_session) {
-      const d = new Date(data.last_session);
-      const label = d.toLocaleDateString('fi-FI', {
-        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-      });
-      document.getElementById('last-session').textContent = `Last session: ${label}`;
-    } else {
-      document.getElementById('last-session').textContent =
-        'No sessions yet — brain grows after first Knuut session';
-    }
+    data = await res.json();
+    data.nodes = data.nodes || [];
+    data.links = data.links || [];
   } catch (err) {
-    console.error('Failed to load brain data:', err);
-    document.getElementById('brain-stats').innerHTML = 'DB connection error — check /api/brain';
+    console.warn('Failed to load brain data, using demo fallback:', err);
+    data = {
+      nodes: DEMO_GRAPH.nodes.map((n) => ({ ...n })),
+      links: DEMO_GRAPH.links.map((l) => ({ ...l })),
+      last_session: null,
+    };
+  }
+
+  nodes = data.nodes;
+  links = data.links;
+  uid = nodes.length;
+
+  if (nodes.length === 0) {
+    containerEl.innerHTML = `
+      <div style="
+        display:flex; flex-direction:column; align-items:center;
+        justify-content:center; height:100%; gap:16px;
+        color:rgba(255,255,255,0.4); font-family:system-ui;
+      ">
+        <div style="font-size:48px">🧠</div>
+        <div style="font-size:18px; font-weight:600">Brain is empty</div>
+        <div style="font-size:13px; text-align:center; max-width:300px; line-height:1.6">
+          No nodes in Neon yet. Run the seed script to populate
+          the initial brain, then Knuut will grow it automatically
+          after each session.
+        </div>
+        <div style="
+          background:rgba(108,99,255,0.2); border:1px solid #6C63FF;
+          border-radius:8px; padding:12px 20px; font-size:12px;
+          font-family:monospace; color:#A89CFF;
+        ">node api/seed-brain.js</div>
+        <button onclick="loadBrainData()" style="
+          margin-top:8px; background:#6C63FF; color:white;
+          border:none; border-radius:8px; padding:10px 20px;
+          font-size:14px; cursor:pointer;
+        ">Retry</button>
+      </div>
+    `;
+    document.getElementById('brain-stats').innerHTML = '0 nodes · 0 links';
+    document.getElementById('last-session').textContent =
+      'No sessions yet — brain grows after first Knuut session';
+    return;
+  }
+
+  if (!document.getElementById('brain-svg')) {
+    containerEl.innerHTML = '<svg id="brain-svg"></svg>';
+    const svgEl = d3.select('#brain-svg');
+    const gEl = svgEl.append('g');
+    svgEl.call(d3.zoom().scaleExtent([0.2, 6]).on('zoom', e => gEl.attr('transform', e.transform)));
+    linkSel = gEl.append('g').attr('class','links');
+    nodeSel = gEl.append('g').attr('class','nodes');
+    labelSel = gEl.append('g').attr('class','labels');
+  }
+
+  sim.nodes(nodes);
+  sim.force('link').links(links);
+  sim.alpha(1).restart();
+  render();
+
+  const mastered = nodes.filter(n => (n.confidence_score ?? 0) >= 0.85).length;
+  const learning = nodes.filter(n => {
+    const c = n.confidence_score ?? 0;
+    return c >= 0.4 && c < 0.85;
+  }).length;
+  const struggling = nodes.filter(n => (n.confidence_score ?? 0) < 0.4).length;
+  document.getElementById('brain-stats').innerHTML = `
+    <span>${nodes.length} nodes · ${links.length} connections</span>
+    <span style="color:#58CC02">● ${mastered} mastered</span>
+    <span style="color:#FFC800">● ${learning} learning</span>
+    <span style="color:#FF4B4B">● ${struggling} needs work</span>
+  `;
+
+  if (data.last_session) {
+    const d = new Date(data.last_session);
+    const label = d.toLocaleDateString('fi-FI', {
+      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+    });
+    document.getElementById('last-session').textContent = `Last session: ${label}`;
+  } else {
+    document.getElementById('last-session').textContent =
+      'No sessions yet — brain grows after first Knuut session';
   }
 }
 
