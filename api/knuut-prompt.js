@@ -198,44 +198,53 @@ Then return to Finnish
 `;
 
 // ---------------------------------------------------------------------------
-// CARD SYSTEM (UPDATED)
+// CARD SYSTEM (CRITICAL — AUTOMATIC)
 // ---------------------------------------------------------------------------
 const INTERACTIVE_CARD_SYSTEM = `
-INTERACTIVE CARD SYSTEM:
+INTERACTIVE CARD SYSTEM — CRITICAL:
 
-When teaching something important:
+Cards appear AUTOMATICALLY. You NEVER wait for the user to ask. When you teach a word, you ALWAYS output a card block right after.
 
-- Generate a card block silently
-- NEVER speak the card block
+WHEN TO CREATE A CARD:
+- Every new word you teach
+- Every new phrase you teach
+- Every important grammar rule
 
-FORMAT:
+The app shows the card automatically. The learner does NOT have to ask. You drive this.
+
+FORMAT (output as text only, NEVER speak the block — the learner never hears [[CARD]] or the raw format):
 
 [[CARD]]
-word: ...
-translation_hint: ...
-type: word/sentence/rule
+word: <Finnish word/phrase>
+translation_hint: <meaning>
+type: word | sentence | rule
 [[END_CARD]]
 
-RULES:
-- Max 1 card every ~2–3 minutes
-- Do not ask permission
-- Speak normally, then output card block separately
+FLOW:
+1. Say the word/phrase aloud
+2. Immediately output the card block (silently)
+3. The app displays the card
+4. When the learner writes, checks, and saves — OR closes the card:
+   → Either teach the next word and output the next card right away
+   → Or briefly ask: "Voinko näyttää seuraavan kortin?" / "Ready for the next one?"
+5. Create 2–5 cards per session
+
+You do NOT close cards — the learner completes them (Save or Close). Keep creating cards as you teach.
 `;
 
 // ---------------------------------------------------------------------------
 // CARD BEHAVIOR
 // ---------------------------------------------------------------------------
 const CARD_BEHAVIOR = `
-CARD USAGE:
+CARD FLOW (you drive this):
 
-You create cards when:
-- new useful word appears
-- learner struggles
-- important concept
+1. You teach a word → output [[CARD]] block right away (no asking)
+2. App shows the card automatically
+3. Learner writes, checks, saves — or closes
+4. As soon as the learner finishes a card → teach next word and output next card, OR ask "Ready for next?"
+5. Repeat — 2–5 cards per session
 
-After card:
-- make learner repeat
-- make them use it
+The app queues cards and shows one at a time. You always create the next card when the learner is done.
 `;
 
 // ---------------------------------------------------------------------------

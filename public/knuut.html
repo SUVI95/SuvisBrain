@@ -392,59 +392,84 @@
       let sessionTranscript = '';
       let sessionStartTime = 0;
       let examMode = false;
-      let activeCards = [];
-      let shownCardWords = {};
+      let cardQueue = [];
+      let currentCardId = null;
       var cardIdCounter = 0;
       var knuutTranscriptBuffer = '';
       var oaiChannel = null;
 
-      function extractCard(text) {
-        if (!text || typeof text !== 'string') return null;
-        if (text.indexOf('[[END_CARD]]') === -1) return null;
-        var match = text.match(/\[\[CARD\]\]([\s\S]*?)\[\[END_CARD\]\]/);
-        if (!match) return null;
-        var content = match[1];
-        var word = (content.match(/word:\s*(.+?)(?:\n|$)/) || [])[1];
-        var hint = (content.match(/translation_hint:\s*(.+?)(?:\n|$)/) || [])[1];
-        var type = (content.match(/type:\s*(.+?)(?:\n|$)/) || [])[1];
-        if (!word) return null;
-        word = word.trim();
-        hint = hint ? hint.trim() : '';
-        type = type ? type.trim() : 'word';
-        return { word: word, translation_hint: hint, type: type };
+      function extractAllCards(text) {
+        if (!text || typeof text !== 'string') return [];
+        if (text.indexOf('[[END_CARD]]') === -1) return [];
+        var re = /\[\[CARD\]\]([\s\S]*?)\[\[END_CARD\]\]/g;
+        var cards = [];
+        var m;
+        while ((m = re.exec(text)) !== null) {
+          var content = m[1];
+          var word = (content.match(/word:\s*(.+?)(?:\n|$)/) || [])[1];
+          var hint = (content.match(/translation_hint:\s*(.+?)(?:\n|$)/) || [])[1];
+          var type = (content.match(/type:\s*(.+?)(?:\n|$)/) || [])[1];
+          if (word) {
+            word = word.trim();
+            cards.push({
+              word: word,
+              translation_hint: hint ? hint.trim() : '',
+              type: type ? type.trim() : 'word'
+            });
+          }
+        }
+        return cards;
       }
 
-      function extractCloseCard(text) {
-        if (!text || typeof text !== 'string') return null;
-        if (text.indexOf('[[END_CLOSE]]') === -1) return null;
-        var match = text.match(/\[\[CLOSE_CARD\]\]([\s\S]*?)\[\[END_CLOSE\]\]/);
-        if (!match) return null;
-        var word = (match[1].match(/word:\s*(.+?)(?:\n|$)/) || [])[1];
-        return word ? word.trim() : null;
+      function addCardsToQueue(cards) {
+        for (var i = 0; i < cards.length; i++) {
+          var c = cards[i];
+          var exists = cardQueue.some(function(q) { return q.card.word === c.word; });
+          if (!exists) cardQueue.push({ id: null, card: c });
+        }
+        showNextCardInQueue();
+      }
+
+      function showNextCardInQueue() {
+        if (currentCardId) return;
+        if (cardQueue.length === 0) return;
+        var next = cardQueue.shift();
+        var id = 'card-' + (++cardIdCounter);
+        next.id = id;
+        currentCardId = id;
+        renderLearningCard(id, next.card);
       }
 
       function showLearningCard(card) {
-        if (shownCardWords[card.word]) return;
-        shownCardWords[card.word] = true;
-        while (activeCards.length > 0) closeLearningCard(activeCards[0].id);
-        var id = 'card-' + (++cardIdCounter);
-        activeCards.push({ id: id, card: card });
-        renderLearningCard(id, card);
+        addCardsToQueue([card]);
       }
 
-      function closeLearningCard(wordOrId) {
-        if (typeof wordOrId === 'string' && wordOrId.startsWith('card-')) {
-          activeCards = activeCards.filter(function(c) { return c.id !== wordOrId; });
-        } else {
-          activeCards = activeCards.filter(function(c) { return c.card.word !== wordOrId; });
-        }
-        var el = document.getElementById('learning-cards-container');
-        if (el) {
-          var toRemove = typeof wordOrId === 'string' && wordOrId.startsWith('card-')
-            ? el.querySelector('[data-card-id="' + wordOrId + '"]')
-            : el.querySelector('[data-card-word="' + wordOrId + '"]');
-          if (toRemove) toRemove.remove();
-        }
+      function closeLearningCard(cardId) {
+        var el = document.querySelector('[data-card-id="' + cardId + '"]');
+        var word = el ? el.getAttribute('data-card-word') : null;
+        currentCardId = null;
+        var container = document.getElementById('learning-cards-container');
+        if (container && el) el.remove();
+        if (word) notifyCardClosed(word);
+        showNextCardInQueue();
+      }
+
+      function notifyCardClosed(word) {
+        if (!oaiChannel || oaiChannel.readyState !== 'open') return;
+        try {
+          oaiChannel.send(JSON.stringify({
+            type: 'conversation.item.create',
+            item: {
+              type: 'message',
+              role: 'user',
+              content: [{ type: 'input_text', text: 'Kortti "' + word + '" suljettu. Voit opettaa seuraavan sanan ja näyttää seuraavan kortin.' }]
+            }
+          }));
+          oaiChannel.send(JSON.stringify({
+            type: 'response.create',
+            response: { modalities: ['audio', 'text'], conversation: 'auto' }
+          }));
+        } catch (e) { console.error('Notify card closed failed:', e); }
       }
 
       function normalizeForCompare(s) {
@@ -552,10 +577,8 @@
         if (!text) return;
         knuutTranscriptBuffer += text;
         if (knuutTranscriptBuffer.length > 10000) knuutTranscriptBuffer = knuutTranscriptBuffer.slice(-8000);
-        var closeWord = extractCloseCard(knuutTranscriptBuffer);
-        if (closeWord) closeLearningCard(closeWord);
-        var card = extractCard(knuutTranscriptBuffer);
-        if (card) showLearningCard(card);
+        var cards = extractAllCards(knuutTranscriptBuffer);
+        if (cards.length > 0) addCardsToQueue(cards);
       }
 
       function requestCardFeedback(word, userAnswer) {
@@ -828,8 +851,8 @@
 
           sessionTranscript = '';
           sessionStartTime = Date.now();
-          activeCards = [];
-          shownCardWords = {};
+          cardQueue = [];
+          currentCardId = null;
           knuutTranscriptBuffer = '';
           var cc = document.getElementById('learning-cards-container');
           if (cc) cc.innerHTML = '';
@@ -857,17 +880,31 @@
             try {
               const obj = JSON.parse(event.data || '{}');
               const t = obj.transcript || obj.item?.transcript;
-              if (obj.type === 'response.audio_transcript.done' && t) {
+              if (obj.type === 'response.output_audio_transcript.done' && t) {
                 sessionTranscript += '\n[Knuut]: ' + t;
                 checkTranscriptForCards(t);
               }
+              if (obj.type === 'response.output_text.delta' && obj.delta) {
+                knuutTranscriptBuffer += obj.delta;
+                if (knuutTranscriptBuffer.length > 10000) knuutTranscriptBuffer = knuutTranscriptBuffer.slice(-8000);
+                var cards = extractAllCards(knuutTranscriptBuffer);
+                if (cards.length > 0) addCardsToQueue(cards);
+              }
+              if (obj.type === 'response.output_item.done' && obj.item?.content) {
+                var textParts = [];
+                var parts = obj.item.content || [];
+                for (var i = 0; i < parts.length; i++) {
+                  var p = parts[i];
+                  if (p && (p.text || p.transcript)) textParts.push(p.text || p.transcript || '');
+                }
+                var fullText = textParts.join('');
+                if (fullText) {
+                  sessionTranscript += '\n[Knuut]: ' + fullText;
+                  checkTranscriptForCards(fullText);
+                }
+              }
               if (obj.type === 'conversation.item.input_audio_transcription.completed' && t) {
                 sessionTranscript += '\n[Learner]: ' + t;
-              }
-              if (obj.type === 'response.output_item.done' && obj.item?.transcript) {
-                var transcript = obj.item.transcript;
-                sessionTranscript += '\n[Knuut]: ' + transcript;
-                checkTranscriptForCards(transcript);
               }
             } catch (e) {}
           };
