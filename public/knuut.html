@@ -288,7 +288,6 @@
 
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <script>
     (function(){
@@ -649,43 +648,46 @@
     })();
   </script>
 
-  <script type="text/babel">
-    const { useRef, useEffect } = React;
-    function Orb({ hue = 260 }) {
-      const containerRef = useRef(null);
-      useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-        const canvas = document.createElement('canvas');
-        canvas.style.cssText = 'width:100%;height:100%;position:absolute;top:0;left:0;opacity:0.5';
-        container.appendChild(canvas);
-        const ctx = canvas.getContext('2d');
-        let t = 0, raf;
-        function resize() { canvas.width = container.offsetWidth; canvas.height = container.offsetHeight; }
-        function animate() {
-          t += 0.01;
-          ctx.clearRect(0,0,canvas.width,canvas.height);
-          const cx = canvas.width/2, cy = canvas.height/2, r = Math.min(canvas.width,canvas.height)*0.4;
-          const g = ctx.createRadialGradient(cx+Math.sin(t)*40, cy+Math.cos(t)*40, 0, cx, cy, r);
-          const h = (hue + t*15) % 360;
-          g.addColorStop(0, 'hsla('+h+',70%,60%,0.7)');
-          g.addColorStop(0.5, 'hsla('+(h+20)+',70%,50%,0.35)');
-          g.addColorStop(1, 'hsla('+(h+40)+',70%,40%,0)');
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, 0, Math.PI*2);
-          ctx.fill();
-          raf = requestAnimationFrame(animate);
-        }
-        resize();
-        animate();
-        window.addEventListener('resize', resize);
-        return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
-      }, [hue]);
-      return <div ref={containerRef} style={{width:'100%',height:'100%',position:'relative'}} />;
-    }
-    const root = ReactDOM.createRoot(document.getElementById('orb-root'));
-    root.render(<Orb hue={260} />);
+  <script>
+    (function() {
+      var useRef = React.useRef, useEffect = React.useEffect;
+      function Orb(props) {
+        var hue = props.hue || 260;
+        var containerRef = useRef(null);
+        useEffect(function() {
+          var container = containerRef.current;
+          if (!container) return;
+          var canvas = document.createElement('canvas');
+          canvas.style.cssText = 'width:100%;height:100%;position:absolute;top:0;left:0;opacity:0.5';
+          container.appendChild(canvas);
+          var ctx = canvas.getContext('2d');
+          var t = 0, raf;
+          function resize() { canvas.width = container.offsetWidth; canvas.height = container.offsetHeight; }
+          function animate() {
+            t += 0.01;
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            var cx = canvas.width/2, cy = canvas.height/2, r = Math.min(canvas.width,canvas.height)*0.4;
+            var g = ctx.createRadialGradient(cx+Math.sin(t)*40, cy+Math.cos(t)*40, 0, cx, cy, r);
+            var h = (hue + t*15) % 360;
+            g.addColorStop(0, 'hsla('+h+',70%,60%,0.7)');
+            g.addColorStop(0.5, 'hsla('+(h+20)+',70%,50%,0.35)');
+            g.addColorStop(1, 'hsla('+(h+40)+',70%,40%,0)');
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI*2);
+            ctx.fill();
+            raf = requestAnimationFrame(animate);
+          }
+          resize();
+          animate();
+          window.addEventListener('resize', resize);
+          return function() { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
+        }, [hue]);
+        return React.createElement('div', { ref: containerRef, style: {width:'100%',height:'100%',position:'relative'} });
+      }
+      var root = ReactDOM.createRoot(document.getElementById('orb-root'));
+      root.render(React.createElement(Orb, { hue: 260 }));
+    })();
   </script>
 </body>
 </html>
