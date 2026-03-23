@@ -127,9 +127,9 @@ export default async function handler(req, res) {
       }
       if (route === 'brain') {
         const sub = pathSegs[1];
-        if (sub === 'skills') return brainSkillsHandler(wrappedReq, nres);
-        if (sub === 'stats') return brainStatsHandler(wrappedReq, nres);
-        if (sub === 'sessions') return brainSessionsHandler(wrappedReq, nres);
+        if (sub === 'skills') return await brainSkillsHandler(wrappedReq, nres);
+        if (sub === 'stats') return await brainStatsHandler(wrappedReq, nres);
+        if (sub === 'sessions') return await brainSessionsHandler(wrappedReq, nres);
         return brainHandler(wrappedReq, nres);
       }
       if (route === 'agents') return agentsHandler(wrappedReq, nres);

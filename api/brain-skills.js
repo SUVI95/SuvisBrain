@@ -1,18 +1,28 @@
 // GET /api/brain/skills — learned vocabulary/cards for authenticated learner
 import { query } from './db.js';
 
+function sendJson(res, status, data) {
+  res.setHeader('Content-Type', 'application/json');
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(data));
+}
+
 export default async function brainSkillsHandler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
+
   if (req.method !== 'GET') {
-    res.writeHead(405, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ error: 'GET only' }));
+    return sendJson(res, 405, { error: 'GET only' });
   }
+
   const user = req.user;
   if (!user || user.role !== 'learner') {
-    res.writeHead(401, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return sendJson(res, 401, { error: 'Unauthorized' });
   }
-  const learnerId = user.id;
+
+  const learnerId = String(user.id || '').trim();
+  if (!learnerId) {
+    return sendJson(res, 400, { error: 'Missing learner id' });
+  }
 
   try {
     const result = await query(
@@ -21,15 +31,16 @@ export default async function brainSkillsHandler(req, res) {
        FROM brain_nodes
        WHERE type = 'Skill'
          AND (metadata->>'learner_id' = $1 OR metadata->>'learner_id' IS NULL)
-         AND metadata->>'source' = 'interactive_card'
+         AND (metadata->>'source' = 'interactive_card' OR metadata ? 'user_answer')
        ORDER BY updated_at DESC`,
       [learnerId]
     );
 
-    const skills = (result.rows || []).map((r) => {
+    const rows = result && result.rows ? result.rows : [];
+    const skills = rows.map((r) => {
       const m = r.metadata || {};
       return {
-        word: r.label,
+        word: r.label || '',
         translation_hint: m.translation_hint || '',
         user_answer: m.user_answer || '',
         correct: m.correct === true || m.correct === 'true',
@@ -39,11 +50,9 @@ export default async function brainSkillsHandler(req, res) {
       };
     });
 
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(skills));
+    return sendJson(res, 200, skills);
   } catch (err) {
     console.error('brain/skills error:', err);
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: err.message }));
+    return sendJson(res, 500, { error: err.message || 'Server error' });
   }
 }

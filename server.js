@@ -12,6 +12,9 @@ import { fileURLToPath } from 'url';
 
 import { getTokenFromRequest, verifyToken } from './src/lib/auth.js';
 import brainHandler from './api/brain.js';
+import brainSkillsHandler from './api/brain-skills.js';
+import brainStatsHandler from './api/brain-stats.js';
+import brainSessionsHandler from './api/brain-sessions.js';
 import agentsHandler from './api/agents.js';
 import sessionCompleteHandler from './api/session-complete.js';
 import sessionFocusHandler from './api/session-focus.js';
@@ -283,6 +286,11 @@ async function handleApi(pathname, req, res, body) {
       return true;
     }
     if (route === 'brain') {
+      const pathSegs = path.split('/').filter(Boolean);
+      const sub = pathSegs[1];
+      if (sub === 'skills') { await brainSkillsHandler(wrappedReq, res); return true; }
+      if (sub === 'stats') { await brainStatsHandler(wrappedReq, res); return true; }
+      if (sub === 'sessions') { await brainSessionsHandler(wrappedReq, res); return true; }
       await brainHandler(wrappedReq, res);
       return true;
     }
