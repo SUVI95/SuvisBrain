@@ -23,6 +23,8 @@ import learnersHandler from './api/learners.js';
 import authHandler from './api/auth.js';
 import weeklyEmailHandler from './api/cron-weekly.js';
 import ykiScoreHandler from './api/yki-score.js';
+import userDataHandler from './api/user-data.js';
+import teacherOverrideHandler from './api/teacher-override.js';
 import { query } from './api/db.js';
 import { getSystemPrompt, langToIso } from './api/knuut-prompt.js';
 
@@ -301,6 +303,11 @@ async function handleApi(pathname, req, res, body) {
 
   try {
     if (route === 'learners') {
+      const pathSegs = path.split('/').filter(Boolean);
+      if (pathSegs[2] === 'reviewed') {
+        await teacherOverrideHandler(wrappedReq, res, pathname);
+        return true;
+      }
       await learnersHandler(wrappedReq, res, pathname);
       return true;
     }
@@ -327,6 +334,11 @@ async function handleApi(pathname, req, res, body) {
     }
     if (route === 'save-card') {
       await saveCardHandler(wrappedReq, res);
+      return true;
+    }
+    if (route === 'user-data') {
+      const sub = path.split('/').filter(Boolean)[1] || '';
+      await userDataHandler(wrappedReq, res, '/api/user-data/' + sub);
       return true;
     }
   } catch (err) {

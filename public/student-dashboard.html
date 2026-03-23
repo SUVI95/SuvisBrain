@@ -193,6 +193,16 @@
     .fade-up { animation: fadeUp 0.4s ease both; }
     @keyframes flicker { 0%,100%{transform:scale(1) rotate(-2deg)} 50%{transform:scale(1.2) rotate(2deg)} }
     .flame-animate { display:inline-block; animation: flicker 1.2s ease-in-out infinite; }
+
+    .trust-banner { background: #f0effe; border: 1px solid rgba(108,99,255,0.3); padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; font-size: 13px; font-weight: 600; color: #5046e5; }
+    .ai-box { background: #fff; border: 1.5px solid #e9e7fd; border-radius: 14px; padding: 16px 20px; margin-bottom: 16px; }
+    .ai-box h3 { font-size: 14px; margin-bottom: 8px; color: #6C63FF; }
+    .ai-box p { font-size: 13px; color: #6b7280; line-height: 1.5; }
+    .explanation { font-size: 12px; color: #9ca3af; margin-top: 8px; font-style: italic; }
+    .data-actions { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+    .btn-data { padding: 10px 18px; border-radius: 10px; font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 600; border: 1px solid #e5e7eb; background: #fff; color: #6b7280; }
+    .btn-data:hover { border-color: #6C63FF; color: #6C63FF; }
+    .btn-data.danger:hover { border-color: #ef4444; color: #ef4444; }
   </style>
 </head>
 <body>
@@ -201,9 +211,16 @@
     <span class="topnav-logo">KNUUT</span>
     <a href="knuut.html">Practice with Knuut</a>
     <a href="teacher-dashboard.html">Teacher view</a>
+    <a href="privacy-ai.html">Privacy & AI</a>
     <a href="#" id="logout-link">Log out</a>
     <button class="mobile-menu-btn" onclick="window.location.href='knuut.html'">▶</button>
   </nav>
+
+  <div class="trust-banner">
+    <span>✔ GDPR Compliant</span>
+    <span>✔ Human-in-the-loop AI</span>
+    <span>✔ Data stored in EU</span>
+  </div>
 
   <div class="page">
 
@@ -257,6 +274,11 @@
 
     <!-- CELEBRATION -->
     <div class="celebration-card" id="celebration-card"></div>
+
+    <div class="ai-box">
+      <h3>AI Suggestions</h3>
+      <p>Recommendations below are generated automatically. Final decisions are always made by the teacher.</p>
+    </div>
 
     <!-- MODES -->
     <div class="section-label">What do you want to practice?</div>
@@ -330,6 +352,13 @@
       <div class="skeleton" style="height:60px"></div>
     </div>
 
+    <div class="section-label">Your data</div>
+    <div class="data-actions">
+      <button class="btn-data" id="export-data-btn">Download My Data</button>
+      <button class="btn-data danger" id="delete-data-btn">Delete My Data</button>
+      <a href="privacy-ai.html" class="btn-data" style="text-decoration:none">Privacy & AI Notice</a>
+    </div>
+
   </div>
 
   <div class="toast" id="mastery-toast"></div>
@@ -347,6 +376,28 @@
     document.getElementById('greeting').textContent = greetWord + (user?.name ? ', ' + user.name.split(' ')[0] : '') + '! 👋';
 
     document.getElementById('logout-link')?.addEventListener('click', e => { e.preventDefault(); ['knuut_token','knuut_user','sb_token','sb_user'].forEach(k => localStorage.removeItem(k)); location.replace('/login.html'); });
+
+    const API_BASE = window.location.origin;
+    async function exportData() {
+      try {
+        const res = await fetch(API_BASE + '/api/user-data/export', { headers: authHeaders() });
+        if (!res.ok) throw new Error(await res.text());
+        const blob = await res.blob();
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'knuut-my-data.json'; a.click();
+      } catch (e) { alert(e.message || 'Export failed'); }
+    }
+    async function deleteData() {
+      if (!confirm('Permanently delete all your data? This cannot be undone.')) return;
+      try {
+        const res = await fetch(API_BASE + '/api/user-data/delete', { method: 'POST', headers: authHeaders() });
+        if (!res.ok) throw new Error(await res.text());
+        ['knuut_token','knuut_user','sb_token','sb_user'].forEach(k => localStorage.removeItem(k));
+        location.replace('/login.html');
+      } catch (e) { alert(e.message || 'Delete failed'); }
+    }
+    document.getElementById('export-data-btn')?.addEventListener('click', exportData);
+    document.getElementById('delete-data-btn')?.addEventListener('click', deleteData);
+
     function startMode(mode) { window.location.href = '/knuut.html?mode=' + encodeURIComponent(mode); }
     function reviewMistakes() { localStorage.setItem('sb_review_words', JSON.stringify(window.__mistakeWords||[])); window.location.href = '/knuut.html?mode=review'; }
     function continueWhereLeftOff() { window.location.href = '/knuut.html'; }
@@ -427,8 +478,8 @@
         if(!topics.length&&nodes?.length)topics=nodes.filter(n=>(n.confidence??0.5)<0.8).slice(0,3).map(n=>({label:n.label,confidence:n.confidence}));
         const focusEl=document.getElementById('focus-cards');
         if(topics.length){
-          focusEl.innerHTML=topics.map(t=>{const pct=Math.round((t.confidence??0.5)*100),letters=(t.label||'??').slice(0,2).toUpperCase();
-            return`<div class="focus-card"><div class="focus-head"><div class="focus-icon">${letters}</div><div><div class="focus-name">${escapeHtml(t.label||'')}</div><div class="focus-needs">needs practice</div></div></div><div class="focus-bar"><div class="focus-bar-fill" style="width:${pct}%"></div></div><button class="btn-practice" onclick="window.location.href='/knuut.html'">Practice now →</button></div>`;
+          focusEl.innerHTML=topics.map(t=>{const pct=Math.round((t.confidence??0.5)*100),letters=(t.label||'??').slice(0,2).toUpperCase(),reason=t.reason||'Recommended based on learning progress.';
+            return`<div class="focus-card"><div class="focus-head"><div class="focus-icon">${letters}</div><div><div class="focus-name">${escapeHtml(t.label||'')}</div><div class="focus-needs">needs practice</div></div></div><div class="focus-bar"><div class="focus-bar-fill" style="width:${pct}%"></div></div><p class="explanation">Why this suggestion? ${escapeHtml(reason)}</p><button class="btn-practice" onclick="window.location.href='/knuut.html'">Practice now →</button></div>`;
           }).join('');
         }else{focusEl.innerHTML='<div class="empty-box"><p>Complete a session with Knuut to get your personal practice plan.</p><a href="/knuut.html" class="btn-start">Start now →</a></div>';}
 

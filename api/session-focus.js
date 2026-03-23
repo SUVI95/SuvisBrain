@@ -40,12 +40,17 @@ export default async function sessionFocusHandler(req, res) {
           LIMIT 5
         `);
 
-    const focusTopics = result.rows.map((r) => ({
-      label: r.label,
-      type: r.type,
-      confidence: r.confidence_score,
-      priority: (r.confidence_score != null ? r.confidence_score : 0.5) < 0.4 ? 'urgent' : 'normal',
-    }));
+    const focusTopics = result.rows.map((r) => {
+      const conf = r.confidence_score != null ? r.confidence_score : 0.5;
+      const pct = Math.round(conf * 100);
+      return {
+        label: r.label,
+        type: r.type,
+        confidence: conf,
+        priority: conf < 0.4 ? 'urgent' : 'normal',
+        reason: `Based on current mastery (${pct}%) — practice needed to reach 85% target.`,
+      };
+    });
 
     const topicNames = focusTopics.map((t) => t.label).join(', ');
     const systemFragment =

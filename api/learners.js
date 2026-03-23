@@ -23,8 +23,23 @@ export default async function learnersHandler(req, res, pathname) {
         GROUP BY l.id
         ORDER BY l.created_at ASC
       `);
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const rows = result.rows.map((r) => {
+        const sessionCount = parseInt(r.session_count) || 0;
+        const lastSession = r.last_session ? new Date(r.last_session) : null;
+        const daysSinceLast = lastSession ? (Date.now() - lastSession.getTime()) / (24 * 60 * 60 * 1000) : 999;
+        const activeThisWeek = lastSession && lastSession >= weekAgo;
+        let risk_level = 'LOW';
+        if (sessionCount < 3 && (daysSinceLast > 7 || !lastSession)) risk_level = 'HIGH';
+        else if (sessionCount < 5 || daysSinceLast > 7) risk_level = 'MEDIUM';
+        return { ...r, risk_level };
+      });
+      const byRisk = (a, b) => {
+        const order = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+        return (order[a.risk_level] ?? 2) - (order[b.risk_level] ?? 2);
+      };
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(result.rows));
+      res.end(JSON.stringify(rows.sort(byRisk)));
       return;
     } catch (err) {
       console.error('GET /api/learners error:', err);

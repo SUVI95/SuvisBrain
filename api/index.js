@@ -13,6 +13,8 @@ import authHandler from './auth.js';
 import sessionHandler from './session.js';
 import weeklyEmailHandler from './cron-weekly.js';
 import ykiScoreHandler from './yki-score.js';
+import userDataHandler from './user-data.js';
+import teacherOverrideHandler from './teacher-override.js';
 import { query } from './db.js';
 
 function toNodeRes(res) {
@@ -139,7 +141,9 @@ export default async function handler(req, res) {
 
     try {
       if (route === 'learners') {
-        return learnersHandler(wrappedReq, nres, '/api/learners' + (pathSegs.length > 1 ? '/' + pathSegs.slice(1).join('/') : ''));
+        const pathname = '/api/learners' + (pathSegs.length > 1 ? '/' + pathSegs.slice(1).join('/') : '');
+        if (pathSegs[2] === 'reviewed') return teacherOverrideHandler(wrappedReq, nres, pathname);
+        return learnersHandler(wrappedReq, nres, pathname);
       }
       if (route === 'brain') {
         const sub = pathSegs[1];
@@ -152,6 +156,7 @@ export default async function handler(req, res) {
       if (route === 'session-complete') return sessionCompleteHandler(wrappedReq, nres);
       if (route === 'session-focus') return sessionFocusHandler(wrappedReq, nres);
       if (route === 'save-card') return saveCardHandler(wrappedReq, nres);
+      if (route === 'user-data') return userDataHandler(wrappedReq, nres, '/api/user-data/' + (pathSegs[1] || ''));
     } catch (err) {
       console.error('[api]', err);
       return res.status(500).json({ error: err.message });

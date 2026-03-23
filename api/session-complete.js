@@ -1,14 +1,16 @@
 // api/session-complete.js — post-session brain update via OpenRouter
 import { query } from './db.js';
+import { removePersonalData } from '../src/lib/safe-ai.js';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 async function analyseTranscript(transcript) {
+  const safeInput = removePersonalData(transcript || '');
   const prompt = `You are analysing a Finnish language learning session transcript.
 Extract learning data and return ONLY valid JSON, no other text.
 
 Transcript:
-${transcript}
+${safeInput}
 
 Return this exact JSON structure:
 {
@@ -55,10 +57,11 @@ Rules:
 }
 
 async function scoreCefrRubric(transcript) {
+  const safeInput = removePersonalData(transcript || '');
   const prompt = `You are a CEFR-certified assessor. Score this YKI mock speaking exam transcript against the CEFR rubric.
 
 Transcript:
-${transcript}
+${safeInput}
 
 Return ONLY valid JSON:
 {

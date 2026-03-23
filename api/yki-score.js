@@ -1,14 +1,16 @@
 // POST /api/yki-score — YKI exam transcript analysis; GET for fetching by episode_id
 import { query } from './db.js';
+import { removePersonalData } from '../src/lib/safe-ai.js';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 async function scoreYkiTranscript(transcript) {
+  const safeInput = removePersonalData(transcript || '');
   const prompt = `You are a certified YKI (Yleinen kielitutkinto) examiner.
 Analyse this speaking exam transcript and return ONLY valid JSON.
 
 Transcript:
-${transcript}
+${safeInput}
 
 Return exactly this structure:
 {

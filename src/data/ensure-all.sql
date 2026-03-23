@@ -40,3 +40,6 @@ CREATE TABLE IF NOT EXISTS teachers (
 
 -- 5. Learners: native_language (ISO 639-1)
 ALTER TABLE learners ADD COLUMN IF NOT EXISTS native_language varchar(10) DEFAULT NULL;
+
+-- 6. Teacher override (human-in-the-loop, EU AI Act)
+ALTER TABLE learners ADD COLUMN IF NOT EXISTS teacher_reviewed_at timestamptz DEFAULT NULL;

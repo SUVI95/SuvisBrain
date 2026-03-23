@@ -14,7 +14,13 @@
       padding: 24px;
     }
     .container { max-width: 1100px; margin: 0 auto; }
-    nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; }
+    .trust-banner {
+      display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: #059669;
+      padding: 8px 12px; background: rgba(5,150,105,0.08); border-radius: 8px; margin-left: auto;
+    }
+    .trust-banner a { color: #059669; text-decoration: none; }
+    .trust-banner a:hover { text-decoration: underline; }
     .nav-link {
       padding: 10px 16px;
       border-radius: 12px;
@@ -69,6 +75,7 @@
       animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
     }
     .learner-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+    .learner-card.selected { box-shadow: 0 0 0 2px #6C63FF; }
     .learner-card.active { border-left-color: #58CC02; }
     .learner-card.idle { border-left-color: #FFC800; }
     .learner-card.inactive { border-left-color: #FF4B4B; }
@@ -80,6 +87,10 @@
     .skill-dot { width: 8px; height: 8px; border-radius: 50%; }
     .learner-meta { font-size: 12px; color: #6B7280; }
     .learner-weakest { display: inline-block; padding: 4px 10px; background: #E5E7EB; border-radius: 8px; font-size: 11px; margin-top: 8px; }
+    .risk-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; margin-left: 6px; }
+    .risk-badge.high { background: #FEE2E2; color: #DC2626; }
+    .risk-badge.medium { background: #FEF3C7; color: #D97706; }
+    .risk-badge.low { background: #D1FAE5; color: #059669; }
     .layout { display: flex; gap: 24px; }
     .main { flex: 1; }
     .side-panel {
@@ -132,6 +143,14 @@
       box-shadow: 0 4px 0 #4B44CC;
     }
     .btn-session:hover { opacity: 0.95; }
+    .btn-reviewed {
+      margin-top: 12px; width: 100%; padding: 10px 14px; background: #fff; color: #6C63FF;
+      border: 2px solid #6C63FF; border-radius: 10px; font-weight: 600; font-size: 13px;
+      cursor: pointer; font-family: inherit;
+    }
+    .btn-reviewed:hover { background: rgba(108,99,255,0.08); }
+    .btn-reviewed.reviewed { background: #D1FAE5; border-color: #059669; color: #059669; cursor: default; }
+    .btn-reviewed.reviewed:hover { background: #D1FAE5; }
   </style>
 </head>
 <body>
@@ -139,7 +158,12 @@
     <nav>
       <a href="index.html" class="nav-link">Brain Graph</a>
       <a href="dashboard.html" class="nav-link">Agents</a>
+      <a href="teacher-dashboard.html" class="nav-link">Teacher</a>
       <a href="student-dashboard.html" class="nav-link">Student view</a>
+      <a href="privacy-ai.html" class="nav-link">Privacy &amp; AI</a>
+      <div class="trust-banner">
+        ✔ GDPR Compliant · ✔ Human-in-the-loop AI · ✔ Data stored in EU
+      </div>
       <a href="#" class="nav-link" id="logout-link">Log out</a>
     </nav>
 
@@ -149,13 +173,14 @@
       <div class="stat-pills">
         <span class="stat-pill">👥 <strong id="total-learners">0</strong> learners</span>
         <span class="stat-pill">📚 <strong id="total-sessions">0</strong> sessions this week</span>
-        <span class="stat-pill">⚠ <strong id="need-attention">0</strong> need attention</span>
+        <span class="stat-pill">⚠ <strong id="need-attention">0</strong> high risk</span>
       </div>
     </header>
 
     <div class="layout">
       <div class="main">
-        <h2 style="font-size:14px;font-weight:600;color:#6B7280;margin-bottom:16px;">Learners</h2>
+        <h2 style="font-size:14px;font-weight:600;color:#6B7280;margin-bottom:16px;">Students needing attention</h2>
+        <p style="font-size:13px;color:#6B7280;margin-bottom:16px;">Sorted by risk level (HIGH first). AI suggestions require your review.</p>
         <div class="learner-grid" id="learner-grid"></div>
       </div>
 
@@ -165,6 +190,7 @@
         <div id="panel-bars"></div>
         <div class="panel-sessions" id="panel-sessions"></div>
         <button class="btn-session" id="btn-start-session">Start session with learner</button>
+        <button class="btn-reviewed" id="btn-reviewed" style="display:none">Mark as Reviewed by Teacher</button>
       </div>
     </div>
   </div>
@@ -212,19 +238,11 @@
         learnersData = await res.json();
         if (!Array.isArray(learnersData)) learnersData = [];
 
-        const totalSessions = learnersData.reduce((s, l) => s + (l.session_count || 0), 0);
-        const sessionsThisWeek = learnersData.reduce((s, l) => {
-          const last = l.last_session ? new Date(l.last_session) : null;
-          return s + (last && last >= weekAgo ? 1 : 0);
-        }, 0);
-        const needAttention = learnersData.filter((l) => {
-          const last = l.last_session ? new Date(l.last_session) : null;
-          return !last || (now - last) / (24 * 60 * 60 * 1000) > 7;
-        }).length;
+        const highRiskCount = learnersData.filter((l) => l.risk_level === 'HIGH').length;
 
         document.getElementById('total-learners').textContent = learnersData.length;
         document.getElementById('total-sessions').textContent = learnersData.reduce((s, l) => s + (l.session_count || 0), 0);
-        document.getElementById('need-attention').textContent = needAttention;
+        document.getElementById('need-attention').textContent = highRiskCount;
 
         const grid = document.getElementById('learner-grid');
         grid.innerHTML = learnersData.map((l, idx) => {
@@ -232,11 +250,13 @@
           const daysAgo = last ? Math.floor((now - last) / (24 * 60 * 60 * 1000)) : null;
           const status = getStatus(l.last_session);
           const initials = (l.name || '—').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+          const risk = (l.risk_level || 'LOW').toLowerCase();
           return `
             <div class="learner-card ${status}" data-id="${l.id}" style="animation-delay:${idx * 0.05}s">
               <div class="learner-head">
                 <div class="learner-avatar">${initials}</div>
                 <span class="learner-name">${l.name}</span>
+                <span class="risk-badge ${risk}">${l.risk_level || 'LOW'}</span>
                 <span class="learner-cefr">${l.cefr_level || '—'}</span>
               </div>
               <div class="skill-dots learner-dots-${l.id}"></div>
@@ -289,6 +309,31 @@
 
       const panel = document.getElementById('side-panel');
       panel.classList.add('visible');
+
+      const btnReviewed = document.getElementById('btn-reviewed');
+      btnReviewed.style.display = 'block';
+      btnReviewed.classList.remove('reviewed');
+      btnReviewed.textContent = 'Mark as Reviewed by Teacher';
+      btnReviewed.disabled = false;
+      if (learner?.teacher_reviewed_at) {
+        btnReviewed.classList.add('reviewed');
+        btnReviewed.textContent = '✓ Reviewed ' + new Date(learner.teacher_reviewed_at).toLocaleDateString('fi-FI');
+        btnReviewed.disabled = true;
+      }
+      btnReviewed.onclick = async () => {
+        try {
+          const r = await fetch(`/api/learners/${learnerId}/reviewed`, { method: 'POST', headers: authHeaders() });
+          if (!r.ok) throw new Error('Failed');
+          const ld = learnersData.find((l) => l.id === learnerId);
+          if (ld) ld.teacher_reviewed_at = new Date().toISOString();
+          btnReviewed.classList.add('reviewed');
+          btnReviewed.textContent = '✓ Reviewed ' + new Date().toLocaleDateString('fi-FI');
+          btnReviewed.disabled = true;
+        } catch (e) {
+          alert('Could not mark as reviewed. Try again.');
+        }
+      };
+
       document.getElementById('panel-sessions').innerHTML = '<div style="color:#6B7280">Loading...</div>';
       document.getElementById('panel-bars').innerHTML = '';
 
