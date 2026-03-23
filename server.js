@@ -1,5 +1,6 @@
 /**
  * SuvisBrain dev server — static files + API routes + voice
+ * Knuut voice: verse
  * Run: node server.js
  */
 

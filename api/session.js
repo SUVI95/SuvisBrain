@@ -1,4 +1,5 @@
 // POST /session — OpenAI Realtime voice (Knuut AI)
+// VOICE: verse (masculine, calm)
 // Handles SDP exchange for WebRTC voice sessions
 import { getSystemPrompt, langToIso } from './knuut-prompt.js';
 import { query } from './db.js';
