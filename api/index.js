@@ -4,6 +4,7 @@ import brainHandler from './brain.js';
 import agentsHandler from './agents.js';
 import sessionCompleteHandler from './session-complete.js';
 import sessionFocusHandler from './session-focus.js';
+import saveCardHandler from './save-card.js';
 import learnersHandler from './learners.js';
 import authHandler from './auth.js';
 import sessionHandler from './session.js';
@@ -125,6 +126,7 @@ export default async function handler(req, res) {
       if (route === 'agents') return agentsHandler(wrappedReq, nres);
       if (route === 'session-complete') return sessionCompleteHandler(wrappedReq, nres);
       if (route === 'session-focus') return sessionFocusHandler(wrappedReq, nres);
+      if (route === 'save-card') return saveCardHandler(wrappedReq, nres);
     } catch (err) {
       console.error('[api]', err);
       return res.status(500).json({ error: err.message });

@@ -121,6 +121,34 @@ IMPORTANT:
 `;
 
 // ---------------------------------------------------------------------------
+// INTERACTIVE CARD SYSTEM
+// ---------------------------------------------------------------------------
+const INTERACTIVE_CARD_SYSTEM = `
+INTERACTIVE CARD SYSTEM:
+
+When you introduce a new word, important phrase, or grammar rule, you MUST emit a card trigger.
+Output this block at the end of your spoken response. The block is for the app ONLY — never speak it aloud.
+
+Format:
+[[CARD]]
+word: <the Finnish word or phrase>
+translation_hint: <meaning in learner's language>
+type: word | phrase | grammar
+[[END_CARD]]
+
+RULES:
+- Only create cards for important learning moments (max 1 every ~2–3 minutes)
+- After creating a card, ask the learner to repeat: "Sano: [word]"
+- The UI will show the card automatically
+- Keep your spoken response natural — do not mention "card" or "[[CARD]]"
+
+When the learner clearly understands, you may output:
+[[CLOSE_CARD]]
+word: <same word>
+[[END_CLOSE]]
+`;
+
+// ---------------------------------------------------------------------------
 // CLARITY CHECK
 // ---------------------------------------------------------------------------
 const CLARITY_CHECK = `
@@ -368,6 +396,7 @@ export function getSystemPrompt(opts) {
     LANGUAGE_RULES,
     LANGUAGE_TEACHING_FLOW,
     CLARITY_CHECK,
+    INTERACTIVE_CARD_SYSTEM,
     FINNISH_STYLE,
     LEVEL_DETECTION,
     CONVERSATION_LOOP,

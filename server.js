@@ -14,6 +14,7 @@ import brainHandler from './api/brain.js';
 import agentsHandler from './api/agents.js';
 import sessionCompleteHandler from './api/session-complete.js';
 import sessionFocusHandler from './api/session-focus.js';
+import saveCardHandler from './api/save-card.js';
 import learnersHandler from './api/learners.js';
 import authHandler from './api/auth.js';
 import weeklyEmailHandler from './api/cron-weekly.js';
@@ -255,6 +256,10 @@ async function handleApi(pathname, req, res, body) {
     }
     if (route === 'session-focus') {
       await sessionFocusHandler(wrappedReq, res);
+      return true;
+    }
+    if (route === 'save-card') {
+      await saveCardHandler(wrappedReq, res);
       return true;
     }
   } catch (err) {
