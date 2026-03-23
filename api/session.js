@@ -19,6 +19,9 @@ export default async function handler(req, res) {
       else if (req.body && req.body.sdp) body = req.body.sdp;
       else if (Buffer.isBuffer(req.body)) body = req.body.toString('utf8');
     }
+    if (!body && typeof req.text === 'function') {
+      body = await req.text() || '';
+    }
 
     const contentType = (req.headers && req.headers['content-type']) || '';
     const offerSdp = contentType.includes('json') ? (JSON.parse(body || '{}').sdp || '') : body;

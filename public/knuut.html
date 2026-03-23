@@ -581,7 +581,7 @@
             'X-Session-Focus': focusFragment || '',
             'X-Exam-Mode': examMode ? 'true' : 'false'
           };
-          const resp = await fetch(SERVER_URL + '/session', {
+          const resp = await fetch(SERVER_URL + '/api/session', {
             method: 'POST',
             headers,
             body: offer.sdp || ''

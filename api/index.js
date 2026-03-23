@@ -6,6 +6,7 @@ import sessionCompleteHandler from './session-complete.js';
 import sessionFocusHandler from './session-focus.js';
 import learnersHandler from './learners.js';
 import authHandler from './auth.js';
+import sessionHandler from './session.js';
 import weeklyEmailHandler from './cron-weekly.js';
 import ykiScoreHandler from './yki-score.js';
 import { query } from './db.js';
@@ -56,6 +57,10 @@ export default async function handler(req, res) {
 
     if (route === 'auth') {
       await authHandler(wrappedReq, nres);
+      return;
+    }
+    if (route === 'session') {
+      await sessionHandler(req, res);
       return;
     }
     if (route === 'health') {
