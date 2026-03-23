@@ -10,6 +10,7 @@ Visual brain layer for Knuut AI — a Finnish voice AI for businesses and school
 
 - **Brain Graph** (`public/index.html`) — D3-force knowledge graph, drag nodes, zoom, hover
 - **Dashboard** (`public/dashboard.html`) — Agent fleet with EP/ENT/FIND/DS metrics
+- **Knuut** (`public/knuut.html`) — Voice language teacher (OpenAI Realtime API), speaks any language
 - **API** (`/api/brain`, `/api/agents`) — Neon-backed CRUD for nodes and agents
 
 ## 📁 Structure
@@ -49,11 +50,16 @@ SuvisBrain/
 ```bash
 npm install
 cp .env.example .env
-# Edit .env and add your DATABASE_URL
+# Edit .env: add DATABASE_URL (Neon) and OPENAI_API_KEY (for Knuut voice)
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The API is at `/api/brain` and `/api/agents`.
+Open [http://localhost:3000](http://localhost:3000):
+
+- `/` or `/index.html` — Brain Graph
+- `/dashboard.html` — Agent Dashboard
+- `/knuut.html` — Knuut voice language teacher
+- `/api/brain`, `/api/agents` — API
 
 ### 4. Static-only (no DB)
 

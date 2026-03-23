@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knuut AI — Language Teacher</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0d0d1a;
+      color: #e0e0f0;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    .container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .orb-container {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .content-overlay {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      max-width: 800px;
+    }
+    .nav-row {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 20;
+      justify-content: flex-start;
+    }
+    .nav-link {
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.7);
+      font-size: 11px;
+      text-decoration: none;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .nav-link:hover {
+      background: rgba(167,139,250,0.2);
+      border-color: #a78bfa;
+      color: #fff;
+    }
+    h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #a78bfa, #1d9e75);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 2px;
+    }
+    .subtitle {
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 2.5rem;
+      line-height: 1.6;
+    }
+    .talk-button {
+      padding: 18px 40px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      background: linear-gradient(135deg, #a78bfa, #1d9e75);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 32px rgba(167,139,250,0.3);
+      font-family: inherit;
+      z-index: 20;
+    }
+    .talk-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 12px 40px rgba(167,139,250,0.4);
+    }
+    .talk-button.active {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      box-shadow: 0 8px 32px rgba(239,68,68,0.4);
+    }
+    .talk-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    #voice-bars {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      margin: 2rem 0;
+      height: 50px;
+    }
+    .vb {
+      width: 5px;
+      height: 18px;
+      background: #1d9e75;
+      border-radius: 3px;
+      transition: transform 0.1s ease, opacity 0.1s ease;
+    }
+    .status-text {
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.5);
+      min-height: 24px;
+    }
+    .status-text.active {
+      color: #1d9e75;
+    }
+    @media (max-width: 768px) {
+      h1 { font-size: 2.2rem; }
+      .subtitle { font-size: 0.95rem; }
+      .talk-button { padding: 14px 28px; font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav-row">
+      <a href="index.html" class="nav-link">Brain Graph</a>
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+    </div>
+    <div class="orb-container" id="orb-root"></div>
+    <div class="content-overlay">
+      <h1>KNUUT AI</h1>
+      <p class="subtitle">Your voice teacher — speak any language. Practice with Knuut and get gentle corrections in real time.</p>
+      <div id="voice-bars">
+        <div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div>
+        <div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div>
+        <div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div>
+      </div>
+      <button id="knuut-talk-btn" class="talk-button">Talk with Knuut</button>
+      <div id="status-text" class="status-text"></div>
+    </div>
+  </div>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script>
+    (function(){
+      const btn = document.getElementById('knuut-talk-btn');
+      const statusText = document.getElementById('status-text');
+      if (!btn) return;
+
+      let pc, micStream, remoteAudioEl, isActive = false, isStarting = false;
+      let sessionTranscript = '';
+      let sessionStartTime = 0;
+      const SERVER_URL = window.location.origin;
+
+      async function getSessionFocus() {
+        try {
+          const res = await fetch('/api/session-focus');
+          const data = await res.json();
+          return data.system_prompt_fragment || '';
+        } catch (err) {
+          return '';
+        }
+      }
+
+      async function onSessionEnd() {
+        const duration = Math.round((Date.now() - sessionStartTime) / 1000);
+        if (sessionTranscript.length < 50) return;
+
+        try {
+          const res = await fetch('/api/session-complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              transcript: sessionTranscript,
+              duration_s: duration,
+              learner_language: 'fi'
+            })
+          });
+          const result = await res.json();
+          console.log('Session saved:', result.summary);
+          if (result.topics_updated || result.new_nodes_created) {
+            console.log('Brain updated:', result.topics_updated, 'nodes,', result.new_nodes_created, 'new');
+          }
+        } catch (err) {
+          console.error('Failed to save session:', err);
+        }
+        sessionTranscript = '';
+      }
+
+      function updateStatus(text, isActive = false) {
+        if (statusText) {
+          statusText.textContent = text;
+          statusText.className = 'status-text' + (isActive ? ' active' : '');
+        }
+      }
+
+      async function startKnuut(){
+        if (isActive || isStarting) return;
+        isStarting = true;
+        btn.disabled = true;
+        updateStatus('Connecting...');
+
+        try {
+          micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          updateStatus('Microphone connected');
+
+          pc = new RTCPeerConnection({
+            iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }]
+          });
+
+          if (!remoteAudioEl) {
+            remoteAudioEl = document.createElement('audio');
+            remoteAudioEl.autoplay = true;
+            remoteAudioEl.playsInline = true;
+            document.body.appendChild(remoteAudioEl);
+          }
+
+          pc.ontrack = (event) => {
+            const audioEl = document.createElement('audio');
+            audioEl.autoplay = true;
+            audioEl.playsInline = true;
+            audioEl.srcObject = event.streams[0];
+            document.body.appendChild(audioEl);
+            audioEl.play()
+              .then(() => updateStatus('Listening...', true))
+              .catch(() => {});
+            try {
+              const bars = document.querySelectorAll('#voice-bars .vb');
+              const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
+              const src2 = ctx2.createMediaStreamSource(event.streams[0]);
+              const analyser2 = ctx2.createAnalyser();
+              analyser2.fftSize = 256;
+              src2.connect(analyser2);
+              const buf2 = new Uint8Array(analyser2.frequencyBinCount);
+              const tick2 = () => {
+                analyser2.getByteFrequencyData(buf2);
+                const level2 = buf2.reduce((a,b)=>a+b,0) / (buf2.length*255);
+                bars.forEach((el, i) => {
+                  const scale = 0.5 + Math.min(1, level2*5) * (0.9 + 0.5*Math.cos((Date.now()/100)+i));
+                  el.style.transform = 'scaleY(' + scale.toFixed(2) + ')';
+                  el.style.transformOrigin = 'bottom';
+                  el.style.opacity = (0.8 + level2*0.2).toFixed(2);
+                });
+                requestAnimationFrame(tick2);
+              };
+              tick2();
+            } catch {}
+          };
+
+          pc.oniceconnectionstatechange = () => {
+            if (pc.iceConnectionState === 'connected') updateStatus('Connected', true);
+          };
+
+          micStream.getTracks().forEach(t => pc.addTrack(t, micStream));
+
+          try {
+            const bars = document.querySelectorAll('#voice-bars .vb');
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const src = ctx.createMediaStreamSource(micStream);
+            const analyser = ctx.createAnalyser();
+            analyser.fftSize = 256;
+            src.connect(analyser);
+            const buf = new Uint8Array(analyser.frequencyBinCount);
+            const tick = () => {
+              analyser.getByteFrequencyData(buf);
+              const level = buf.reduce((a,b)=>a+b,0) / (buf.length*255);
+              bars.forEach((el, i) => {
+                const scale = 0.4 + Math.min(1, level*4) * (0.6 + 0.4*Math.sin((Date.now()/120)+i));
+                el.style.transform = 'scaleY(' + scale.toFixed(2) + ')';
+                el.style.transformOrigin = 'bottom';
+                el.style.opacity = (0.7 + level*0.3).toFixed(2);
+              });
+              requestAnimationFrame(tick);
+            };
+            tick();
+          } catch {}
+
+          sessionTranscript = '';
+          sessionStartTime = Date.now();
+
+          const channel = pc.createDataChannel('oai-events');
+          channel.onopen = async () => {
+            try {
+                  channel.send(JSON.stringify({
+                type: 'response.create',
+                response: { modalities: ['audio','text'], conversation: 'auto' }
+              }));
+            } catch (e) {}
+          };
+          channel.onmessage = (event) => {
+            try {
+              const obj = JSON.parse(event.data || '{}');
+              if (obj.type === 'response.output_item.done' && obj.item?.transcript) {
+                sessionTranscript += '\n[Knuut]: ' + obj.item.transcript;
+              }
+              if (obj.type === 'conversation.item.input_audio_transcription.completed' && obj.transcript) {
+                sessionTranscript += '\n[User]: ' + obj.transcript;
+              }
+            } catch (e) {}
+          };
+
+          try { pc.addTransceiver('audio', { direction: 'sendrecv' }); } catch {}
+
+          const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false });
+          await pc.setLocalDescription(offer);
+
+          const focusFragment = await getSessionFocus();
+          const resp = await fetch(SERVER_URL + '/session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/sdp',
+              'X-Session-Focus': focusFragment || ''
+            },
+            body: offer.sdp || ''
+          });
+
+          if (!resp.ok) {
+            const errText = await resp.text();
+            throw new Error('Session failed: ' + errText);
+          }
+
+          const answerSdp = await resp.text();
+          await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+          try { await remoteAudioEl.play(); } catch {}
+
+          isActive = true;
+          btn.textContent = 'Stop Knuut';
+          btn.classList.add('active');
+          updateStatus('Ready to talk', true);
+        } catch (e) {
+          console.error(e);
+          stopKnuut();
+          updateStatus('Error: ' + (e && e.message ? e.message : 'Unknown'));
+          alert('Could not start: ' + (e && e.message ? e.message : e));
+        } finally {
+          isStarting = false;
+          btn.disabled = false;
+        }
+      }
+
+      function stopKnuut(){
+        onSessionEnd();
+        isActive = false;
+        btn.textContent = 'Talk with Knuut';
+        btn.classList.remove('active');
+        updateStatus('');
+        try { if (pc) pc.close(); } catch {}
+        pc = null;
+        if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+        if (remoteAudioEl) remoteAudioEl.srcObject = null;
+        document.querySelectorAll('#voice-bars .vb').forEach(el => {
+          el.style.transform = 'scaleY(1)';
+          el.style.opacity = '0.5';
+        });
+      }
+
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        if (isActive) stopKnuut(); else startKnuut();
+      });
+    })();
+  </script>
+
+  <script type="text/babel">
+    const { useRef, useEffect } = React;
+    function Orb({ hue = 260 }) {
+      const containerRef = useRef(null);
+      useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+        const canvas = document.createElement('canvas');
+        canvas.style.cssText = 'width:100%;height:100%;position:absolute;top:0;left:0;opacity:0.5';
+        container.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        let t = 0, raf;
+        function resize() { canvas.width = container.offsetWidth; canvas.height = container.offsetHeight; }
+        function animate() {
+          t += 0.01;
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+          const cx = canvas.width/2, cy = canvas.height/2, r = Math.min(canvas.width,canvas.height)*0.4;
+          const g = ctx.createRadialGradient(cx+Math.sin(t)*40, cy+Math.cos(t)*40, 0, cx, cy, r);
+          const h = (hue + t*15) % 360;
+          g.addColorStop(0, 'hsla('+h+',70%,60%,0.7)');
+          g.addColorStop(0.5, 'hsla('+(h+20)+',70%,50%,0.35)');
+          g.addColorStop(1, 'hsla('+(h+40)+',70%,40%,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI*2);
+          ctx.fill();
+          raf = requestAnimationFrame(animate);
+        }
+        resize();
+        animate();
+        window.addEventListener('resize', resize);
+        return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
+      }, [hue]);
+      return <div ref={containerRef} style={{width:'100%',height:'100%',position:'relative'}} />;
+    }
+    const root = ReactDOM.createRoot(document.getElementById('orb-root'));
+    root.render(<Orb hue={260} />);
+  </script>
+</body>
+</html>

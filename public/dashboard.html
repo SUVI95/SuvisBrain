@@ -74,6 +74,7 @@
 <nav>
   <a class="nav-btn active" href="dashboard.html">Dashboard</a>
   <a class="nav-btn" href="index.html">Brain Graph</a>
+  <a class="nav-btn" href="knuut.html">Knuut</a>
   <a class="nav-btn" href="#">Conversations</a>
   <a class="nav-btn" href="#">Leads</a>
   <a class="nav-btn" href="#">Settings</a>
@@ -111,40 +112,66 @@
 <div class="agent-grid" id="agent-grid"></div>
 
 <script>
-const agents = [
-  { name:'Hank',   role:'Systems Engineer',   color:'#60a5fa', ep:112, ent:632, find:0,  ds:2,  tick:'1m',  sleep:'13h' },
-  { name:'Jules',  role:'Head of User Face',  color:'#1d9e75', ep:15,  ent:153, find:0,  ds:0,  tick:'1m',  sleep:'13h' },
-  { name:'Cleo',   role:'Head of Personal',   color:'#a78bfa', ep:0,   ent:0,   find:1,  ds:0,  tick:'1m',  sleep:'13h' },
-  { name:'Atlas',  role:'Head of Research',   color:'#f59e0b', ep:1,   ent:30,  find:0,  ds:0,  tick:'1m',  sleep:'13h' },
-  { name:'Adrian', role:'Video Production',   color:'#d45a5a', ep:6,   ent:15,  find:0,  ds:8,  tick:'—',   sleep:'58m' },
-  { name:'Nelli',  role:'Finnish Language',   color:'#34d399', ep:22,  ent:88,  find:3,  ds:1,  tick:'5m',  sleep:'2h'  },
-  { name:'Nova',   role:'Sales Qualifier',    color:'#f472b6', ep:41,  ent:210, find:7,  ds:0,  tick:'1m',  sleep:'8h'  },
-];
+async function loadDashboard() {
+  let agentData = [];
+  try {
+    const res = await fetch('/api/agents');
+    const data = await res.json();
+    agentData = data.agents || [];
+  } catch (err) {
+    console.error('Failed to load agents:', err);
+    document.getElementById('agent-grid').innerHTML =
+      '<p style="color:rgba(255,255,255,0.3);font-size:12px">Could not reach API — is the server running?</p>';
+    return;
+  }
 
-const grid = document.getElementById('agent-grid');
-agents.forEach(a => {
-  grid.innerHTML += `
-    <div class="agent-card">
-      <div class="agent-head">
-        <div class="agent-dot" style="background:${a.color}"></div>
-        <div>
-          <div class="agent-name">${a.name}</div>
-          <div class="agent-role">${a.role}</div>
+  let brainStats = { nodes: [], links: [] };
+  try {
+    const res = await fetch('/api/brain');
+    brainStats = await res.json();
+  } catch (err) {
+    console.warn('Brain stats unavailable');
+  }
+
+  const totalEpisodes = agentData.reduce((sum, a) => sum + parseInt(a.episode_count ?? 0, 10), 0);
+  const totalNodes = (brainStats.nodes || []).length;
+  const activeAgents = agentData.filter(a => (a.status || 'active') === 'active').length;
+
+  const statCards = document.querySelectorAll('.stat-card');
+  if (statCards[0]) statCards[0].querySelector('.stat-value').textContent = totalEpisodes.toLocaleString();
+  if (statCards[1]) statCards[1].querySelector('.stat-value').textContent = totalNodes;
+  if (statCards[2]) statCards[2].querySelector('.stat-value').textContent = activeAgents;
+
+  const grid = document.getElementById('agent-grid');
+  grid.innerHTML = '';
+
+  agentData.forEach(a => {
+    const lastActive = a.last_active
+      ? new Date(a.last_active).toLocaleString('fi-FI', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })
+      : 'never';
+
+    grid.innerHTML += `
+      <div class="agent-card">
+        <div class="agent-head">
+          <div class="agent-dot" style="background:${a.color || '#888'}"></div>
+          <div>
+            <div class="agent-name">${a.name}</div>
+            <div class="agent-role">${a.role || '—'}</div>
+          </div>
+          <span class="ok-badge">${a.status || 'active'}</span>
         </div>
-        <span class="ok-badge">OK</span>
-      </div>
-      <div class="agent-metrics">
-        <div class="metric"><div class="metric-val">${a.ep}</div><div class="metric-key">EP</div></div>
-        <div class="metric"><div class="metric-val">${a.ent}</div><div class="metric-key">ENT</div></div>
-        <div class="metric"><div class="metric-val" style="color:${a.find>0?'#f59e0b':'inherit'}">${a.find}</div><div class="metric-key">FIND</div></div>
-        <div class="metric"><div class="metric-val" style="color:${a.ds>0?'#d45a5a':'inherit'}">${a.ds}</div><div class="metric-key">DS</div></div>
-      </div>
-      <div class="agent-footer">
-        <span>tick ${a.tick}</span>
-        <span>sleep ${a.sleep}</span>
-      </div>
-    </div>`;
-});
+        <div class="agent-metrics">
+          <div class="metric"><div class="metric-val">${a.episode_count ?? 0}</div><div class="metric-key">sessions</div></div>
+          <div class="metric"><div class="metric-val">${a.node_count ?? 0}</div><div class="metric-key">nodes</div></div>
+        </div>
+        <div class="agent-footer">
+          <span>last active: ${lastActive}</span>
+        </div>
+      </div>`;
+  });
+}
+
+loadDashboard();
 </script>
 </body>
 </html>

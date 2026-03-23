@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
+    "seed": "node api/seed-brain.js",
     "build": "echo 'Static + serverless'"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.9.0",
-    "dotenv": "^17.3.1"
+    "dotenv": "^17.3.1",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "vercel": "^38.0.0"

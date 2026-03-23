@@ -1,59 +1,86 @@
-/**
- * Vercel Serverless API: Brain graph
- * GET  /api/brain  → { nodes, links }
- * POST /api/brain  → create node (body: { label, type, agentId?, metadata? })
- */
+// api/brain.js — GET/POST brain nodes and edges
+import { query } from './db.js';
 
-import { getBrainGraph, createNode } from '../src/api/memory.js';
-
-export default async function handler(req, res) {
+export default async function brainHandler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+  if (req.method === 'GET') {
+    try {
+      const [nodesResult, edgesResult] = await Promise.all([
+        query(
+          `SELECT id, label, type, metadata,
+                  (metadata->>'confidence_score')::float as confidence_score
+           FROM brain_nodes ORDER BY created_at DESC`
+        ),
+        query(
+          `SELECT be.id, n1.label as source, n2.label as target, be.value
+           FROM brain_edges be
+           JOIN brain_nodes n1 ON n1.id = be.source_id
+           JOIN brain_nodes n2 ON n2.id = be.target_id`
+        ),
+      ]);
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          nodes: nodesResult.rows.map((r) => ({
+            id: r.label,
+            type: r.type,
+            confidence_score: r.confidence_score ?? 0.5,
+            db_id: r.id,
+            ...(r.metadata || {}),
+          })),
+          links: edgesResult.rows.map((r) => ({
+            source: r.source,
+            target: r.target,
+            value: r.value ?? 1,
+          })),
+        })
+      );
+    } catch (err) {
+      console.error('GET /api/brain error:', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
   }
 
-  if (!process.env.DATABASE_URL) {
-    return res.status(500).json({
-      error: 'DATABASE_URL not configured. Add it in .env or Vercel env vars.',
-    });
-  }
-
-  try {
-    if (req.method === 'GET') {
-      const graph = await getBrainGraph();
-      return res.status(200).json(graph);
+  if (req.method === 'POST') {
+    const { label, type, agent_id } = req.body || {};
+    if (!label || !type) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Missing label or type' }));
+      return;
     }
 
-    if (req.method === 'POST') {
-      const { label, type, agentId, metadata } = req.body || {};
-      if (!label || !type) {
-        return res.status(400).json({
-          error: 'Missing required fields: label, type',
-        });
-      }
-      const validTypes = ['Core', 'Memory', 'Conversation', 'Entity', 'Skill', 'Agent'];
-      if (!validTypes.includes(type)) {
-        return res.status(400).json({
-          error: `type must be one of: ${validTypes.join(', ')}`,
-        });
-      }
-      const node = await createNode({
-        label,
-        type,
-        agentId: agentId || null,
-        metadata: metadata || {},
-      });
-      return res.status(201).json(node);
-    }
+    try {
+      const nodeResult = await query(
+        `INSERT INTO brain_nodes (label, type, agent_id, metadata)
+         VALUES ($1, $2, $3, $4) RETURNING id`,
+        [label, type, agent_id ?? null, JSON.stringify({ confidence_score: 0.5 })]
+      );
+      const newId = nodeResult.rows[0].id;
 
-    return res.status(405).json({ error: 'Method not allowed' });
-  } catch (err) {
-    console.error('[api/brain]', err);
-    return res.status(500).json({
-      error: err.message || 'Database error',
-    });
+      const coreResult = await query(
+        `SELECT id FROM brain_nodes WHERE type = 'Core' LIMIT 1`
+      );
+      if (coreResult.rows.length > 0) {
+        await query(
+          `INSERT INTO brain_edges (source_id, target_id, value)
+           VALUES ($1, $2, 1)`,
+          [coreResult.rows[0].id, newId]
+        );
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, id: newId }));
+    } catch (err) {
+      console.error('POST /api/brain error:', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
   }
+
+  res.writeHead(405).end();
 }
