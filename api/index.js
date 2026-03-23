@@ -29,12 +29,12 @@ function toNodeRes(res) {
 
 async function collectBody(req) {
   if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) return req.body;
-  const raw = typeof req.body === 'string' ? req.body : (await req.text?.?.()) || '';
-  try { return JSON.parse(raw || '{}'); } catch { return {}; }
+  const raw = typeof req.body === 'string' ? req.body : (req.text ? await req.text() : '') || '';
+  try { return JSON.parse(raw || '{}'); } catch (e) { return {}; }
 }
 
 function getPathParam(req) {
-  if (req.query?.path != null) return req.query.path;
+  if (req.query && req.query.path != null) return req.query.path;
   const url = req.url || req.originalUrl || '';
   const q = url.includes('?') ? url.split('?')[1] : '';
   const params = new URLSearchParams(q);
@@ -69,10 +69,10 @@ export default async function handler(req, res) {
         return res.status(200).json({
           status: 'ok',
           counts: {
-            brain_nodes: parseInt(nodes.rows[0]?.count || 0),
-            brain_edges: parseInt(edges.rows[0]?.count || 0),
-            episodes: parseInt(episodes.rows[0]?.count || 0),
-            learners: parseInt(learners.rows[0]?.count || 0),
+          brain_nodes: parseInt((nodes.rows[0] && nodes.rows[0].count) || 0),
+          brain_edges: parseInt((edges.rows[0] && edges.rows[0].count) || 0),
+          episodes: parseInt((episodes.rows[0] && episodes.rows[0].count) || 0),
+          learners: parseInt((learners.rows[0] && learners.rows[0].count) || 0),
           },
         });
       } catch (err) {

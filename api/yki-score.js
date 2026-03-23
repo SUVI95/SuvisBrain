@@ -54,7 +54,7 @@ yki_result options: fail, pass, pass_with_distinction`;
     }),
   });
   const data = await res.json();
-  const text = (data.choices?.[0]?.message?.content || '{}').replace(/```json|```/g, '').trim();
+  const text = ((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '{}').replace(/```json|```/g, '').trim();
   return JSON.parse(text);
 }
 

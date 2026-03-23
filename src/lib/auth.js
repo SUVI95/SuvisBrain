@@ -13,13 +13,13 @@ export function signToken(payload) {
 export function verifyToken(token) {
   try {
     return jwt.verify(token, SECRET);
-  } catch {
+  } catch (e) {
     return null;
   }
 }
 
 export function getTokenFromRequest(req) {
-  const auth = req.headers?.authorization || '';
+  const auth = (req.headers && req.headers.authorization) || '';
   if (auth.startsWith('Bearer ')) return auth.slice(7);
   return null;
 }

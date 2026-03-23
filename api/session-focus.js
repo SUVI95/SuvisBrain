@@ -28,7 +28,7 @@ export default async function sessionFocusHandler(req, res) {
       label: r.label,
       type: r.type,
       confidence: r.confidence_score,
-      priority: (r.confidence_score ?? 0.5) < 0.4 ? 'urgent' : 'normal',
+      priority: (r.confidence_score != null ? r.confidence_score : 0.5) < 0.4 ? 'urgent' : 'normal',
     }));
 
     const topicNames = focusTopics.map((t) => t.label).join(', ');

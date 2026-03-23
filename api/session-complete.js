@@ -49,7 +49,7 @@ Rules:
   });
 
   const data = await response.json();
-  const text = data.choices?.[0]?.message?.content || '{}';
+  const text = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '{}';
   const clean = text.replace(/```json|```/g, '').trim();
   return JSON.parse(clean);
 }
@@ -85,10 +85,10 @@ Apply CEFR criteria: range, accuracy, fluency, interaction. Be strict but fair.`
     }),
   });
   const data = await res.json();
-  const text = (data.choices?.[0]?.message?.content || '{}').replace(/```json|```/g, '').trim();
+  const text = ((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '{}').replace(/```json|```/g, '').trim();
   try {
     return JSON.parse(text);
-  } catch {
+  } catch (e) {
     return null;
   }
 }
@@ -115,7 +115,7 @@ export default async function sessionCompleteHandler(req, res) {
     let cefrScore = null;
     if (is_mock_exam) {
       const scored = await scoreCefrRubric(transcript);
-      cefrScore = scored?.cefr_level || analysis.cefr_level_demonstrated;
+      cefrScore = (scored && scored.cefr_level) || analysis.cefr_level_demonstrated;
     }
 
     const title = is_mock_exam
@@ -126,12 +126,12 @@ export default async function sessionCompleteHandler(req, res) {
       `INSERT INTO episodes (agent_id, learner_id, title, summary, language, duration_s, raw_transcript)
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
       [
-        agent_id ?? null,
-        learner_id ?? null,
+        agent_id != null ? agent_id : null,
+        learner_id != null ? learner_id : null,
         title,
         analysis.summary,
-        learner_language ?? 'fi',
-        duration_s ?? 0,
+        learner_language != null ? learner_language : 'fi',
+        duration_s != null ? duration_s : 0,
         transcript,
       ]
     );
@@ -235,8 +235,8 @@ export default async function sessionCompleteHandler(req, res) {
       }
     }
 
-    const practiced = (analysis.topics_practiced?.length || 0) + (analysis.topics_struggled?.length || 0);
-    const created = analysis.new_topics?.length || 0;
+    const practiced = (analysis.topics_practiced && analysis.topics_practiced.length || 0) + (analysis.topics_struggled && analysis.topics_struggled.length || 0);
+    const created = (analysis.new_topics && analysis.new_topics.length) || 0;
     if (!is_mock_exam) {
       console.log(`Brain update: ${practiced} nodes updated, ${created} nodes created`);
     }

@@ -8,7 +8,7 @@ export default async function learnersHandler(req, res, pathname) {
   const learnerId = match ? match[1] : null;
 
   if (req.method === 'GET' && !learnerId) {
-    if (req.user?.role !== 'teacher') {
+    if (!req.user || req.user.role !== 'teacher') {
       res.writeHead(403, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Teacher access required' }));
       return;
@@ -35,7 +35,7 @@ export default async function learnersHandler(req, res, pathname) {
   }
 
   if (req.method === 'GET' && learnerId) {
-    if (req.user?.role === 'learner' && req.user?.id !== learnerId) {
+    if (req.user && req.user.role === 'learner' && req.user.id !== learnerId) {
       res.writeHead(403, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Can only view own progress' }));
       return;
@@ -74,20 +74,20 @@ export default async function learnersHandler(req, res, pathname) {
             ? Object.values(r.confidence_history)
             : [];
         const history = hist.map((h) => ({
-          score: typeof h?.score === 'number' ? h.score : (h?.c ?? 0.5),
-          date: h?.date || h?.t?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+          score: typeof (h && h.score) === 'number' ? h.score : (h && h.c != null ? h.c : 0.5),
+          date: (h && h.date) || (h && h.t && h.t.slice(0, 10)) || new Date().toISOString().slice(0, 10),
         }));
         return {
           label: r.label,
           type: r.type,
-          confidence: r.confidence ?? 0.5,
+          confidence: r.confidence != null ? r.confidence : 0.5,
           history,
         };
       });
 
       const episodes = episodesResult.rows || [];
       const ykiEpisodes = episodes.filter(
-        (e) => e.metadata && (e.metadata?.is_yki_exam || e.metadata?.yki_score)
+        (e) => e.metadata && (e.metadata.is_yki_exam || e.metadata.yki_score)
       );
 
       res.writeHead(200, { 'Content-Type': 'application/json' });

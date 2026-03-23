@@ -24,18 +24,18 @@ export default async function brainHandler(req, res) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(
         JSON.stringify({
-          last_session: lastEpisode.rows[0]?.created_at ?? null,
+          last_session: (lastEpisode.rows[0] && lastEpisode.rows[0].created_at) || null,
           nodes: nodesResult.rows.map((r) => ({
             id: r.label,
             type: r.type,
-            confidence_score: r.confidence_score ?? 0.5,
+            confidence_score: r.confidence_score != null ? r.confidence_score : 0.5,
             db_id: r.id,
             ...(r.metadata || {}),
           })),
           links: edgesResult.rows.map((r) => ({
             source: r.source,
             target: r.target,
-            value: r.value ?? 1,
+            value: r.value != null ? r.value : 1,
           })),
         })
       );
@@ -59,7 +59,7 @@ export default async function brainHandler(req, res) {
       const nodeResult = await query(
         `INSERT INTO brain_nodes (label, type, agent_id, metadata)
          VALUES ($1, $2, $3, $4) RETURNING id`,
-        [label, type, agent_id ?? null, JSON.stringify({ confidence_score: 0.5 })]
+        [label, type, agent_id != null ? agent_id : null, JSON.stringify({ confidence_score: 0.5 })]
       );
       const newId = nodeResult.rows[0].id;
 
