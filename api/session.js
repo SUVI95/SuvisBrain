@@ -70,7 +70,7 @@ export default async function handler(req, res, body) {
       },
       body: JSON.stringify({
         model: 'gpt-realtime-1.5',
-        voice: 'echo',
+        voice: 'cedar',
         input_audio_format: 'pcm16',
         output_audio_format: 'pcm16',
         instructions: systemPrompt,
