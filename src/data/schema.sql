@@ -25,10 +25,13 @@ create table brain_nodes (
   type        text not null check (type in ('Core','Memory','Conversation','Entity','Skill','Agent')),
   agent_id    uuid references agents(id),
   metadata    jsonb default '{}',
+  confidence_history jsonb default '[]',  -- [{t: "ISO8601", c: 0.75}, ...] for sparklines
   embedding   vector(1536),   -- for semantic search (optional)
   created_at  timestamptz default now(),
   updated_at  timestamptz default now()
 );
+
+-- Migration for existing DBs: alter table brain_nodes add column if not exists confidence_history jsonb default '[]';
 
 -- ── EDGES (brain graph links) ─────────────────────────────────
 create table brain_edges (
@@ -49,6 +52,7 @@ create table episodes (
   duration_s  int,
   lead_qualified boolean default false,
   raw_transcript text,
+  metadata    jsonb default '{}',
   created_at  timestamptz default now()
 );
 

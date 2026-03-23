@@ -134,6 +134,16 @@
     .status-text.active {
       color: #1d9e75;
     }
+    .exam-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
+    .exam-toggle input { cursor: pointer; }
     @media (max-width: 768px) {
       h1 { font-size: 2.2rem; }
       .subtitle { font-size: 0.95rem; }
@@ -158,6 +168,9 @@
         <div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div>
         <div class="vb"></div><div class="vb"></div><div class="vb"></div><div class="vb"></div>
       </div>
+      <label class="exam-toggle">
+        <input type="checkbox" id="exam-mode-cb"> YKI exam mode
+      </label>
       <button id="knuut-talk-btn" class="talk-button">Talk with Knuut</button>
       <div id="status-text" class="status-text"></div>
     </div>
@@ -173,14 +186,32 @@
       const statusText = document.getElementById('status-text');
       if (!btn) return;
 
+      const token = localStorage.getItem('knuut_token');
+      const user = (() => { try { return JSON.parse(localStorage.getItem('knuut_user') || '{}'); } catch { return {}; } })();
+      if (!token) {
+        location.replace('/login.html?next=' + encodeURIComponent('/knuut.html' + location.search));
+        return;
+      }
+      const urlLearnerId = new URLSearchParams(location.search).get('learner_id');
+      const learnerId = urlLearnerId || (user?.role === 'learner' ? user?.id : null);
+
+      function authHeaders() {
+        return { 'Authorization': 'Bearer ' + (localStorage.getItem('knuut_token') || '') };
+      }
+
       let pc, micStream, remoteAudioEl, isActive = false, isStarting = false;
       let sessionTranscript = '';
       let sessionStartTime = 0;
+      let examMode = false;
       const SERVER_URL = window.location.origin;
+
+      document.getElementById('exam-mode-cb')?.addEventListener('change', (e) => {
+        examMode = e.target.checked;
+      });
 
       async function getSessionFocus() {
         try {
-          const res = await fetch('/api/session-focus');
+          const res = await fetch('/api/session-focus', { headers: authHeaders() });
           const data = await res.json();
           return data.system_prompt_fragment || '';
         } catch (err) {
@@ -193,17 +224,24 @@
         if (sessionTranscript.length < 50) return;
 
         try {
+          const body = {
+            transcript: sessionTranscript,
+            duration_s: duration,
+            learner_language: 'fi',
+            is_mock_exam: examMode
+          };
+          if (learnerId) body.learner_id = learnerId;
+
           const res = await fetch('/api/session-complete', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              transcript: sessionTranscript,
-              duration_s: duration,
-              learner_language: 'fi'
-            })
+            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+            body: JSON.stringify(body)
           });
           const result = await res.json();
           console.log('Session saved:', result.summary);
+          if (result.cefr_score) {
+            updateStatus('YKI mock exam scored: ' + result.cefr_score, true);
+          }
           if (result.topics_updated || result.new_nodes_created) {
             console.log('Brain updated:', result.topics_updated, 'nodes,', result.new_nodes_created, 'new');
           }
@@ -222,9 +260,10 @@
 
       async function startKnuut(){
         if (isActive || isStarting) return;
+        examMode = document.getElementById('exam-mode-cb')?.checked ?? false;
         isStarting = true;
         btn.disabled = true;
-        updateStatus('Connecting...');
+        updateStatus(examMode ? 'Connecting (YKI exam mode)...' : 'Connecting...');
 
         try {
           micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -335,12 +374,14 @@
           await pc.setLocalDescription(offer);
 
           const focusFragment = await getSessionFocus();
+          const headers = {
+            'Content-Type': 'application/sdp',
+            'X-Session-Focus': focusFragment || '',
+            'X-Exam-Mode': examMode ? 'true' : 'false'
+          };
           const resp = await fetch(SERVER_URL + '/session', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/sdp',
-              'X-Session-Focus': focusFragment || ''
-            },
+            headers,
             body: offer.sdp || ''
           });
 

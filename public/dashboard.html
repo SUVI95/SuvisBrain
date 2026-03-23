@@ -114,10 +114,14 @@
 <div class="agent-grid" id="agent-grid"></div>
 
 <script>
+const token = localStorage.getItem('knuut_token');
+if (!token) location.replace('/login.html?next=' + encodeURIComponent(location.pathname || '/dashboard.html'));
+function authHdrs() { return { 'Authorization': 'Bearer ' + (localStorage.getItem('knuut_token') || '') }; }
+
 async function loadDashboard() {
   let agentData = [];
   try {
-    const res = await fetch('/api/agents');
+    const res = await fetch('/api/agents', { headers: authHdrs() });
     const data = await res.json();
     agentData = data.agents || [];
   } catch (err) {
@@ -129,7 +133,7 @@ async function loadDashboard() {
 
   let brainStats = { nodes: [], links: [] };
   try {
-    const res = await fetch('/api/brain');
+    const res = await fetch('/api/brain', { headers: authHdrs() });
     brainStats = await res.json();
   } catch (err) {
     console.warn('Brain stats unavailable');

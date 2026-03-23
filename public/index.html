@@ -114,6 +114,11 @@ import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 const COLOR = { Core:'#a78bfa', Memory:'#7b6fd4', Conversation:'#1d9e75', Entity:'#d4960a', Skill:'#d45a5a', Agent:'#60a5fa' };
 const RADIUS = { Core:18, Memory:9, Conversation:12, Entity:8, Skill:10, Agent:13 };
 
+// ── AUTH ─────────────────────────────────────────────────────────────
+const token = localStorage.getItem('knuut_token');
+if (!token) location.replace('/login.html?next=' + encodeURIComponent(location.pathname || '/index.html'));
+function authHdrs() { return { 'Authorization': 'Bearer ' + (localStorage.getItem('knuut_token') || '') }; }
+
 // ── LOAD FROM API ────────────────────────────────────────────────────
 let nodes = [];
 let links = [];
@@ -121,7 +126,7 @@ let uid = 0;
 
 async function loadBrainData() {
   try {
-    const res = await fetch('/api/brain');
+    const res = await fetch('/api/brain', { headers: authHdrs() });
     if (!res.ok) throw new Error(`API returned ${res.status}`);
     const data = await res.json();
     nodes = data.nodes || [];
@@ -276,7 +281,7 @@ window.addNode = async function(type) {
   try {
     await fetch('/api/brain', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHdrs() },
       body: JSON.stringify({ label, type }),
     });
   } catch (err) {

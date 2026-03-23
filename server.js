@@ -9,11 +9,14 @@ import { readFileSync, existsSync } from 'fs';
 import { join, extname } from 'path';
 import { fileURLToPath } from 'url';
 
+import { getTokenFromRequest, verifyToken } from './src/lib/auth.js';
 import brainHandler from './api/brain.js';
 import agentsHandler from './api/agents.js';
 import sessionCompleteHandler from './api/session-complete.js';
 import sessionFocusHandler from './api/session-focus.js';
 import learnersHandler from './api/learners.js';
+import authHandler from './api/auth.js';
+import weeklyEmailHandler from './api/cron-weekly.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PORT = 3000;
@@ -65,8 +68,22 @@ async function handleVoice(pathname, req, res) {
       }
 
       const focusFragment = req.headers['x-session-focus'] || '';
+      const examMode = (req.headers['x-exam-mode'] || '').toLowerCase() === 'true';
 
-      const LANG_TEACHER_PROMPT = `You are Knuut, a friendly, patient language teacher who can speak and teach ANY language. You adapt to the user's target language immediately.
+      const LANG_TEACHER_PROMPT = examMode
+        ? `You are conducting a YKI (Finnish national language exam) MOCK SPEAKING TEST. Formal, exam-like conditions.
+
+RULES:
+- Use formal register. No casual chat. This is an assessment.
+- Topic categories per YKI syllabus: everyday life, work/studies, society/culture, expressing opinions, describing/narrating, giving instructions.
+- Ask one question at a time. Give the candidate time to answer (30–60 seconds).
+- Do NOT correct errors during the exam — note them silently for assessment.
+- After the candidate speaks, acknowledge briefly ("Kiitos") and move to the next question.
+- Keep your own turns SHORT. You are the examiner, not a conversation partner.
+- Cover 2–3 different topic areas in the session.
+- Time pressure: gently remind if the candidate is silent for too long ("Voitko vastata?").
+${focusFragment ? '\n' + focusFragment : ''}`
+        : `You are Knuut, a friendly, patient language teacher who can speak and teach ANY language. You adapt to the user's target language immediately.
 
 CRITICAL: NEVER speak while the user speaks. Wait until they fully stop. After they stop, pause 1 second before responding. Keep responses SHORT — max 2-3 sentences. Never monologue.
 
@@ -154,7 +171,26 @@ async function handleApi(pathname, req, res, body) {
     method: req.method,
     headers: req.headers,
     body: body ? (() => { try { return JSON.parse(body); } catch { return {}; } })() : {},
+    user: null,
   };
+
+  if (route === 'auth') {
+    await authHandler(wrappedReq, res);
+    return true;
+  }
+  if (route === 'cron-weekly') {
+    await weeklyEmailHandler(req, res);
+    return true;
+  }
+
+  const token = getTokenFromRequest(req);
+  const user = token ? verifyToken(token) : null;
+  if (!user) {
+    res.writeHead(401, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Unauthorized', code: 'AUTH_REQUIRED' }));
+    return true;
+  }
+  wrappedReq.user = user;
 
   try {
     if (route === 'learners') {

@@ -8,6 +8,11 @@ export default async function learnersHandler(req, res, pathname) {
   const learnerId = match ? match[1] : null;
 
   if (req.method === 'GET' && !learnerId) {
+    if (req.user?.role !== 'teacher') {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Teacher access required' }));
+      return;
+    }
     try {
       const result = await query(`
         SELECT l.*,
@@ -30,12 +35,18 @@ export default async function learnersHandler(req, res, pathname) {
   }
 
   if (req.method === 'GET' && learnerId) {
+    if (req.user?.role === 'learner' && req.user?.id !== learnerId) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Can only view own progress' }));
+      return;
+    }
     try {
       const [learnerResult, nodesResult, episodesResult] = await Promise.all([
         query(`SELECT * FROM learners WHERE id = $1`, [learnerId]),
         query(`
           SELECT label, type,
-                 (metadata->>'confidence_score')::float as confidence
+                 (metadata->>'confidence_score')::float as confidence,
+                 COALESCE(confidence_history, '[]'::jsonb) as confidence_history
           FROM brain_nodes
           WHERE type IN ('Skill','Memory')
           ORDER BY COALESCE((metadata->>'confidence_score')::float, 0.5) ASC

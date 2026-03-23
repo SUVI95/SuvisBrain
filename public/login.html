@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knuut — Login</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f0f0f;
+      color: #e0e0f0;
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+    }
+    h1 { font-size: 24px; margin-bottom: 8px; color: #6C63FF; }
+    .sub { font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 24px; }
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 16px;
+      font-family: inherit;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #6C63FF;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    button:hover { opacity: 0.9; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .error { color: #ef4444; font-size: 12px; margin-top: 12px; }
+    .hint { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Knuut</h1>
+    <p class="sub">Sign in with your email</p>
+    <form id="login-form">
+      <input type="email" name="email" placeholder="email@example.com" required autofocus>
+      <button type="submit" id="btn">Sign in</button>
+    </form>
+    <div class="error" id="error"></div>
+    <p class="hint">Learners: use your registered email (e.g. amira@test.fi). Teachers: teacher@knuut.fi</p>
+  </div>
+  <script>
+    const form = document.getElementById('login-form');
+    const btn = document.getElementById('btn');
+    const err = document.getElementById('error');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.textContent = '';
+      btn.disabled = true;
+      const email = form.email.value.trim();
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          err.textContent = data.error || 'Login failed';
+          btn.disabled = false;
+          return;
+        }
+        localStorage.setItem('knuut_token', data.token);
+        localStorage.setItem('knuut_user', JSON.stringify({ ...data.user, role: data.role }));
+        const next = new URLSearchParams(location.search).get('next') || (data.role === 'teacher' ? '/teacher-dashboard.html' : '/student-dashboard.html');
+        location.href = next;
+      } catch (e) {
+        err.textContent = 'Network error';
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -106,6 +106,7 @@
         <a href="index.html" class="nav-link">Brain Graph</a>
         <a href="dashboard.html" class="nav-link">Agents</a>
         <a href="student-dashboard.html" class="nav-link">Student view</a>
+        <a href="#" class="nav-link" id="logout-link">Log out</a>
       </nav>
 
       <h2>Learners</h2>
@@ -131,12 +132,29 @@
   </div>
 
   <script>
+    const token = localStorage.getItem('knuut_token');
+    const user = (() => { try { return JSON.parse(localStorage.getItem('knuut_user') || '{}'); } catch { return {}; } })();
+    if (!token || user?.role !== 'teacher') {
+      location.replace('/login.html?next=' + encodeURIComponent('/teacher-dashboard.html'));
+    }
+
+    function authHeaders() {
+      return { 'Authorization': 'Bearer ' + (localStorage.getItem('knuut_token') || '') };
+    }
+
+    document.getElementById('logout-link')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('knuut_token');
+      localStorage.removeItem('knuut_user');
+      location.replace('/login.html');
+    });
+
     let learnersData = [];
     let progressCache = {};
 
     async function loadLearners() {
       try {
-        const res = await fetch('/api/learners');
+        const res = await fetch('/api/learners', { headers: authHeaders() });
         learnersData = await res.json();
         if (!Array.isArray(learnersData)) learnersData = [];
 
@@ -174,7 +192,7 @@
 
     async function fetchWeakestTopic(learnerId) {
       try {
-        const res = await fetch(`/api/learners/${learnerId}/progress`);
+        const res = await fetch(`/api/learners/${learnerId}/progress`, { headers: authHeaders() });
         const data = await res.json();
         const weakest = data.nodes?.[0]?.label;
         const el = document.querySelector(`.weakest-${learnerId}`);
@@ -194,7 +212,7 @@
       document.getElementById('panel-sessions').innerHTML = '<div class="empty-panel">Loading...</div>';
 
       try {
-        const res = await fetch(`/api/learners/${learnerId}/progress`);
+        const res = await fetch(`/api/learners/${learnerId}/progress`, { headers: authHeaders() });
         const data = await res.json();
         const episodes = data.episodes || [];
         const recent = episodes.slice(0, 5);

@@ -84,6 +84,8 @@
     .progress-fill.high { background: #22c55e; }
     .progress-fill.medium { background: #f59e0b; }
     .progress-fill.low { background: #ef4444; }
+    .spark-wrap { margin-top: 6px; }
+    .sparkline { color: rgba(108,99,255,0.5); width: 80px; height: 24px; }
     .focus-list { list-style: none; }
     .focus-list li {
       padding: 10px 14px;
@@ -124,6 +126,7 @@
       <a href="dashboard.html" class="nav-link">Agents</a>
       <a href="knuut.html" class="nav-link">Practice with Knuut</a>
       <a href="teacher-dashboard.html" class="nav-link">Teacher view</a>
+      <a href="#" class="nav-link" id="logout-link">Log out</a>
     </nav>
 
     <h2>Skill progress</h2>
@@ -143,7 +146,23 @@
   </div>
 
   <script>
-    const LEARNER_ID = '2f3825cf-1e0e-403e-b152-75dc3a08a93e';
+    const token = localStorage.getItem('knuut_token');
+    const user = (() => { try { return JSON.parse(localStorage.getItem('knuut_user') || '{}'); } catch { return {}; } })();
+    if (!token || user?.role !== 'learner') {
+      location.replace('/login.html?next=' + encodeURIComponent('/student-dashboard.html'));
+    }
+    const LEARNER_ID = user?.id;
+
+    function authHeaders() {
+      return { 'Authorization': 'Bearer ' + (localStorage.getItem('knuut_token') || '') };
+    }
+
+    document.getElementById('logout-link')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('knuut_token');
+      localStorage.removeItem('knuut_user');
+      location.replace('/login.html');
+    });
 
     async function loadStudentDashboard() {
       document.getElementById('learner-name').textContent = '—';
@@ -152,8 +171,8 @@
 
       try {
         const [progressRes, focusRes] = await Promise.all([
-          fetch(`/api/learners/${LEARNER_ID}/progress`),
-          fetch('/api/session-focus'),
+          fetch(`/api/learners/${LEARNER_ID}/progress`, { headers: authHeaders() }),
+          fetch('/api/session-focus', { headers: authHeaders() }),
         ]);
 
         if (!progressRes.ok) throw new Error('Progress fetch failed');
@@ -170,6 +189,12 @@
             const c = n.confidence ?? 0.5;
             const pct = Math.round(c * 100);
             const cls = c >= 0.8 ? 'high' : c >= 0.4 ? 'medium' : 'low';
+            const raw = n.confidence_history;
+            const hist = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? (raw.length ? Array.from(raw) : []) : []);
+            const vals = hist.map((h) => (typeof h === 'object' && h !== null && 'c' in h ? Number(h.c) : 0.5));
+            const spark = vals.length >= 2
+              ? `<svg class="sparkline" width="80" height="24" viewBox="0 0 80 24" preserveAspectRatio="none"><polyline fill="none" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.6" points="${vals.map((v, i) => (i / (vals.length - 1 || 1)) * 78 + 1 + ',' + (22 - v * 20)).join(' ')}"/></svg>`
+              : '';
             return `
               <div class="progress-bar-wrap">
                 <div class="progress-label">
@@ -179,6 +204,7 @@
                 <div class="progress-track">
                   <div class="progress-fill ${cls}" style="width:${pct}%"></div>
                 </div>
+                ${spark ? `<div class="spark-wrap">${spark}</div>` : ''}
               </div>`;
           }).join('');
         } else {
