@@ -7,73 +7,203 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #0f0f0f;
-      color: #e0e0f0;
-      font-family: 'Courier New', monospace;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #F9F7F4;
+      color: #1A1A2E;
       min-height: 100vh;
+      display: flex;
+    }
+    @keyframes slideDown {
+      from { transform: translateY(-40px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes fadeUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+    .split-left {
+      flex: 1;
+      background: linear-gradient(180deg, #003580 0%, #003580 50%, #fff 50%, #fff 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      min-height: 100vh;
+    }
+    .logo-area {
+      animation: slideDown 0.5s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .logo-name { font-size: 48px; font-weight: 800; color: #003580; letter-spacing: -1px; }
+    .tagline { font-size: 18px; color: #6B7280; margin-top: 12px; }
+    @media (max-width: 768px) {
+      body { flex-direction: column; }
+      .split-left { min-height: 200px; padding: 24px; }
+      .logo-name { font-size: 32px; }
+      .tagline { font-size: 14px; }
+    }
+    .split-right {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 40px;
     }
-    .card {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.1);
+    .form-card {
+      background: #FFFFFF;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
       border-radius: 16px;
       padding: 40px;
       width: 100%;
       max-width: 400px;
+      animation: fadeUp 0.4s ease 0.1s both;
     }
-    h1 { font-size: 24px; margin-bottom: 8px; color: #6C63FF; }
-    .sub { font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 24px; }
+    .form-card.shake { animation: shake 0.4s ease; }
+    .tabs {
+      display: flex;
+      background: #E5E7EB;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .tabs .tab {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #6B7280;
+      cursor: pointer;
+      transition: 0.2s ease;
+      font-family: inherit;
+      z-index: 1;
+    }
+    .tabs .tab.active { color: #fff; }
+    .tabs .slide {
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      left: 4px;
+      width: calc(50% - 4px);
+      background: #6C63FF;
+      border-radius: 8px;
+      transition: transform 0.2s ease;
+    }
+    .tabs .slide.teacher { transform: translateX(100%); }
+    label { display: block; font-size: 14px; font-weight: 600; color: #1A1A2E; margin-bottom: 8px; }
     input {
       width: 100%;
       padding: 14px 16px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.15);
+      border: 1px solid #E5E7EB;
       border-radius: 8px;
-      color: #fff;
-      font-size: 14px;
-      margin-bottom: 16px;
+      font-size: 16px;
       font-family: inherit;
+      margin-bottom: 20px;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    button {
+    input:focus {
+      outline: none;
+      border-color: #6C63FF;
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+    }
+    .btn-primary {
       width: 100%;
-      padding: 14px;
+      padding: 14px 28px;
       background: #6C63FF;
-      border: none;
-      border-radius: 8px;
       color: #fff;
-      font-size: 14px;
-      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 16px;
       cursor: pointer;
       font-family: inherit;
+      box-shadow: 0 4px 0 #4B44CC;
+      transition: transform 0.15s, box-shadow 0.15s;
     }
-    button:hover { opacity: 0.9; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .error { color: #ef4444; font-size: 12px; margin-top: 12px; }
-    .hint { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 20px; }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-1px); }
+    .btn-primary:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 #4B44CC; }
+    .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+    .btn-primary.loading { position: relative; color: transparent; }
+    .btn-primary.loading::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      left: 50%;
+      top: 50%;
+      margin: -12px 0 0 -12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-primary.success::before {
+      content: '✓';
+      position: absolute;
+      color: #fff;
+      font-size: 24px;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .error { color: #FF4B4B; font-size: 13px; margin-top: 12px; }
+    .hint { font-size: 12px; color: #6B7280; margin-top: 20px; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Knuut</h1>
-    <p class="sub">Sign in with your email</p>
-    <form id="login-form">
-      <input type="email" name="email" placeholder="email@example.com" required autofocus>
-      <button type="submit" id="btn">Sign in</button>
-    </form>
-    <div class="error" id="error"></div>
-    <p class="hint">Learners: use your registered email (e.g. amira@test.fi). Teachers: teacher@knuut.fi</p>
+  <div class="split-left">
+    <div class="logo-area">
+      <div class="logo-name">Knuut</div>
+      <p class="tagline">Learn Finnish. Remember everything.</p>
+    </div>
+  </div>
+  <div class="split-right">
+    <div class="form-card" id="form-card">
+      <div class="tabs">
+        <div class="slide" id="tab-slide"></div>
+        <button type="button" class="tab active" data-role="learner">Learner</button>
+        <button type="button" class="tab" data-role="teacher">Teacher</button>
+      </div>
+      <form id="login-form">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="email@example.com" required autofocus>
+        <button type="submit" class="btn-primary" id="btn">Sign in</button>
+      </form>
+      <div class="error" id="error"></div>
+      <p class="hint">Learners: amira@test.fi, pavel@test.fi. Teachers: teacher@knuut.fi</p>
+    </div>
   </div>
   <script>
     const form = document.getElementById('login-form');
     const btn = document.getElementById('btn');
     const err = document.getElementById('error');
+    const card = document.getElementById('form-card');
+
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-slide').classList.toggle('teacher', tab.dataset.role === 'teacher');
+        err.textContent = '';
+      });
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       err.textContent = '';
+      card.classList.remove('shake');
       btn.disabled = true;
+      btn.classList.add('loading');
+      btn.classList.remove('success');
       const email = form.email.value.trim();
       try {
         const res = await fetch('/api/auth/login', {
@@ -85,15 +215,25 @@
         if (!res.ok) {
           err.textContent = data.error || 'Login failed';
           btn.disabled = false;
+          btn.classList.remove('loading');
+          card.classList.add('shake');
+          setTimeout(() => card.classList.remove('shake'), 400);
           return;
         }
+        localStorage.setItem('sb_token', data.token);
+        localStorage.setItem('sb_user', JSON.stringify({ ...data.user, role: data.role }));
         localStorage.setItem('knuut_token', data.token);
         localStorage.setItem('knuut_user', JSON.stringify({ ...data.user, role: data.role }));
+        btn.classList.remove('loading');
+        btn.classList.add('success');
         const next = new URLSearchParams(location.search).get('next') || (data.role === 'teacher' ? '/teacher-dashboard.html' : '/student-dashboard.html');
-        location.href = next;
+        setTimeout(() => { location.href = next; }, 600);
       } catch (e) {
         err.textContent = 'Network error';
         btn.disabled = false;
+        btn.classList.remove('loading');
+        card.classList.add('shake');
+        setTimeout(() => card.classList.remove('shake'), 400);
       }
     });
   </script>

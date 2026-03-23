@@ -185,36 +185,57 @@
     .session-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.4);
       display: none;
       align-items: center;
       justify-content: center;
       z-index: 999;
+      animation: fadeIn 0.3s ease;
     }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .session-overlay.visible { display: flex; }
     .overlay-card {
-      background: #1a1a2e;
+      background: #fff;
       border-radius: 16px;
-      padding: 32px;
-      max-width: 400px;
+      padding: 40px;
+      max-width: 420px;
       text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
     }
-    .overlay-card h2 { font-size: 20px; margin-bottom: 12px; }
+    .overlay-card h2 { font-size: 22px; margin-bottom: 8px; color: #1A1A2E; font-family: system-ui,sans-serif; }
     .overlay-card .badge { font-size: 32px; font-weight: bold; color: #6C63FF; margin: 16px 0; }
+    .overlay-check {
+      width: 80px; height: 80px; margin: 0 auto 20px;
+    }
+    .overlay-check circle, .overlay-check path {
+      fill: none; stroke: #58CC02; stroke-width: 3;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+    .overlay-check circle { stroke-dasharray: 283; stroke-dashoffset: 283; animation: drawCircle 0.6s ease forwards; }
+    .overlay-check path { stroke-dasharray: 100; stroke-dashoffset: 100; animation: drawCheck 0.4s ease 0.5s forwards; }
+    @keyframes drawCircle { to { stroke-dashoffset: 0; } }
+    @keyframes drawCheck { to { stroke-dashoffset: 0; } }
+    .overlay-stats { display: flex; gap: 20px; justify-content: center; margin: 16px 0; flex-wrap: wrap; }
+    .overlay-stat { font-size: 14px; color: #6B7280; }
+    .overlay-summary { font-style: italic; color: #6B7280; font-size: 14px; max-width: 360px; margin: 0 auto 24px; line-height: 1.5; }
     .overlay-card .btn {
       display: inline-block;
-      padding: 12px 24px;
+      padding: 14px 28px;
       margin: 8px;
-      border-radius: 10px;
-      background: #6C63FF;
-      color: #fff;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 16px;
       text-decoration: none;
-      font-size: 14px;
       cursor: pointer;
       border: none;
       font-family: inherit;
+      box-shadow: 0 4px 0 #4B44CC;
+      transition: transform 0.15s;
     }
-    .overlay-card .btn:hover { opacity: 0.9; }
+    .overlay-card .btn:hover { transform: translateY(-1px); }
+    .overlay-card .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #4B44CC; }
+    .overlay-card .btn-primary { background: #6C63FF; color: #fff; }
+    .overlay-card .btn-success { background: #58CC02; color: #fff; box-shadow: 0 4px 0 #3da001; }
     @media (max-width: 768px) {
       h1 { font-size: 2.2rem; }
       .subtitle { font-size: 0.95rem; }
@@ -254,9 +275,13 @@
 
   <div class="session-overlay" id="session-overlay">
     <div class="overlay-card">
+      <svg class="overlay-check" viewBox="0 0 80 80" id="overlay-check">
+        <circle cx="40" cy="40" r="36"/>
+        <path d="M22 40 L35 53 L58 27"/>
+      </svg>
       <h2 id="overlay-title">Session complete!</h2>
-      <p id="overlay-summary"></p>
-      <div class="badge" id="overlay-badge"></div>
+      <div class="overlay-stats" id="overlay-stats"></div>
+      <p class="overlay-summary" id="overlay-summary"></p>
       <div id="overlay-buttons"></div>
     </div>
   </div>
@@ -271,8 +296,8 @@
       const statusText = document.getElementById('status-text');
       if (!btn) return;
 
-      const token = localStorage.getItem('knuut_token');
-      const user = (() => { try { return JSON.parse(localStorage.getItem('knuut_user') || '{}'); } catch { return {}; } })();
+      const token = localStorage.getItem('sb_token') || localStorage.getItem('knuut_token');
+      const user = (() => { try { return JSON.parse(localStorage.getItem('sb_user') || localStorage.getItem('knuut_user') || '{}'); } catch { return {}; } })();
       if (!token) {
         location.replace('/login.html?next=' + encodeURIComponent('/knuut.html' + location.search));
         return;
@@ -281,7 +306,7 @@
       const learnerId = urlLearnerId || (user?.role === 'learner' ? user?.id : null);
 
       function authHeaders() {
-        return { 'Authorization': 'Bearer ' + (localStorage.getItem('knuut_token') || '') };
+        return { 'Authorization': 'Bearer ' + (localStorage.getItem('sb_token') || localStorage.getItem('knuut_token') || '') };
       }
 
       let pc, micStream, remoteAudioEl, isActive = false, isStarting = false;
@@ -364,46 +389,60 @@
               ykiResult = await scoreRes.json();
             } catch (e) { console.error('YKI score failed:', e); }
 
-            showSessionOverlay(true, result, ykiResult);
+            showSessionOverlay(true, result, ykiResult, duration);
           } else {
-            showSessionOverlay(false, result, null);
+            showSessionOverlay(false, result, null, duration);
           }
           if (result.topics_updated || result.new_nodes_created) {
             console.log('Brain updated:', result.topics_updated, 'nodes,', result.new_nodes_created, 'new');
           }
         } catch (err) {
           console.error('Failed to save session:', err);
-          showSessionOverlay(false, { summary: 'Error saving session' }, null);
+          showSessionOverlay(false, { summary: 'Error saving session' }, null, 0);
         }
         sessionTranscript = '';
       }
 
-      function showSessionOverlay(isYki, result, ykiScore) {
+      function showSessionOverlay(isYki, result, ykiScore, durationSecs) {
         const overlay = document.getElementById('session-overlay');
+        const check = document.getElementById('overlay-check');
         const title = document.getElementById('overlay-title');
+        const stats = document.getElementById('overlay-stats');
         const summary = document.getElementById('overlay-summary');
-        const badge = document.getElementById('overlay-badge');
         const buttons = document.getElementById('overlay-buttons');
+        check.style.display = isYki ? 'none' : 'block';
         overlay.classList.add('visible');
+        const close = () => overlay.classList.remove('visible');
+        const esc = (e) => { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } };
+        document.addEventListener('keydown', esc);
+        overlay.onclick = (e) => { if (e.target === overlay) close(); };
         if (isYki && ykiScore) {
-          const res = ykiScore.yki_result || ykiScore.cefr_level;
           const passed = (ykiScore.yki_result || '').includes('pass') && !(ykiScore.yki_result || '').includes('fail');
           title.textContent = 'Exam complete! Your result: ' + (passed ? 'PASS' : 'FAIL');
+          stats.innerHTML = '';
           summary.textContent = result.summary || '';
-          badge.textContent = (ykiScore.cefr_level || ykiScore.overall_score || '-') + (ykiScore.overall_score != null ? ' (' + ykiScore.overall_score + '/100)' : '');
+          summary.style.display = 'block';
           buttons.innerHTML = `
-            <a href="/yki-results.html?episode=${result.episode_id}" class="btn">See full report</a>
-            <a href="/knuut.html" class="btn">Practice weak areas</a>
+            <a href="/yki-results.html?episode=${result.episode_id}" class="btn btn-primary">See full report</a>
+            <a href="/knuut.html" class="btn btn-success">Practice weak areas</a>
           `;
         } else {
           title.textContent = 'Session complete!';
+          const m = Math.floor((durationSecs || result.duration_s || 0) / 60);
+          const s = (durationSecs || result.duration_s || 0) % 60;
+          stats.innerHTML = `
+            <span class="overlay-stat">⏱ ${m}m ${s}s</span>
+            <span class="overlay-stat">🧠 ${result.topics_updated || 0} topics practiced</span>
+            <span class="overlay-stat">✨ ${result.new_nodes_created || 0} new topics</span>
+          `;
+          stats.style.display = 'flex';
           summary.textContent = result.summary || '';
-          badge.textContent = result.cefr_level || '';
-          buttons.innerHTML = '<a href="/knuut.html" class="btn">Practice again</a><button class="btn overlay-close" style="background:rgba(255,255,255,0.2)">Close</button>';
+          summary.style.display = 'block';
+          buttons.innerHTML = `
+            <a href="/knuut.html" class="btn btn-primary">Practice again</a>
+            <a href="/student-dashboard.html" class="btn btn-success">See my progress</a>
+          `;
         }
-        overlay.addEventListener('click', (e) => {
-          if (e.target === overlay || e.target.classList.contains('overlay-close')) overlay.classList.remove('visible');
-        });
       }
 
       function hideSessionOverlay() {
