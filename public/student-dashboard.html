@@ -377,7 +377,6 @@
 
     document.getElementById('logout-link')?.addEventListener('click', e => { e.preventDefault(); ['knuut_token','knuut_user','sb_token','sb_user'].forEach(k => localStorage.removeItem(k)); location.replace('/login.html'); });
 
-    const API_BASE = window.location.origin;
     async function exportData() {
       try {
         const res = await fetch(API_BASE + '/api/user-data/export', { headers: authHeaders() });
