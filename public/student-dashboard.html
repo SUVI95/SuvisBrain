@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knuut — My Progress</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f0f0f;
+      color: #e0e0f0;
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 28px;
+    }
+    .learner-name { font-size: 24px; font-weight: bold; color: #fff; }
+    .cefr-badge {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: bold;
+      background: rgba(108,99,255,0.3);
+      color: #6C63FF;
+      border: 1px solid rgba(108,99,255,0.5);
+    }
+    .sessions-count { font-size: 14px; color: rgba(255,255,255,0.5); }
+    nav { display: flex; gap: 8px; margin-bottom: 28px; }
+    .nav-link {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.6);
+      font-size: 12px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .nav-link:hover { background: rgba(108,99,255,0.2); border-color: #6C63FF; color: #fff; }
+    h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 16px;
+    }
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .progress-bar-wrap {
+      margin-bottom: 14px;
+    }
+    .progress-bar-wrap:last-child { margin-bottom: 0; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 6px;
+      color: rgba(255,255,255,0.7);
+    }
+    .progress-track {
+      height: 10px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.3s ease;
+    }
+    .progress-fill.high { background: #22c55e; }
+    .progress-fill.medium { background: #f59e0b; }
+    .progress-fill.low { background: #ef4444; }
+    .focus-list { list-style: none; }
+    .focus-list li {
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      background: rgba(108,99,255,0.1);
+      border: 1px solid rgba(108,99,255,0.2);
+      border-radius: 8px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.9);
+    }
+    .focus-list li:last-child { margin-bottom: 0; }
+    .session-card {
+      padding: 16px;
+      margin-bottom: 12px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+    }
+    .session-card:last-child { margin-bottom: 0; }
+    .session-date { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 6px; }
+    .session-summary { font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.5; }
+    .session-duration { font-size: 11px; color: #6C63FF; margin-top: 8px; }
+    .empty-state { color: rgba(255,255,255,0.4); font-size: 13px; padding: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <div class="learner-name" id="learner-name">—</div>
+        <div class="sessions-count" id="sessions-count">0 sessions</div>
+      </div>
+      <span class="cefr-badge" id="cefr-badge">A1</span>
+    </header>
+
+    <nav>
+      <a href="index.html" class="nav-link">Brain Graph</a>
+      <a href="dashboard.html" class="nav-link">Agents</a>
+      <a href="knuut.html" class="nav-link">Practice with Knuut</a>
+      <a href="teacher-dashboard.html" class="nav-link">Teacher view</a>
+    </nav>
+
+    <h2>Skill progress</h2>
+    <div class="card" id="progress-card">
+      <div class="empty-state">Loading...</div>
+    </div>
+
+    <h2>Next session focus</h2>
+    <div class="card" id="focus-card">
+      <ul class="focus-list" id="focus-list"></ul>
+    </div>
+
+    <h2>Recent sessions</h2>
+    <div class="card" id="sessions-card">
+      <div class="empty-state">Loading...</div>
+    </div>
+  </div>
+
+  <script>
+    const LEARNER_ID = '2f3825cf-1e0e-403e-b152-75dc3a08a93e';
+
+    async function loadStudentDashboard() {
+      document.getElementById('learner-name').textContent = '—';
+      document.getElementById('cefr-badge').textContent = 'A1';
+      document.getElementById('sessions-count').textContent = '0 sessions';
+
+      try {
+        const [progressRes, focusRes] = await Promise.all([
+          fetch(`/api/learners/${LEARNER_ID}/progress`),
+          fetch('/api/session-focus'),
+        ]);
+
+        if (!progressRes.ok) throw new Error('Progress fetch failed');
+        const { learner, nodes, episodes } = await progressRes.json();
+
+        document.getElementById('learner-name').textContent = learner.name;
+        document.getElementById('cefr-badge').textContent = learner.cefr_level || 'A1';
+        document.getElementById('sessions-count').textContent =
+          (episodes?.length || 0) + ' sessions';
+
+        const progressCard = document.getElementById('progress-card');
+        if (nodes && nodes.length > 0) {
+          progressCard.innerHTML = nodes.map((n) => {
+            const c = n.confidence ?? 0.5;
+            const pct = Math.round(c * 100);
+            const cls = c >= 0.8 ? 'high' : c >= 0.4 ? 'medium' : 'low';
+            return `
+              <div class="progress-bar-wrap">
+                <div class="progress-label">
+                  <span>${n.label}</span>
+                  <span>${pct}%</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill ${cls}" style="width:${pct}%"></div>
+                </div>
+              </div>`;
+          }).join('');
+        } else {
+          progressCard.innerHTML = '<div class="empty-state">No skill data yet. Practice with Knuut!</div>';
+        }
+
+        const focusData = await focusRes.json();
+        const focusList = document.getElementById('focus-list');
+        const topics = (focusData.focus_topics || []).slice(0, 3);
+        if (topics.length > 0) {
+          focusList.innerHTML = topics.map((t) => `<li>${t.label}</li>`).join('');
+        } else {
+          focusList.innerHTML = '<li class="empty-state">All topics mastered. Try advanced practice!</li>';
+        }
+
+        const sessionsCard = document.getElementById('sessions-card');
+        if (episodes && episodes.length > 0) {
+          const recent = episodes.slice(0, 5);
+          sessionsCard.innerHTML = recent.map((e) => `
+            <div class="session-card">
+              <div class="session-date">${new Date(e.created_at).toLocaleDateString('fi-FI')}</div>
+              <div class="session-summary">${e.summary || '—'}</div>
+              <div class="session-duration">${e.duration_s || 0} min</div>
+            </div>
+          `).join('');
+        } else {
+          sessionsCard.innerHTML = '<div class="empty-state">No sessions yet. Start practicing with Knuut!</div>';
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('progress-card').innerHTML =
+          '<div class="empty-state">Could not load. Is the server running?</div>';
+      }
+    }
+
+    loadStudentDashboard();
+  </script>
+</body>
+</html>

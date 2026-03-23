@@ -1,16 +1,11 @@
 {
-  "rewrites": [
-    { "source": "/", "destination": "/public/index.html" },
-    { "source": "/index.html", "destination": "/public/index.html" },
-    { "source": "/dashboard.html", "destination": "/public/dashboard.html" },
-    { "source": "/brain", "destination": "/index.html" }
+  "version": 2,
+  "builds": [
+    { "src": "api/*.js", "use": "@vercel/node" },
+    { "src": "public/**", "use": "@vercel/static" }
   ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" }
-      ]
-    }
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }

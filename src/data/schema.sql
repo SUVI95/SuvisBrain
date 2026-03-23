@@ -61,6 +61,21 @@ create table entities (
   created_at  timestamptz default now()
 );
 
+-- ── LEARNERS ──────────────────────────────────────────────────
+create table if not exists learners (
+  id           uuid primary key default gen_random_uuid(),
+  name         text not null,
+  email        text unique,
+  mother_tongue text,
+  cefr_level   text default 'A1',
+  agent_id     uuid references agents(id),
+  created_at   timestamptz default now(),
+  updated_at   timestamptz default now()
+);
+
+alter table episodes add column if not exists learner_id uuid references learners(id);
+create index if not exists idx_episodes_learner on episodes(learner_id);
+
 -- ── INDEXES ──────────────────────────────────────────────────
 create index on brain_nodes(type);
 create index on brain_nodes(agent_id);
@@ -68,6 +83,7 @@ create index on brain_edges(source_id);
 create index on brain_edges(target_id);
 create index on episodes(agent_id);
 create index on episodes(created_at);
+create index on episodes(learner_id);
 
 -- ── SEED DATA — initial agents ────────────────────────────────
 insert into agents (name, role, color) values
@@ -78,3 +94,11 @@ insert into agents (name, role, color) values
   ('Adrian', 'Video Production',  '#d45a5a'),
   ('Nelli',  'Finnish Language',  '#34d399'),
   ('Nova',   'Sales Qualifier',   '#f472b6');
+
+-- ── SEED DATA — initial learners ────────────────────────────────
+insert into learners (name, email, mother_tongue, cefr_level) values
+  ('Amira Hassan',   'amira@test.fi',  'Arabic',   'A1'),
+  ('Pavel Sorokin',  'pavel@test.fi',  'Russian',  'A2'),
+  ('Fatuma Warsame', 'fatuma@test.fi', 'Somali',   'A1'),
+  ('Li Wei',         'li@test.fi',     'Mandarin', 'B1')
+on conflict (email) do nothing;

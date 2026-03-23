@@ -13,6 +13,7 @@ import brainHandler from './api/brain.js';
 import agentsHandler from './api/agents.js';
 import sessionCompleteHandler from './api/session-complete.js';
 import sessionFocusHandler from './api/session-focus.js';
+import learnersHandler from './api/learners.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PORT = 3000;
@@ -156,6 +157,10 @@ async function handleApi(pathname, req, res, body) {
   };
 
   try {
+    if (route === 'learners') {
+      await learnersHandler(wrappedReq, res, pathname);
+      return true;
+    }
     if (route === 'brain') {
       await brainHandler(wrappedReq, res);
       return true;

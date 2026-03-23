@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knuut — Teacher Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f0f0f;
+      color: #e0e0f0;
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .layout { display: flex; gap: 24px; max-width: 1200px; margin: 0 auto; }
+    .main { flex: 1; }
+    .side-panel {
+      width: 340px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 20px;
+      max-height: 600px;
+      overflow-y: auto;
+      display: none;
+    }
+    .side-panel.visible { display: block; }
+    header {
+      padding: 20px 0 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 28px;
+    }
+    .logo { font-size: 20px; font-weight: bold; color: #6C63FF; letter-spacing: 2px; }
+    .subtitle { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px; }
+    .stats { display: flex; gap: 24px; margin-top: 12px; }
+    .stat { font-size: 14px; color: rgba(255,255,255,0.6); }
+    .stat strong { color: #6C63FF; }
+    nav { display: flex; gap: 8px; margin-bottom: 28px; }
+    .nav-link {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.6);
+      font-size: 12px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .nav-link:hover { background: rgba(108,99,255,0.2); border-color: #6C63FF; color: #fff; }
+    h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    th {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.4);
+    }
+    tr { cursor: pointer; transition: background 0.2s; }
+    tr:hover { background: rgba(108,99,255,0.08); }
+    tr.selected { background: rgba(108,99,255,0.15); }
+    td { font-size: 13px; }
+    .session-mini {
+      padding: 12px;
+      margin-bottom: 10px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+    }
+    .session-mini:last-child { margin-bottom: 0; }
+    .session-mini-date { font-size: 10px; color: rgba(255,255,255,0.4); }
+    .session-mini-summary { font-size: 12px; margin-top: 6px; color: rgba(255,255,255,0.8); }
+    .empty-panel { color: rgba(255,255,255,0.4); font-size: 13px; padding: 20px; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <div class="main">
+      <header>
+        <div class="logo">KNUUT — Class Overview</div>
+        <div class="subtitle">Teacher dashboard</div>
+        <div class="stats">
+          <span class="stat">Learners: <strong id="total-learners">0</strong></span>
+          <span class="stat">Sessions: <strong id="total-sessions">0</strong></span>
+        </div>
+      </header>
+
+      <nav>
+        <a href="index.html" class="nav-link">Brain Graph</a>
+        <a href="dashboard.html" class="nav-link">Agents</a>
+        <a href="student-dashboard.html" class="nav-link">Student view</a>
+      </nav>
+
+      <h2>Learners</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Mother tongue</th>
+            <th>CEFR</th>
+            <th>Sessions</th>
+            <th>Last active</th>
+            <th>Weakest topic</th>
+          </tr>
+        </thead>
+        <tbody id="learner-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="side-panel" id="side-panel">
+      <h2 id="panel-learner-name">—</h2>
+      <div id="panel-sessions"></div>
+    </div>
+  </div>
+
+  <script>
+    let learnersData = [];
+    let progressCache = {};
+
+    async function loadLearners() {
+      try {
+        const res = await fetch('/api/learners');
+        learnersData = await res.json();
+        if (!Array.isArray(learnersData)) learnersData = [];
+
+        const totalSessions = learnersData.reduce((s, l) => s + (l.session_count || 0), 0);
+        document.getElementById('total-learners').textContent = learnersData.length;
+        document.getElementById('total-sessions').textContent = totalSessions;
+
+        const tbody = document.getElementById('learner-tbody');
+        tbody.innerHTML = learnersData.map((l) => {
+          const lastActive = l.last_session
+            ? new Date(l.last_session).toLocaleDateString('fi-FI', { day: 'numeric', month: 'short' })
+            : '—';
+          return `
+            <tr data-id="${l.id}">
+              <td>${l.name}</td>
+              <td>${l.mother_tongue || '—'}</td>
+              <td>${l.cefr_level || '—'}</td>
+              <td>${l.session_count || 0}</td>
+              <td>${lastActive}</td>
+              <td class="weakest-${l.id}">—</td>
+            </tr>`;
+        }).join('');
+
+        tbody.querySelectorAll('tr').forEach((row) => {
+          row.addEventListener('click', () => showLearnerSessions(row.dataset.id));
+        });
+
+        learnersData.forEach((l) => fetchWeakestTopic(l.id));
+      } catch (err) {
+        console.error(err);
+        document.getElementById('learner-tbody').innerHTML =
+          '<tr><td colspan="6" style="color:rgba(255,255,255,0.4)">Could not load learners.</td></tr>';
+      }
+    }
+
+    async function fetchWeakestTopic(learnerId) {
+      try {
+        const res = await fetch(`/api/learners/${learnerId}/progress`);
+        const data = await res.json();
+        const weakest = data.nodes?.[0]?.label;
+        const el = document.querySelector(`.weakest-${learnerId}`);
+        if (el && weakest) el.textContent = weakest;
+      } catch (e) {}
+    }
+
+    async function showLearnerSessions(learnerId) {
+      document.querySelectorAll('#learner-tbody tr').forEach((r) => r.classList.remove('selected'));
+      document.querySelector(`tr[data-id="${learnerId}"]`)?.classList.add('selected');
+
+      const learner = learnersData.find((l) => l.id === learnerId);
+      document.getElementById('panel-learner-name').textContent = learner?.name || '—';
+
+      const panel = document.getElementById('side-panel');
+      panel.classList.add('visible');
+      document.getElementById('panel-sessions').innerHTML = '<div class="empty-panel">Loading...</div>';
+
+      try {
+        const res = await fetch(`/api/learners/${learnerId}/progress`);
+        const data = await res.json();
+        const episodes = data.episodes || [];
+        const recent = episodes.slice(0, 5);
+
+        if (recent.length > 0) {
+          document.getElementById('panel-sessions').innerHTML = recent.map((e) => `
+            <div class="session-mini">
+              <div class="session-mini-date">${new Date(e.created_at).toLocaleDateString('fi-FI')}</div>
+              <div class="session-mini-summary">${e.summary || '—'}</div>
+            </div>
+          `).join('');
+        } else {
+          document.getElementById('panel-sessions').innerHTML =
+            '<div class="empty-panel">No sessions yet.</div>';
+        }
+      } catch (err) {
+        document.getElementById('panel-sessions').innerHTML =
+          '<div class="empty-panel">Could not load sessions.</div>';
+      }
+    }
+
+    loadLearners();
+  </script>
+</body>
+</html>
