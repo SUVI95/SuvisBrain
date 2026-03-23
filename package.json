@@ -1,0 +1,18 @@
+{
+  "name": "suvis-brain",
+  "version": "1.0.0",
+  "description": "Knuut AI Brain — knowledge graph and agent dashboard with Neon",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "echo 'Static + serverless'"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.0",
+    "dotenv": "^17.3.1"
+  },
+  "devDependencies": {
+    "vercel": "^38.0.0"
+  }
+}

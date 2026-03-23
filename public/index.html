@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knuut AI — Brain</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#0d0d1a; color:#e0e0f0; font-family:'Courier New',monospace; height:100vh; overflow:hidden; }
+
+    #topbar {
+      position:fixed; top:0; left:0; right:0; height:52px;
+      background:rgba(13,13,26,0.97);
+      border-bottom:1px solid rgba(255,255,255,0.07);
+      display:flex; align-items:center; padding:0 20px; gap:14px; z-index:100;
+    }
+    .logo { font-size:14px; font-weight:bold; color:#a78bfa; letter-spacing:3px; text-transform:uppercase; }
+    .divider { width:1px; height:22px; background:rgba(255,255,255,0.1); }
+    #node-count { font-size:11px; color:rgba(255,255,255,0.35); }
+    .nav-link {
+      padding:6px 14px; border-radius:6px; border:1px solid rgba(255,255,255,0.15);
+      background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.7);
+      font-size:11px; cursor:pointer; text-decoration:none;
+      transition:all 0.15s; font-family:inherit; display:inline-flex; align-items:center; gap:6px;
+    }
+    .nav-link:hover { background:rgba(167,139,250,0.2); border-color:#a78bfa; color:#fff; }
+    .nav-link.dashboard { border-color:rgba(29,158,117,0.4); color:#7dd6b8; }
+    .nav-link.dashboard:hover { background:rgba(29,158,117,0.15); border-color:#1d9e75; }
+    #add-buttons { display:flex; gap:6px; margin-left:auto; }
+    .add-btn {
+      padding:4px 12px; border-radius:20px; border:1px solid;
+      font-size:11px; cursor:pointer; background:transparent;
+      transition:all 0.15s; font-family:inherit;
+    }
+    .add-btn:hover { opacity:0.8; transform:scale(1.05); }
+    .btn-memory      { border-color:#7b6fd4; color:#b0aaee; }
+    .btn-memory:hover { background:rgba(123,111,212,0.2); }
+    .btn-conversation { border-color:#1d9e75; color:#7dd6b8; }
+    .btn-conversation:hover { background:rgba(29,158,117,0.2); }
+    .btn-entity { border-color:#d4960a; color:#f5c97a; }
+    .btn-entity:hover { background:rgba(212,150,10,0.2); }
+    .btn-skill { border-color:#d45a5a; color:#f5a0a0; }
+    .btn-skill:hover { background:rgba(212,90,90,0.2); }
+    .btn-agent { border-color:#60a5fa; color:#93c5fd; }
+    .btn-agent:hover { background:rgba(96,165,250,0.2); }
+
+    #info-panel {
+      position:fixed; bottom:20px; left:20px;
+      background:rgba(13,13,26,0.92);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:10px; padding:12px 16px;
+      font-size:11px; z-index:100; min-width:200px;
+    }
+    #info-label { color:rgba(255,255,255,0.35); margin-bottom:6px; }
+    #info-name  { font-size:14px; color:#fff; font-weight:bold; }
+    #info-type  { margin-top:2px; }
+
+    #legend {
+      position:fixed; bottom:20px; right:20px;
+      background:rgba(13,13,26,0.92);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:10px; padding:12px 16px;
+      font-size:11px; z-index:100; line-height:2;
+    }
+    .leg { display:flex; align-items:center; gap:6px; }
+    .dot { width:8px; height:8px; border-radius:50%; }
+
+    #svg-container { position:fixed; top:52px; left:0; right:0; bottom:0; }
+    svg { width:100%; height:100%; }
+  </style>
+</head>
+<body>
+
+<div id="topbar">
+  <span class="logo">KNUUT</span>
+  <div class="divider"></div>
+  <span>Brain Graph</span>
+  <div class="divider"></div>
+  <span id="node-count">0 nodes · 0 links</span>
+  <a href="dashboard.html" class="nav-link dashboard">Dashboard</a>
+  <div id="add-buttons">
+    <button class="add-btn btn-memory"       onclick="addNode('Memory')">+ Memory</button>
+    <button class="add-btn btn-conversation" onclick="addNode('Conversation')">+ Conversation</button>
+    <button class="add-btn btn-entity"       onclick="addNode('Entity')">+ Entity</button>
+    <button class="add-btn btn-skill"        onclick="addNode('Skill')">+ Skill</button>
+    <button class="add-btn btn-agent"        onclick="addNode('Agent')">+ Agent</button>
+  </div>
+</div>
+
+<div id="info-panel">
+  <div id="info-label">hover a node</div>
+  <div id="info-name">—</div>
+  <div id="info-type" style="color:rgba(255,255,255,0.4)">—</div>
+</div>
+
+<div id="legend">
+  <div class="leg"><div class="dot" style="background:#a78bfa"></div><span style="color:rgba(255,255,255,0.5)">Core</span></div>
+  <div class="leg"><div class="dot" style="background:#7b6fd4"></div><span style="color:rgba(255,255,255,0.5)">Memory</span></div>
+  <div class="leg"><div class="dot" style="background:#1d9e75"></div><span style="color:rgba(255,255,255,0.5)">Conversation</span></div>
+  <div class="leg"><div class="dot" style="background:#d4960a"></div><span style="color:rgba(255,255,255,0.5)">Entity</span></div>
+  <div class="leg"><div class="dot" style="background:#d45a5a"></div><span style="color:rgba(255,255,255,0.5)">Skill</span></div>
+  <div class="leg"><div class="dot" style="background:#60a5fa"></div><span style="color:rgba(255,255,255,0.5)">Agent</span></div>
+</div>
+
+<div id="svg-container"><svg id="brain-svg"></svg></div>
+
+<script type="module">
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+// ── COLOR & SIZE CONFIG ──────────────────────────────────────────────
+const COLOR = { Core:'#a78bfa', Memory:'#7b6fd4', Conversation:'#1d9e75', Entity:'#d4960a', Skill:'#d45a5a', Agent:'#60a5fa' };
+const RADIUS = { Core:18, Memory:9, Conversation:12, Entity:8, Skill:10, Agent:13 };
+
+// ── INITIAL DATA (replace with Neon API fetch later) ───────────────────
+let nodes = [
+  {id:"Knuut AI",        type:"Core"},
+  {id:"Finnish lesson",  type:"Conversation"},
+  {id:"Sales call",      type:"Conversation"},
+  {id:"Night call 3am",  type:"Conversation"},
+  {id:"Demo call",       type:"Conversation"},
+  {id:"School inquiry",  type:"Conversation"},
+  {id:"Lead: Matti",     type:"Entity"},
+  {id:"Lead: Aino",      type:"Entity"},
+  {id:"VillaVuokatti",   type:"Entity"},
+  {id:"Kajaani school",  type:"Entity"},
+  {id:"Student: Yusuf",  type:"Entity"},
+  {id:"Prefers short",   type:"Memory"},
+  {id:"Spoke Arabic",    type:"Memory"},
+  {id:"Language: FI",    type:"Memory"},
+  {id:"Lead qualified",  type:"Memory"},
+  {id:"Morning brief",   type:"Memory"},
+  {id:"Greet Finnish",   type:"Skill"},
+  {id:"Voice tone",      type:"Skill"},
+  {id:"HubSpot sync",    type:"Skill"},
+  {id:"Detect lang",     type:"Skill"},
+  {id:"Book meeting",    type:"Skill"},
+  {id:"Hank",            type:"Agent"},
+  {id:"Jules",           type:"Agent"},
+  {id:"Cleo",            type:"Agent"},
+];
+
+let links = [
+  {source:"Knuut AI",       target:"Finnish lesson",  value:3},
+  {source:"Knuut AI",       target:"Sales call",       value:3},
+  {source:"Knuut AI",       target:"Night call 3am",   value:2},
+  {source:"Knuut AI",       target:"Demo call",        value:2},
+  {source:"Knuut AI",       target:"School inquiry",   value:2},
+  {source:"Knuut AI",       target:"Greet Finnish",    value:2},
+  {source:"Knuut AI",       target:"Voice tone",       value:2},
+  {source:"Knuut AI",       target:"HubSpot sync",     value:2},
+  {source:"Knuut AI",       target:"Detect lang",      value:2},
+  {source:"Knuut AI",       target:"Morning brief",    value:2},
+  {source:"Knuut AI",       target:"Hank",             value:3},
+  {source:"Knuut AI",       target:"Jules",            value:3},
+  {source:"Knuut AI",       target:"Cleo",             value:3},
+  {source:"Finnish lesson", target:"Kajaani school",   value:2},
+  {source:"Finnish lesson", target:"Language: FI",     value:2},
+  {source:"Finnish lesson", target:"Spoke Arabic",     value:2},
+  {source:"Finnish lesson", target:"Student: Yusuf",   value:2},
+  {source:"Sales call",     target:"Lead: Matti",      value:2},
+  {source:"Sales call",     target:"Lead: Aino",       value:2},
+  {source:"Sales call",     target:"VillaVuokatti",    value:2},
+  {source:"Sales call",     target:"Book meeting",     value:2},
+  {source:"Sales call",     target:"Lead qualified",   value:2},
+  {source:"Lead: Matti",    target:"Prefers short",    value:1},
+  {source:"Lead: Aino",     target:"Lead qualified",   value:1},
+  {source:"VillaVuokatti",  target:"HubSpot sync",     value:2},
+  {source:"Detect lang",    target:"Spoke Arabic",     value:1},
+  {source:"Detect lang",    target:"Language: FI",     value:1},
+  {source:"Hank",           target:"Morning brief",    value:2},
+  {source:"Jules",          target:"HubSpot sync",     value:2},
+  {source:"Jules",          target:"Book meeting",     value:1},
+];
+
+let uid = nodes.length;
+
+// ── SVG SETUP ────────────────────────────────────────────────────────
+const container = document.getElementById('svg-container');
+const W = container.offsetWidth;
+const H = container.offsetHeight;
+const svg = d3.select('#brain-svg');
+const g = svg.append('g');
+
+svg.call(d3.zoom().scaleExtent([0.2, 6]).on('zoom', e => g.attr('transform', e.transform)));
+
+// ── SIMULATION ───────────────────────────────────────────────────────
+const sim = d3.forceSimulation(nodes)
+  .force('link',    d3.forceLink(links).id(d => d.id).distance(90).strength(0.5))
+  .force('charge',  d3.forceManyBody().strength(-200))
+  .force('center',  d3.forceCenter(W/2, H/2))
+  .force('collide', d3.forceCollide(d => RADIUS[d.type] + 10))
+  .on('tick', ticked);
+
+// ── RENDER ───────────────────────────────────────────────────────────
+let linkSel = g.append('g').attr('class','links');
+let nodeSel  = g.append('g').attr('class','nodes');
+let labelSel = g.append('g').attr('class','labels');
+
+function render() {
+  // Links
+  linkSel.selectAll('line').data(links, d => d.source.id+'-'+d.target.id).join(
+    enter => enter.append('line')
+      .attr('stroke','rgba(255,255,255,0.12)')
+      .attr('stroke-width', d => Math.sqrt(d.value||1))
+  );
+
+  // Nodes
+  const ng = nodeSel.selectAll('circle').data(nodes, d => d.id).join(
+    enter => {
+      const c = enter.append('circle')
+        .attr('r', d => RADIUS[d.type])
+        .attr('fill', d => COLOR[d.type])
+        .attr('fill-opacity', 0.85)
+        .attr('stroke', d => COLOR[d.type])
+        .attr('stroke-width', 1.5)
+        .attr('stroke-opacity', 0.5)
+        .style('cursor','pointer')
+        .on('mouseover', (e,d) => {
+          document.getElementById('info-label').textContent = 'selected node';
+          document.getElementById('info-name').textContent  = d.id;
+          document.getElementById('info-type').textContent  = d.type;
+          document.getElementById('info-type').style.color  = COLOR[d.type];
+          d3.select(e.currentTarget)
+            .transition().duration(120)
+            .attr('r', RADIUS[d.type]*1.6)
+            .attr('fill-opacity',1);
+        })
+        .on('mouseout', (e,d) => {
+          document.getElementById('info-label').textContent = 'hover a node';
+          document.getElementById('info-name').textContent  = '—';
+          document.getElementById('info-type').textContent  = '—';
+          document.getElementById('info-type').style.color  = 'rgba(255,255,255,0.4)';
+          d3.select(e.currentTarget)
+            .transition().duration(120)
+            .attr('r', RADIUS[d.type])
+            .attr('fill-opacity',0.85);
+        })
+        .call(d3.drag()
+          .on('start',(e,d)=>{ if(!e.active) sim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+          .on('drag', (e,d)=>{ d.fx=e.x; d.fy=e.y; })
+          .on('end',  (e,d)=>{ if(!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; })
+        );
+      return c;
+    }
+  );
+
+  // Labels
+  labelSel.selectAll('text').data(nodes, d => d.id).join(
+    enter => enter.append('text')
+      .attr('font-size','10px')
+      .attr('fill','rgba(255,255,255,0.55)')
+      .attr('dx', d => RADIUS[d.type]+5)
+      .attr('dy','0.35em')
+      .style('pointer-events','none')
+      .style('user-select','none')
+      .text(d => d.id.length > 18 ? d.id.slice(0,17)+'…' : d.id)
+  );
+
+  document.getElementById('node-count').textContent = `${nodes.length} nodes · ${links.length} links`;
+}
+
+function ticked() {
+  linkSel.selectAll('line')
+    .attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+    .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+  nodeSel.selectAll('circle')
+    .attr('cx',d=>d.x).attr('cy',d=>d.y);
+  labelSel.selectAll('text')
+    .attr('x',d=>d.x).attr('y',d=>d.y);
+}
+
+// ── ADD NODE ─────────────────────────────────────────────────────────
+const POOLS = {
+  Memory:       ['Prefers voice','Called twice','Spoke Russian','Night person','Wants demo','Likes humor'],
+  Conversation: ['Follow-up call','Trial lesson','Complaint call','Booking call','Intro call','Check-in'],
+  Entity:       ['Lead: Pekka','School: Tampere','Company: Metso','Student: Amira','Lead: Sofia','Org: City Oulu'],
+  Skill:        ['Summarize call','Email draft','Detect mood','Ask follow-up','Qualify lead','Switch lang'],
+  Agent:        ['Atlas','Adrian','Nelli','Nova','Rex'],
+};
+const poolIdx = {};
+window.addNode = function(type) {
+  poolIdx[type] = (poolIdx[type]||0);
+  const label = POOLS[type][poolIdx[type] % POOLS[type].length] + ' ' + uid;
+  poolIdx[type]++;
+  const newNode = { id: label, type, x: W/2+(Math.random()-.5)*120, y: H/2+(Math.random()-.5)*120 };
+  nodes.push(newNode);
+  const connect = nodes[Math.floor(Math.random() * Math.min(nodes.length-1, 8))];
+  links.push({ source: connect.id, target: label, value: 1 });
+  uid++;
+  sim.nodes(nodes);
+  sim.force('link').links(links);
+  sim.alpha(0.5).restart();
+  render();
+};
+
+render();
+sim.alpha(1).restart();
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Knuut AI — Dashboard</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#0d0d1a; color:#e0e0f0; font-family:'Courier New',monospace; min-height:100vh; padding:20px; }
+
+    header {
+      display:flex; align-items:center; gap:16px;
+      padding:16px 0 24px;
+      border-bottom:1px solid rgba(255,255,255,0.07);
+      margin-bottom:28px;
+    }
+    .logo { font-size:18px; font-weight:bold; color:#a78bfa; letter-spacing:3px; }
+    .subtitle { font-size:12px; color:rgba(255,255,255,0.3); }
+    .status-dot { width:8px; height:8px; border-radius:50%; background:#1d9e75; margin-left:auto; box-shadow:0 0 8px #1d9e75; }
+
+    nav { display:flex; gap:4px; margin-bottom:28px; }
+    .nav-btn {
+      padding:6px 16px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);
+      background:transparent; color:rgba(255,255,255,0.4); font-size:12px;
+      cursor:pointer; font-family:inherit; transition:all 0.15s;
+      text-decoration:none; display:inline-block;
+    }
+    .nav-btn:hover, .nav-btn.active {
+      background:rgba(167,139,250,0.15); border-color:#a78bfa; color:#a78bfa;
+    }
+
+    .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:28px; }
+    .stat-card {
+      background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+      border-radius:10px; padding:16px;
+    }
+    .stat-label { font-size:10px; color:rgba(255,255,255,0.35); margin-bottom:6px; text-transform:uppercase; letter-spacing:1px; }
+    .stat-value { font-size:24px; font-weight:bold; color:#fff; }
+    .stat-sub   { font-size:10px; color:rgba(255,255,255,0.25); margin-top:4px; }
+
+    h2 { font-size:12px; text-transform:uppercase; letter-spacing:2px; color:rgba(255,255,255,0.3); margin-bottom:14px; }
+
+    .agent-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; margin-bottom:32px; }
+    .agent-card {
+      background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+      border-radius:12px; padding:16px; transition:border-color 0.2s;
+    }
+    .agent-card:hover { border-color:rgba(167,139,250,0.3); }
+    .agent-head { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+    .agent-dot  { width:10px; height:10px; border-radius:50%; }
+    .agent-name { font-size:14px; font-weight:bold; flex:1; }
+    .agent-role { font-size:10px; color:rgba(255,255,255,0.35); }
+    .ok-badge   { font-size:9px; padding:2px 7px; border-radius:4px; background:rgba(29,158,117,0.2); color:#1d9e75; border:1px solid rgba(29,158,117,0.3); }
+    .agent-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+    .metric { text-align:center; }
+    .metric-val { font-size:16px; font-weight:bold; }
+    .metric-key { font-size:9px; color:rgba(255,255,255,0.3); margin-top:2px; }
+    .agent-footer { margin-top:12px; display:flex; justify-content:space-between; font-size:10px; color:rgba(255,255,255,0.25); }
+
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">KNUUT AI</div>
+    <div class="subtitle">Agent Fleet Dashboard</div>
+  </div>
+  <div class="status-dot pulse"></div>
+</header>
+
+<nav>
+  <a class="nav-btn active" href="dashboard.html">Dashboard</a>
+  <a class="nav-btn" href="index.html">Brain Graph</a>
+  <a class="nav-btn" href="#">Conversations</a>
+  <a class="nav-btn" href="#">Leads</a>
+  <a class="nav-btn" href="#">Settings</a>
+</nav>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-label">Total Episodes</div>
+    <div class="stat-value">1,247</div>
+    <div class="stat-sub">↑ 38 today</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Entities Known</div>
+    <div class="stat-value">892</div>
+    <div class="stat-sub">leads, schools, contacts</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Active Agents</div>
+    <div class="stat-value">5</div>
+    <div class="stat-sub">2 sleeping</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Leads Today</div>
+    <div class="stat-value" style="color:#1d9e75">14</div>
+    <div class="stat-sub">↑ 3 qualified</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Last Deep Sleep</div>
+    <div class="stat-value" style="font-size:18px">10m 21s</div>
+    <div class="stat-sub">30 consolidated</div>
+  </div>
+</div>
+
+<h2>Agent Fleet</h2>
+<div class="agent-grid" id="agent-grid"></div>
+
+<script>
+const agents = [
+  { name:'Hank',   role:'Systems Engineer',   color:'#60a5fa', ep:112, ent:632, find:0,  ds:2,  tick:'1m',  sleep:'13h' },
+  { name:'Jules',  role:'Head of User Face',  color:'#1d9e75', ep:15,  ent:153, find:0,  ds:0,  tick:'1m',  sleep:'13h' },
+  { name:'Cleo',   role:'Head of Personal',   color:'#a78bfa', ep:0,   ent:0,   find:1,  ds:0,  tick:'1m',  sleep:'13h' },
+  { name:'Atlas',  role:'Head of Research',   color:'#f59e0b', ep:1,   ent:30,  find:0,  ds:0,  tick:'1m',  sleep:'13h' },
+  { name:'Adrian', role:'Video Production',   color:'#d45a5a', ep:6,   ent:15,  find:0,  ds:8,  tick:'—',   sleep:'58m' },
+  { name:'Nelli',  role:'Finnish Language',   color:'#34d399', ep:22,  ent:88,  find:3,  ds:1,  tick:'5m',  sleep:'2h'  },
+  { name:'Nova',   role:'Sales Qualifier',    color:'#f472b6', ep:41,  ent:210, find:7,  ds:0,  tick:'1m',  sleep:'8h'  },
+];
+
+const grid = document.getElementById('agent-grid');
+agents.forEach(a => {
+  grid.innerHTML += `
+    <div class="agent-card">
+      <div class="agent-head">
+        <div class="agent-dot" style="background:${a.color}"></div>
+        <div>
+          <div class="agent-name">${a.name}</div>
+          <div class="agent-role">${a.role}</div>
+        </div>
+        <span class="ok-badge">OK</span>
+      </div>
+      <div class="agent-metrics">
+        <div class="metric"><div class="metric-val">${a.ep}</div><div class="metric-key">EP</div></div>
+        <div class="metric"><div class="metric-val">${a.ent}</div><div class="metric-key">ENT</div></div>
+        <div class="metric"><div class="metric-val" style="color:${a.find>0?'#f59e0b':'inherit'}">${a.find}</div><div class="metric-key">FIND</div></div>
+        <div class="metric"><div class="metric-val" style="color:${a.ds>0?'#d45a5a':'inherit'}">${a.ds}</div><div class="metric-key">DS</div></div>
+      </div>
+      <div class="agent-footer">
+        <span>tick ${a.tick}</span>
+        <span>sleep ${a.sleep}</span>
+      </div>
+    </div>`;
+});
+</script>
+</body>
+</html>
