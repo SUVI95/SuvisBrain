@@ -75,6 +75,8 @@ async function handleVoice(pathname, req, res) {
 
       const learnerId = body.learner_id || null;
       const mode = (body.mode || '').toLowerCase() === 'yki' ? 'yki' : 'regular';
+      const dashboardMode = body.dashboard_mode || null;
+      const reviewWords = Array.isArray(body.review_words) ? body.review_words : [];
       const focusTopics = Array.isArray(body.focusTopics) ? body.focusTopics : [];
 
       let learnerCefr = null;
@@ -134,6 +136,8 @@ async function handleVoice(pathname, req, res) {
 
       const systemPrompt = getSystemPrompt({
         mode,
+        dashboardMode,
+        reviewWords,
         focusTopics,
         learnerCefr,
         nativeLanguage,

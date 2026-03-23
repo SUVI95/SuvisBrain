@@ -1,0 +1,49 @@
+---
+description: Student dashboard and Knuut integration
+globs: public/student-dashboard.html, public/knuut.html, api/brain*.js, api/session.js, api/knuut-prompt.js
+---
+
+# Student Dashboard & Knuut Brain Integration
+
+## Overview
+The student dashboard connects to the backend "brain" system and Knuut AI. Learners see their progress, learned vocabulary, and choose learning modes that pass context to Knuut.
+
+## API Endpoints (relative paths, no localhost)
+- `GET /api/brain/skills` — Learned vocabulary/cards (word, translation_hint, user_answer, correct). Requires auth, learner role.
+- `GET /api/brain/stats` — XP, streak, level. Requires auth, learner role.
+- `GET /api/brain/sessions` — Past sessions. Requires auth, learner role.
+- `GET /api/learners/:id/progress` — Full progress (nodes, episodes, yki_episodes). Learner can only view own.
+- `GET /api/session-focus?learner_id=xxx` — Weak topics for next session.
+
+## Learning Modes
+When user clicks a mode, navigate to: `/knuut.html?mode={mode}`
+- `conversation` — Conversation Practice
+- `vocab` — Vocabulary Training
+- `culture` — Finnish Culture (sauna, work culture, sisu)
+- `yki` — YKI Exam Practice
+- `real_life` — Real-Life Situations (Kela, job interview, café)
+- `review` — Review Mistakes (pass `review_words` from localStorage or URL)
+
+Knuut receives `dashboard_mode` and `review_words` in the session API. The prompt injects mode context so Knuut knows why the learner came WITHOUT asking.
+
+## Dashboard Sections
+1. **Your Skills** — Cards from brain/skills. Filter: All / Correct / Mistakes.
+2. **Vocabulary Expansion** — Words from mistakes. "Review mistakes with Knuut" button.
+3. **Learning Modes** — Clickable cards → Knuut with mode.
+4. **Continue where you left off** — Opens Knuut (uses session-focus).
+5. **Next session focus** — Weak topics, "Practice now" → Knuut.
+6. **Recent sessions** — From episodes.
+7. **Mock exam history** — YKI episodes.
+
+## Review Mistakes Flow
+1. Dashboard sets `localStorage.sb_review_words = JSON.stringify([{word, translation_hint}, ...])`
+2. Navigate to `/knuut.html?mode=review`
+3. Knuut reads from URL or localStorage
+4. Session API receives `review_words`, injects into prompt
+5. Knuut starts reviewing those words directly
+
+## UI Requirements
+- Clean modern cards, responsive
+- Loading states (skeleton)
+- Error handling (show message if fetch fails)
+- Use relative `/api/...` paths only

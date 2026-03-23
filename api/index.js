@@ -1,6 +1,9 @@
 // Vercel single API entry — rewrite sends /api/auth, /api/brain, etc. to /api?path=auth
 import { getTokenFromRequest, verifyToken } from '../src/lib/auth.js';
 import brainHandler from './brain.js';
+import brainSkillsHandler from './brain-skills.js';
+import brainStatsHandler from './brain-stats.js';
+import brainSessionsHandler from './brain-sessions.js';
 import agentsHandler from './agents.js';
 import sessionCompleteHandler from './session-complete.js';
 import sessionFocusHandler from './session-focus.js';
@@ -122,7 +125,13 @@ export default async function handler(req, res) {
       if (route === 'learners') {
         return learnersHandler(wrappedReq, nres, '/api/learners' + (pathSegs.length > 1 ? '/' + pathSegs.slice(1).join('/') : ''));
       }
-      if (route === 'brain') return brainHandler(wrappedReq, nres);
+      if (route === 'brain') {
+        const sub = pathSegs[1];
+        if (sub === 'skills') return brainSkillsHandler(wrappedReq, nres);
+        if (sub === 'stats') return brainStatsHandler(wrappedReq, nres);
+        if (sub === 'sessions') return brainSessionsHandler(wrappedReq, nres);
+        return brainHandler(wrappedReq, nres);
+      }
       if (route === 'agents') return agentsHandler(wrappedReq, nres);
       if (route === 'session-complete') return sessionCompleteHandler(wrappedReq, nres);
       if (route === 'session-focus') return sessionFocusHandler(wrappedReq, nres);

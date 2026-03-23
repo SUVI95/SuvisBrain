@@ -143,6 +143,38 @@
     }
     .btn-practice:hover { transform: translateY(-1px); }
     .btn-practice:active { transform: translateY(2px); box-shadow: 0 2px 0 #4B44CC; }
+    .mode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .mode-card {
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(108,99,255,0.08), rgba(168,85,247,0.08));
+      border: 1px solid rgba(108,99,255,0.2);
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .mode-card:hover { background: rgba(108,99,255,0.15); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(108,99,255,0.2); }
+    .filter-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .filter-btn { padding: 8px 16px; border-radius: 8px; border: 1px solid #E5E7EB; background: #fff; cursor: pointer; font-size: 13px; font-family: inherit; }
+    .filter-btn:hover { border-color: #6C63FF; color: #6C63FF; }
+    .filter-btn.active { background: #6C63FF; color: #fff; border-color: #6C63FF; }
+    .skill-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .skill-card-item {
+      padding: 14px;
+      background: #f8f9fa;
+      border: 1px solid #E5E7EB;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+    .skill-card-item strong { display: block; font-size: 15px; margin-bottom: 4px; }
+    .skill-card-item .hint { color: #6B7280; font-size: 12px; margin-bottom: 4px; }
+    .skill-card-item .status { font-size: 11px; }
+    .vocab-hint { color: #6B7280; font-size: 13px; margin-bottom: 12px; }
+    .vocab-mistake-chip { display: inline-block; padding: 6px 12px; margin: 4px; background: rgba(255,75,75,0.1); border-radius: 8px; font-size: 12px; cursor: pointer; }
+    .continue-card { padding: 16px; }
+    .btn-continue { width: 100%; padding: 14px; font-size: 15px; }
     .session-timeline { position: relative; padding-left: 24px; border-left: 2px solid #E5E7EB; margin-left: 8px; }
     .session-item {
       position: relative;
@@ -241,12 +273,40 @@
       </div>
     </div>
 
+    <div class="card continue-card">
+      <button class="btn-practice btn-continue" onclick="continueWhereLeftOff()">▶ Continue where you left off</button>
+    </div>
+
+    <h2>Learning modes</h2>
+    <div class="card">
+      <div class="mode-grid" id="mode-grid">
+        <div class="mode-card" data-mode="conversation">🗣 Conversation Practice</div>
+        <div class="mode-card" data-mode="vocab">🧠 Vocabulary Training</div>
+        <div class="mode-card" data-mode="culture">🇫🇮 Finnish Culture</div>
+        <div class="mode-card" data-mode="yki">🎯 YKI Exam Practice</div>
+        <div class="mode-card" data-mode="real_life">🏢 Real-Life Situations</div>
+      </div>
+    </div>
+
     <h2>Your skills</h2>
     <div class="card" id="skill-card">
+      <div class="filter-row">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="correct">Correct</button>
+        <button class="filter-btn" data-filter="mistakes">Mistakes</button>
+      </div>
+      <div class="skill-cards" id="skill-cards"></div>
       <div class="skill-grid" id="skill-grid"></div>
     </div>
 
     <div class="celebration-card" id="celebration-card" style="display:none"></div>
+
+    <h2>Vocabulary expansion</h2>
+    <div class="card" id="vocab-expansion">
+      <p class="vocab-hint">Practice words you got wrong to strengthen them.</p>
+      <div id="vocab-mistakes"></div>
+      <button class="btn-practice" id="review-mistakes-btn" style="display:none">Review mistakes with Knuut</button>
+    </div>
 
     <h2>Next session focus</h2>
     <div class="card">
@@ -284,6 +344,24 @@
       e.preventDefault();
       ['knuut_token', 'knuut_user', 'sb_token', 'sb_user'].forEach(k => localStorage.removeItem(k));
       location.replace('/login.html');
+    });
+
+    function startMode(mode) {
+      window.location.href = '/knuut.html?mode=' + encodeURIComponent(mode);
+    }
+
+    function reviewMistakes() {
+      const mistakes = window.__mistakeWords || [];
+      localStorage.setItem('sb_review_words', JSON.stringify(mistakes));
+      window.location.href = '/knuut.html?mode=review';
+    }
+
+    function continueWhereLeftOff() {
+      window.location.href = '/knuut.html';
+    }
+
+    document.querySelectorAll('.mode-card').forEach((el) => {
+      el.addEventListener('click', () => startMode(el.dataset.mode));
     });
 
     const STORAGE_KEY = 'sb_skill_scores_' + LEARNER_ID;
@@ -345,28 +423,81 @@
       return streak;
     }
 
+    let skillsFilter = 'all';
+    let allSkills = [];
+
+    function renderSkillCards(skills) {
+      const filtered = skillsFilter === 'all' ? skills : skillsFilter === 'correct' ? skills.filter((s) => s.correct) : skills.filter((s) => !s.correct);
+      const container = document.getElementById('skill-cards');
+      const grid = document.getElementById('skill-grid');
+      if (skills.length === 0) {
+        container.innerHTML = '<div style="grid-column:1/-1;color:#6B7280;padding:20px">No words learned yet. Practice with Knuut!</div>';
+        container.style.display = 'block';
+        grid.style.display = 'none';
+        return;
+      }
+      container.innerHTML = filtered.map((s) => `
+        <div class="skill-card-item">
+          <strong>${escapeHtml(s.word)}</strong>
+          <div class="hint">${escapeHtml(s.translation_hint || '')}</div>
+          ${s.user_answer ? '<div class="hint">You wrote: ' + escapeHtml(s.user_answer) + '</div>' : ''}
+          <span class="status">${s.correct ? '✅ Correct' : '❌ Mistake'}</span>
+        </div>
+      `).join('');
+      grid.style.display = 'none';
+      container.style.display = 'grid';
+      document.querySelectorAll('.filter-btn').forEach((b) => {
+        b.classList.toggle('active', b.dataset.filter === skillsFilter);
+        b.onclick = () => { skillsFilter = b.dataset.filter; renderSkillCards(allSkills); };
+      });
+    }
+
+    function escapeHtml(s) {
+      if (!s) return '';
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
     async function loadStudentDashboard() {
-      document.getElementById('skill-grid').innerHTML = '<div class="skeleton" style="height:80px;grid-column:1/-1"></div>';
+      document.getElementById('skill-cards').innerHTML = '<div class="skeleton" style="height:80px;grid-column:1/-1"></div>';
       document.getElementById('focus-cards').innerHTML = '<div class="skeleton" style="height:100px"></div><div class="skeleton" style="height:100px"></div><div class="skeleton" style="height:100px"></div>';
       document.getElementById('sessions-list').innerHTML = '<div class="skeleton" style="height:60px;margin-bottom:12px"></div><div class="skeleton" style="height:60px"></div>';
 
       try {
-        const [progressRes, focusRes] = await Promise.all([
-          fetch(`/api/learners/${LEARNER_ID}/progress`, { headers: authHeaders() }),
-          fetch('/api/session-focus', { headers: authHeaders() }),
+        const [progressRes, focusRes, skillsRes, statsRes] = await Promise.all([
+          fetch('/api/learners/' + LEARNER_ID + '/progress', { headers: authHeaders() }),
+          fetch('/api/session-focus?learner_id=' + encodeURIComponent(LEARNER_ID), { headers: authHeaders() }),
+          fetch('/api/brain/skills', { headers: authHeaders() }),
+          fetch('/api/brain/stats', { headers: authHeaders() }),
         ]);
 
         if (!progressRes.ok) throw new Error('Progress fetch failed');
         const { learner, nodes, episodes, yki_episodes } = await progressRes.json();
 
-        const streak = computeStreak(episodes);
-        const xpWeek = (episodes || []).filter((e) => {
-          const d = new Date(e.created_at);
-          const now = new Date();
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          return d >= weekAgo;
-        }).length * 50;
-        const xpGoal = 500;
+        const skillsData = skillsRes.ok ? await skillsRes.json() : [];
+        allSkills = Array.isArray(skillsData) ? skillsData : [];
+        renderSkillCards(allSkills);
+        document.querySelectorAll('.filter-btn').forEach((b) => {
+          b.onclick = () => { skillsFilter = b.dataset.filter; renderSkillCards(allSkills); };
+        });
+
+        const mistakes = allSkills.filter((s) => !s.correct);
+        window.__mistakeWords = mistakes.map((s) => ({ word: s.word, translation_hint: s.translation_hint }));
+        const vocabMistakes = document.getElementById('vocab-mistakes');
+        const reviewBtn = document.getElementById('review-mistakes-btn');
+        if (mistakes.length > 0) {
+          vocabMistakes.innerHTML = mistakes.slice(0, 10).map((s) => '<span class="vocab-mistake-chip">' + escapeHtml(s.word) + '</span>').join('');
+          reviewBtn.style.display = 'inline-block';
+          reviewBtn.onclick = reviewMistakes;
+        } else {
+          vocabMistakes.innerHTML = '<span style="color:#6B7280">No mistakes to review yet. Keep practicing!</span>';
+        }
+
+        const stats = statsRes.ok ? await statsRes.json() : {};
+        const xpWeek = stats.xp || 0;
+        const xpGoal = stats.xp_goal || 500;
+        const streak = stats.streak != null ? stats.streak : computeStreak(episodes);
 
         document.getElementById('learner-name').textContent = learner?.name || '—';
         document.getElementById('cefr-badge').textContent = learner?.cefr_level || 'A1';
@@ -406,7 +537,8 @@
 
         const skillGrid = document.getElementById('skill-grid');
         if (nodes && nodes.length > 0) {
-          skillGrid.innerHTML = nodes.map((n, idx) => {
+          skillGrid.style.display = 'grid';
+          skillGrid.innerHTML = '<div style="grid-column:1/-1;font-size:12px;color:#6B7280;margin-bottom:12px">Topic mastery</div>' + nodes.map((n, idx) => {
             const c = n.confidence ?? 0.5;
             const pct = Math.round(c * 100);
             const cls = c > 0.8 ? 'mastered' : c >= 0.4 ? 'learning' : 'locked';

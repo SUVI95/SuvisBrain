@@ -381,8 +381,17 @@
         location.replace('/login.html?next=' + encodeURIComponent('/knuut.html' + location.search));
         return;
       }
-      const urlLearnerId = new URLSearchParams(location.search).get('learner_id');
+      const params = new URLSearchParams(location.search);
+      const urlLearnerId = params.get('learner_id');
       const learnerId = urlLearnerId || (user?.role === 'learner' ? user?.id : null);
+      const dashboardMode = params.get('mode') || null;
+      const reviewWordsParam = params.get('review_words');
+      let reviewWords = [];
+      if (dashboardMode === 'review') {
+        try {
+          reviewWords = reviewWordsParam ? JSON.parse(decodeURIComponent(reviewWordsParam)) : JSON.parse(localStorage.getItem('sb_review_words') || '[]');
+        } catch (e) { reviewWords = []; }
+      }
 
       function authHeaders() {
         return { 'Authorization': 'Bearer ' + (localStorage.getItem('sb_token') || localStorage.getItem('knuut_token') || '') };
@@ -916,15 +925,18 @@
           await pc.setLocalDescription(offer);
 
           const focusData = await getSessionFocus();
+          const sessionBody = {
+            sdp: offer.sdp || '',
+            learner_id: learnerId || undefined,
+            mode: examMode ? 'yki' : 'regular',
+            focusTopics: focusData.focusTopics || []
+          };
+          if (dashboardMode) sessionBody.dashboard_mode = dashboardMode;
+          if (reviewWords.length > 0) sessionBody.review_words = reviewWords;
           const resp = await fetch(SERVER_URL + '/api/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              sdp: offer.sdp || '',
-              learner_id: learnerId || undefined,
-              mode: examMode ? 'yki' : 'regular',
-              focusTopics: focusData.focusTopics || []
-            })
+            body: JSON.stringify(sessionBody)
           });
 
           if (!resp.ok) {

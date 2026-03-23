@@ -350,6 +350,15 @@ const YKI_MODE = `
 SESSION: YKI EXAM — professional tone, no corrections during exam, structured feedback at end, CEFR estimate with reasoning.
 `;
 
+const MODE_CONTEXTS = {
+  vocab: 'LEARNER CAME FROM: Vocabulary Training. Focus on teaching new words, flashcards, and vocabulary building. Do NOT ask why they came — start with vocabulary immediately.',
+  culture: 'LEARNER CAME FROM: Finnish Culture. Teach sauna, work culture, Finnish behavior, social norms, sisu. Do NOT ask why they came — start with culture content.',
+  real_life: 'LEARNER CAME FROM: Real-Life Situations. Simulate Kela, job interview, café, doctor, daily errands. Do NOT ask why they came — start a scenario immediately.',
+  conversation: 'LEARNER CAME FROM: Conversation Practice. Warm, natural dialogue. Do NOT ask why they came — start the conversation.',
+  review: 'LEARNER CAME FROM: Review Mistakes. They want to practice words they got wrong. Use the provided review words. Do NOT ask why they came — start reviewing.',
+  yki: 'LEARNER CAME FROM: YKI Exam Practice. Act as exam trainer. Do NOT ask why they came — start exam practice.',
+};
+
 const FIRST_SESSION = `
 FIRST SESSION: Introduce warmly. Ask: Where from? Why Finnish? Experience? Be extra encouraging.
 `;
@@ -391,6 +400,16 @@ function learnerMemoryAddendum(learnerName, lastEpisode) {
   return parts.length > 0 ? '\n' + parts.join(' ') + '\n' : '';
 }
 
+function modeContextAddendum(dashboardMode, reviewWords) {
+  if (!dashboardMode || !MODE_CONTEXTS[dashboardMode]) return '';
+  let out = '\n' + MODE_CONTEXTS[dashboardMode] + '\n';
+  if (dashboardMode === 'review' && reviewWords && reviewWords.length > 0) {
+    const words = reviewWords.slice(0, 15).map((w) => (typeof w === 'string' ? w : w.word)).join(', ');
+    out += 'REVIEW THESE WORDS (focus on these): ' + words + '\n';
+  }
+  return out;
+}
+
 function brainAddendum(brainNodes) {
   if (!brainNodes || brainNodes.length === 0) return '';
   const weak = brainNodes.filter((n) => (n.confidence || 0.5) < 0.6).map((n) => n.label);
@@ -417,6 +436,8 @@ const LANG_TO_ISO = {
 export function getSystemPrompt(opts) {
   const options = opts || {};
   const mode = options.mode || 'regular';
+  const dashboardMode = options.dashboardMode || null;
+  const reviewWords = options.reviewWords || [];
   const focusTopics = options.focusTopics || [];
   const learnerCefr = options.learnerCefr || null;
   const nativeLanguage = options.nativeLanguage || null;
@@ -425,7 +446,8 @@ export function getSystemPrompt(opts) {
   const brainNodes = options.brainNodes || [];
   const isFirstSession = options.isFirstSession || false;
 
-  const modePrompt = mode === 'yki' ? YKI_MODE : REGULAR_MODE;
+  const effectiveMode = dashboardMode || mode;
+  const modePrompt = effectiveMode === 'yki' ? YKI_MODE : REGULAR_MODE;
 
   return [
     CORE_IDENTITY,
@@ -446,6 +468,7 @@ export function getSystemPrompt(opts) {
     MOTIVATION,
     REAL_LIFE,
     modePrompt,
+    modeContextAddendum(dashboardMode, reviewWords),
     isFirstSession ? FIRST_SESSION : '',
     learnerMemoryAddendum(learnerName, lastEpisode),
     brainAddendum(brainNodes),

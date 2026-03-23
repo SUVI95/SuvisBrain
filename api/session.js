@@ -30,6 +30,8 @@ export default async function handler(req, res, body) {
 
     const learnerId = (body && body.learner_id) || null;
     const mode = ((body && body.mode) || 'regular').toLowerCase() === 'yki' ? 'yki' : 'regular';
+    const dashboardMode = (body && body.dashboard_mode) || null;
+    const reviewWords = Array.isArray(body && body.review_words) ? body.review_words : [];
     const focusTopics = Array.isArray(body && body.focusTopics) ? body.focusTopics : [];
 
     let learnerCefr = null;
@@ -89,6 +91,8 @@ export default async function handler(req, res, body) {
 
     const systemPrompt = getSystemPrompt({
       mode,
+      dashboardMode,
+      reviewWords,
       focusTopics,
       learnerCefr,
       nativeLanguage,
