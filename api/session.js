@@ -34,21 +34,34 @@ export default async function handler(req, res, body) {
 
     let learnerCefr = null;
     let nativeLanguage = null;
+    let learnerName = null;
     let isFirstSession = false;
+    let lastEpisode = null;
 
     if (learnerId) {
       try {
-        const learnerResult = await query(
-          `SELECT cefr_level, mother_tongue,
-                  (SELECT COUNT(*) FROM episodes WHERE learner_id = $1) AS session_count
-           FROM learners WHERE id = $2`,
-          [learnerId, learnerId]
-        );
+        const [learnerResult, lastEpisodeResult] = await Promise.all([
+          query(
+            `SELECT name, cefr_level, mother_tongue,
+                    (SELECT COUNT(*) FROM episodes WHERE learner_id = $1) AS session_count
+             FROM learners WHERE id = $2`,
+            [learnerId, learnerId]
+          ),
+          query(
+            `SELECT title, summary, raw_transcript, created_at
+             FROM episodes WHERE learner_id = $1 ORDER BY created_at DESC LIMIT 1`,
+            [learnerId]
+          ),
+        ]);
         if (learnerResult.rows && learnerResult.rows[0]) {
           const row = learnerResult.rows[0];
+          learnerName = row.name || null;
           learnerCefr = row.cefr_level || null;
           nativeLanguage = row.mother_tongue ? langToIso(row.mother_tongue) : null;
           isFirstSession = parseInt(row.session_count, 10) === 0;
+        }
+        if (lastEpisodeResult.rows && lastEpisodeResult.rows[0]) {
+          lastEpisode = lastEpisodeResult.rows[0];
         }
       } catch (err) {
         console.error('[voice] Could not fetch learner profile:', err.message);
@@ -60,6 +73,8 @@ export default async function handler(req, res, body) {
       focusTopics,
       learnerCefr,
       nativeLanguage,
+      learnerName,
+      lastEpisode,
       isFirstSession,
     });
 

@@ -373,6 +373,24 @@ function nativeLanguageAddendum(lang) {
     : '';
 }
 
+function learnerMemoryAddendum(learnerName, lastEpisode) {
+  const parts = [];
+  if (learnerName) {
+    parts.push('LEARNER NAME: ' + String(learnerName).trim() + '. Use their name naturally (e.g. "Hei ' + String(learnerName).trim() + '").');
+  }
+  if (lastEpisode) {
+    const title = lastEpisode.title || 'Previous session';
+    const summary = lastEpisode.summary || '';
+    const raw = lastEpisode.raw_transcript ? String(lastEpisode.raw_transcript) : '';
+    const excerpt = raw.replace(/\s+/g, ' ').trim().slice(0, 400) + (raw.length > 400 ? '...' : '');
+    parts.push('LAST SESSION: ' + title + '.');
+    if (summary) parts.push('Summary: ' + summary);
+    if (excerpt) parts.push('Excerpt from last conversation: "' + excerpt.replace(/"/g, "'") + '"');
+    parts.push('Reference or continue from this when relevant. Remember what you discussed.');
+  }
+  return parts.length > 0 ? '\n' + parts.join(' ') + '\n' : '';
+}
+
 const LANG_TO_ISO = {
   english: 'en', arabic: 'ar', russian: 'ru', somali: 'so', mandarin: 'zh',
   chinese: 'zh', spanish: 'es', french: 'fr', german: 'de', estonian: 'et',
@@ -388,6 +406,8 @@ export function getSystemPrompt(opts) {
   const focusTopics = options.focusTopics || [];
   const learnerCefr = options.learnerCefr || null;
   const nativeLanguage = options.nativeLanguage || null;
+  const learnerName = options.learnerName || null;
+  const lastEpisode = options.lastEpisode || null;
   const isFirstSession = options.isFirstSession || false;
 
   const modePrompt = mode === 'yki' ? YKI_MODE : REGULAR_MODE;
@@ -412,6 +432,7 @@ export function getSystemPrompt(opts) {
     REAL_LIFE,
     modePrompt,
     isFirstSession ? FIRST_SESSION : '',
+    learnerMemoryAddendum(learnerName, lastEpisode),
     focusAddendum(focusTopics),
     levelAddendum(learnerCefr),
     nativeLanguageAddendum(nativeLanguage),
