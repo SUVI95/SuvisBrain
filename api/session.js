@@ -69,7 +69,7 @@ export default async function handler(req, res, body) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-realtime-preview',
+        model: 'gpt-realtime-1.5',
         voice: 'echo',
         input_audio_format: 'pcm16',
         output_audio_format: 'pcm16',
@@ -86,7 +86,7 @@ export default async function handler(req, res, body) {
 
     const sessData = await createResp.json();
     const sessionId = sessData.id;
-    const apiUrl = 'https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview&session=' + encodeURIComponent(sessionId);
+    const apiUrl = 'https://api.openai.com/v1/realtime?model=gpt-realtime-1.5&session=' + encodeURIComponent(sessionId);
     const oaiResp = await fetch(apiUrl, {
       method: 'POST',
       headers: {
