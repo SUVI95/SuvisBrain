@@ -75,8 +75,8 @@ export default async function handler(req, res) {
       return;
     }
     if (route === 'session') {
-      const rawBody = await getRawBody(req);
-      await sessionHandler(req, res, rawBody);
+      const sessionBody = req.method === 'POST' ? await collectBody(req) : {};
+      await sessionHandler(req, res, sessionBody);
       return;
     }
     if (route === 'health') {

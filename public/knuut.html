@@ -349,9 +349,12 @@
         try {
           const res = await fetch('/api/session-focus', { headers: authHeaders() });
           const data = await res.json();
-          return data.system_prompt_fragment || '';
+          return {
+            fragment: data.system_prompt_fragment || '',
+            focusTopics: (data.focus_topics || []).map(function(t) { return t.label || t; })
+          };
         } catch (err) {
-          return '';
+          return { fragment: '', focusTopics: [] };
         }
       }
 
@@ -574,16 +577,16 @@
           const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false });
           await pc.setLocalDescription(offer);
 
-          const focusFragment = await getSessionFocus();
-          const headers = {
-            'Content-Type': 'application/json',
-            'X-Session-Focus': focusFragment || '',
-            'X-Exam-Mode': examMode ? 'true' : 'false'
-          };
+          const focusData = await getSessionFocus();
           const resp = await fetch(SERVER_URL + '/api/session', {
             method: 'POST',
-            headers,
-            body: JSON.stringify({ sdp: offer.sdp || '' })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sdp: offer.sdp || '',
+              learner_id: learnerId || undefined,
+              mode: examMode ? 'yki' : 'regular',
+              focusTopics: focusData.focusTopics || []
+            })
           });
 
           if (!resp.ok) {
