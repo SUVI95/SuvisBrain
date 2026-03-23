@@ -115,7 +115,7 @@ async function handleVoice(pathname, req, res) {
         },
         body: JSON.stringify({
           model: 'gpt-realtime-1.5',
-          voice: 'ash',
+          voice: 'verse',
           input_audio_format: 'pcm16',
           output_audio_format: 'pcm16',
           instructions: systemPrompt,
