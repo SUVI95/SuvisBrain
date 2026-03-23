@@ -235,12 +235,17 @@ export default async function sessionCompleteHandler(req, res) {
       }
     }
 
+    const practiced = (analysis.topics_practiced?.length || 0) + (analysis.topics_struggled?.length || 0);
+    const created = analysis.new_topics?.length || 0;
+    if (!is_mock_exam) {
+      console.log(`Brain update: ${practiced} nodes updated, ${created} nodes created`);
+    }
     const payload = {
       success: true,
       episode_id: episodeId,
       summary: analysis.summary,
-      topics_updated: is_mock_exam ? 0 : (analysis.topics_practiced?.length || 0) + (analysis.topics_struggled?.length || 0),
-      new_nodes_created: is_mock_exam ? 0 : (analysis.new_topics?.length || 0),
+      topics_updated: is_mock_exam ? 0 : practiced,
+      new_nodes_created: is_mock_exam ? 0 : created,
       cefr_level: analysis.cefr_level_demonstrated,
     };
     if (is_mock_exam && cefrScore) payload.cefr_score = cefrScore;

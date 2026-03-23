@@ -62,7 +62,7 @@ async function seed() {
         `INSERT INTO brain_nodes (label, type, metadata)
          VALUES ($1, $2, $3)
          RETURNING id`,
-        [n.label, n.type, JSON.stringify({ confidence_score: n.confidence })]
+        [n.label, n.type, JSON.stringify({ confidence_score: n.confidence, source: 'seed' })]
       );
       idMap[n.label] = r.rows[0].id;
       console.log(`  + ${n.label} (${n.type})`);

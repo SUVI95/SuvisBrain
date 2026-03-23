@@ -16,7 +16,12 @@
     }
     .logo { font-size:14px; font-weight:bold; color:#a78bfa; letter-spacing:3px; text-transform:uppercase; }
     .divider { width:1px; height:22px; background:rgba(255,255,255,0.1); }
-    #node-count { font-size:11px; color:rgba(255,255,255,0.35); }
+    #brain-stats { font-size:11px; color:rgba(255,255,255,0.35); display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .info-btn { cursor:pointer; color:rgba(255,255,255,0.4); font-size:14px; position:relative; }
+    .info-tooltip { display:none; position:absolute; background:#1a1a2e; border:1px solid rgba(108,99,255,0.4); border-radius:12px; padding:16px; width:260px; font-size:13px; color:rgba(255,255,255,0.8); line-height:1.6; z-index:100; top:24px; left:0; }
+    .info-btn:hover .info-tooltip, .info-btn:focus .info-tooltip { display:block; }
+    .info-tooltip ul { margin:8px 0 0 16px; }
+    .info-tooltip em { display:block; margin-top:10px; font-size:11px; color:rgba(255,255,255,0.5); }
     .nav-link {
       padding:6px 14px; border-radius:6px; border:1px solid rgba(255,255,255,0.15);
       background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.7);
@@ -75,9 +80,24 @@
   <span class="logo">KNUUT</span>
   <div class="divider"></div>
   <span>Knuut's Memory Graph</span>
+  <span class="info-btn" tabindex="0">
+    ⓘ
+    <div class="info-tooltip">
+      <strong>How Knuut's brain grows</strong>
+      <ul>
+        <li>Each voice session adds new topic nodes</li>
+        <li>Practiced topics get brighter (higher confidence)</li>
+        <li>Struggling topics get dimmer</li>
+        <li>Nodes with confidence > 85% are mastered</li>
+        <li>New vocab and grammar patterns create new connections</li>
+      </ul>
+      <em>The brain starts with seed data and grows from real sessions.</em>
+    </div>
+  </span>
   <span style="font-size:10px;color:rgba(255,255,255,0.35)">Internal — teacher view only</span>
   <div class="divider"></div>
-  <span id="node-count">0 nodes · 0 links</span>
+  <div id="brain-stats">0 nodes · 0 links</div>
+  <span id="last-session" style="font-size:10px;color:rgba(255,255,255,0.35)"></span>
   <a href="dashboard.html" class="nav-link dashboard">Dashboard</a>
   <a href="knuut.html" class="nav-link" style="border-color:rgba(29,158,117,0.5);color:#7dd6b8">Knuut</a>
   <a href="student-dashboard.html" class="nav-link">Student</a>
@@ -139,17 +159,80 @@ async function loadBrainData() {
     links = data.links || [];
     uid = nodes.length;
 
+    if (nodes.length === 0) {
+      document.getElementById('svg-container').innerHTML = `
+        <div style="
+          display:flex; flex-direction:column; align-items:center;
+          justify-content:center; height:100%; gap:16px;
+          color:rgba(255,255,255,0.4); font-family:system-ui;
+        ">
+          <div style="font-size:48px">🧠</div>
+          <div style="font-size:18px; font-weight:600">Brain is empty</div>
+          <div style="font-size:13px; text-align:center; max-width:300px; line-height:1.6">
+            No nodes in Neon yet. Run the seed script to populate
+            the initial brain, then Knuut will grow it automatically
+            after each session.
+          </div>
+          <div style="
+            background:rgba(108,99,255,0.2); border:1px solid #6C63FF;
+            border-radius:8px; padding:12px 20px; font-size:12px;
+            font-family:monospace; color:#A89CFF;
+          ">node api/seed-brain.js</div>
+          <button onclick="loadBrainData()" style="
+            margin-top:8px; background:#6C63FF; color:white;
+            border:none; border-radius:8px; padding:10px 20px;
+            font-size:14px; cursor:pointer;
+          ">Retry</button>
+        </div>
+      `;
+      document.getElementById('brain-stats').innerHTML = '0 nodes · 0 links';
+      document.getElementById('last-session').textContent =
+        'No sessions yet — brain grows after first Knuut session';
+      return;
+    }
+
+    const containerEl = document.getElementById('svg-container');
+    if (!document.getElementById('brain-svg')) {
+      containerEl.innerHTML = '<svg id="brain-svg"></svg>';
+      const svgEl = d3.select('#brain-svg');
+      const gEl = svgEl.append('g');
+      svgEl.call(d3.zoom().scaleExtent([0.2, 6]).on('zoom', e => gEl.attr('transform', e.transform)));
+      linkSel = gEl.append('g').attr('class','links');
+      nodeSel = gEl.append('g').attr('class','nodes');
+      labelSel = gEl.append('g').attr('class','labels');
+    }
+
     sim.nodes(nodes);
     sim.force('link').links(links);
     sim.alpha(1).restart();
     render();
 
-    document.getElementById('node-count').textContent =
-      `${nodes.length} nodes · ${links.length} links`;
+    const mastered = nodes.filter(n => (n.confidence_score ?? 0) >= 0.85).length;
+    const learning = nodes.filter(n => {
+      const c = n.confidence_score ?? 0;
+      return c >= 0.4 && c < 0.85;
+    }).length;
+    const struggling = nodes.filter(n => (n.confidence_score ?? 0) < 0.4).length;
+    document.getElementById('brain-stats').innerHTML = `
+      <span>${nodes.length} nodes · ${links.length} connections</span>
+      <span style="color:#58CC02">● ${mastered} mastered</span>
+      <span style="color:#FFC800">● ${learning} learning</span>
+      <span style="color:#FF4B4B">● ${struggling} needs work</span>
+    `;
+
+    if (data.last_session) {
+      const d = new Date(data.last_session);
+      const label = d.toLocaleDateString('fi-FI', {
+        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+      });
+      document.getElementById('last-session').textContent = `Last session: ${label}`;
+    } else {
+      document.getElementById('last-session').textContent =
+        'No sessions yet — brain grows after first Knuut session';
+    }
   } catch (err) {
     console.error('Failed to load brain data:', err);
-    document.getElementById('node-count').textContent =
-      'DB connection error — check /api/brain';
+    document.getElementById('brain-stats').innerHTML = 'DB connection error — check /api/brain';
   }
 }
 
@@ -242,7 +325,6 @@ function render() {
       .text(d => d.id.length > 18 ? d.id.slice(0,17)+'…' : d.id)
   );
 
-  document.getElementById('node-count').textContent = `${nodes.length} nodes · ${links.length} links`;
 }
 
 function ticked() {

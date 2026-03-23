@@ -6,7 +6,7 @@ export default async function brainHandler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const [nodesResult, edgesResult] = await Promise.all([
+      const [nodesResult, edgesResult, lastEpisode] = await Promise.all([
         query(
           `SELECT id, label, type, metadata,
                   (metadata->>'confidence_score')::float as confidence_score
@@ -18,11 +18,13 @@ export default async function brainHandler(req, res) {
            JOIN brain_nodes n1 ON n1.id = be.source_id
            JOIN brain_nodes n2 ON n2.id = be.target_id`
         ),
+        query('SELECT created_at FROM episodes ORDER BY created_at DESC LIMIT 1'),
       ]);
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(
         JSON.stringify({
+          last_session: lastEpisode.rows[0]?.created_at ?? null,
           nodes: nodesResult.rows.map((r) => ({
             id: r.label,
             type: r.type,

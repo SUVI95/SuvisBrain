@@ -18,6 +18,7 @@ import learnersHandler from './api/learners.js';
 import authHandler from './api/auth.js';
 import weeklyEmailHandler from './api/cron-weekly.js';
 import ykiScoreHandler from './api/yki-score.js';
+import { query } from './api/db.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PORT = 3000;
@@ -192,6 +193,30 @@ async function handleApi(pathname, req, res, body) {
 
   if (route === 'auth') {
     await authHandler(wrappedReq, res);
+    return true;
+  }
+  if (route === 'health') {
+    try {
+      const [nodes, edges, episodes, learners] = await Promise.all([
+        query('SELECT COUNT(*) FROM brain_nodes'),
+        query('SELECT COUNT(*) FROM brain_edges'),
+        query('SELECT COUNT(*) FROM episodes'),
+        query('SELECT COUNT(*) FROM learners'),
+      ]);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        status: 'ok',
+        counts: {
+          brain_nodes: parseInt(nodes.rows[0]?.count || 0),
+          brain_edges: parseInt(edges.rows[0]?.count || 0),
+          episodes: parseInt(episodes.rows[0]?.count || 0),
+          learners: parseInt(learners.rows[0]?.count || 0),
+        },
+      }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'db_error', error: err.message }));
+    }
     return true;
   }
   if (route === 'cron-weekly') {
