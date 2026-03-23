@@ -842,7 +842,7 @@
               try {
                 channel.send(JSON.stringify({
                   type: 'session.update',
-                  session: { instructions: sessionInstructions }
+                  session: { instructions: sessionInstructions, voice: 'verse' }
                 }));
               } catch (e) {}
             }
