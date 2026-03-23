@@ -206,12 +206,13 @@
       btn.classList.remove('success');
       const email = form.email.value.trim();
       try {
-        const res = await fetch('/api/auth/login', {
+        const res = await fetch('/api/auth', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email }),
         });
-        const data = await res.json();
+        let data;
+        try { data = await res.json(); } catch (_) { data = { error: res.status === 404 ? 'API not found — check deployment' : 'Server error' }; }
         if (!res.ok) {
           err.textContent = data.error || 'Login failed';
           btn.disabled = false;
