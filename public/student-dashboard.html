@@ -206,6 +206,21 @@
     .btn-data { padding: 10px 18px; border-radius: 10px; font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 600; border: 1px solid #e5e7eb; background: #fff; color: #6b7280; }
     .btn-data:hover { border-color: #6C63FF; color: #6C63FF; }
     .btn-data.danger:hover { border-color: #ef4444; color: #ef4444; }
+
+    .topic-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1.5px solid #e9e7fd;
+      font-size: 14px;
+      font-weight: 700;
+      color: #5046e5;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .topic-chip:hover { border-color: #6C63FF; background: #faf9ff; transform: translateY(-1px); }
   </style>
 </head>
 <body>
@@ -262,11 +277,20 @@
       </div>
     </div>
 
+    <div class="ai-box fade-up" id="progress-fi-wrap" style="animation-delay:0.04s">
+      <p id="fi-progress-sessions" style="font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:6px"></p>
+      <p id="fi-progress-streak" style="font-size:15px;color:#374151;margin-bottom:6px"></p>
+      <p id="fi-progress-msg" style="font-size:14px;color:#6b7280;line-height:1.55"></p>
+    </div>
+
     <!-- CONTINUE -->
     <button class="continue-btn fade-up" style="animation-delay:0.06s" onclick="continueWhereLeftOff()">
-      <span>▶ Continue where you left off</span>
+      <span>Jatka harjoittelua →</span>
       <span class="arrow-circle">→</span>
     </button>
+
+    <div class="section-label" style="margin-top:4px">Harjoittele tänään:</div>
+    <div class="fade-up" id="quick-topic-chips" style="animation-delay:0.07s;display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;"></div>
 
     <!-- REVIEW ALERT -->
     <div class="review-alert fade-up" id="review-alert" style="animation-delay:0.1s">
@@ -358,7 +382,7 @@
     </div>
 
     <!-- SESSIONS -->
-    <div class="section-label">Recent sessions</div>
+    <div class="section-label">Viimeisimmät harjoitukset</div>
     <div class="session-list" id="sessions-list">
       <div class="skeleton" style="height:80px"></div>
       <div class="skeleton" style="height:80px"></div>
@@ -390,8 +414,9 @@
     function authHeaders() { return { 'Authorization': 'Bearer ' + (localStorage.getItem('sb_token') || localStorage.getItem('knuut_token') || '') }; }
 
     const hour = new Date().getHours();
-    const greetWord = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-    document.getElementById('greeting').textContent = greetWord + (user?.name ? ', ' + user.name.split(' ')[0] : '') + '! 👋';
+    const greetFi = hour < 12 ? 'Hyvää huomenta' : hour < 17 ? 'Hyvää päivää' : 'Hyvää iltaa';
+    document.getElementById('greeting').textContent = greetFi + (user?.name ? ', ' + user.name.split(' ')[0] : '') + '! 👋';
+    document.getElementById('header-sub').textContent = (user?.cefr_level ? 'Tasosi: ' + String(user.cefr_level).toUpperCase() + ' · ' : '') + 'Harjoittele suomea säännöllisesti.';
 
     document.getElementById('logout-link')?.addEventListener('click', e => { e.preventDefault(); ['knuut_token','knuut_user','sb_token','sb_user'].forEach(k => localStorage.removeItem(k)); location.replace('/login.html'); });
 
@@ -432,7 +457,28 @@
     function showMasteryToast(name) { const t=document.getElementById('mastery-toast'); t.textContent='🏆 You mastered "'+name+'"!'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500); }
     function computeStreak(eps) { if(!eps?.length)return 0; const dates=[...new Set(eps.map(e=>(e.created_at||'').slice(0,10)))].sort().reverse(); let s=0,today=new Date().toISOString().slice(0,10); for(let i=0;i<dates.length;i++){const exp=new Date(today);exp.setDate(exp.getDate()-i);if(dates.includes(exp.toISOString().slice(0,10)))s++;else break;} return s; }
     function escapeHtml(s) { if(!s)return''; const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
-    function relativeTime(dateStr) { if(!dateStr)return'—'; const d=new Date(dateStr); const ms=Date.now()-d.getTime(); if(ms<60000)return'just now'; if(ms<3600000)return Math.floor(ms/60000)+' min ago'; if(ms<86400000)return Math.floor(ms/3600000)+' h ago'; const days=Math.floor(ms/86400000); if(days===1)return'yesterday'; if(days<7)return days+' days ago'; if(days<30)return Math.floor(days/7)+' weeks ago'; return d.toLocaleDateString('fi-FI'); }
+    function relativeTimeFi(dateStr) {
+      if (!dateStr) return '—';
+      const d = new Date(dateStr);
+      const now = new Date();
+      const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const startThat = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      const dayDiff = Math.round((startToday - startThat) / (24 * 60 * 60 * 1000));
+      if (dayDiff === 0) return 'tänään';
+      if (dayDiff === 1) return 'eilen';
+      if (dayDiff === 2) return 'toissapäivänä';
+      if (dayDiff > 2 && dayDiff < 7) return dayDiff + ' päivää sitten';
+      if (dayDiff >= 7 && dayDiff < 14) return 'viikko sitten';
+      if (dayDiff >= 14 && dayDiff < 70) return Math.floor(dayDiff / 7) + ' viikkoa sitten';
+      return d.toLocaleDateString('fi-FI');
+    }
+    function cefrMotivationFi(level) {
+      const L = (level || 'A1').toUpperCase();
+      if (L === 'A1') return 'Hyvä alku! Jatka harjoittelua joka päivä.';
+      if (L === 'A2') return 'Edistyt hyvin! Olet melkein B1-tasolla.';
+      if (L === 'B1') return 'Erinomaista! Olet saavuttanut peruskielitaidon.';
+      return 'Hyvä työ! Jatka säännöllistä harjoittelua.';
+    }
 
     let skillsFilter='all', allSkills=[];
     function renderSkillCards(skills) {
@@ -470,7 +516,13 @@
 
         const stats=statsRes.ok?await statsRes.json():{};
         const xpWeek=stats.xp||0,xpGoal=stats.xp_goal||500,streak=stats.streak!=null?stats.streak:computeStreak(episodes),freezesRemaining=stats.streak_freezes_remaining??2;
-        document.getElementById('cefr-badge').textContent=learner?.cefr_level||'A1';
+        const cefrLevel=(learner?.cefr_level||user?.cefr_level||'A1').toUpperCase();
+        document.getElementById('cefr-badge').textContent=cefrLevel;
+        document.getElementById('header-sub').textContent='Tasosi: '+cefrLevel+' · harjoittele suomea säännöllisesti.';
+        const totalEp=(episodes||[]).length;
+        document.getElementById('fi-progress-sessions').textContent='Olet suorittanut '+totalEp+' harjoittelusessiota.';
+        document.getElementById('fi-progress-streak').textContent='Aktiivisuusputki: 🔥 '+streak+' päivää';
+        document.getElementById('fi-progress-msg').textContent=cefrMotivationFi(cefrLevel);
         document.getElementById('streak-count').textContent=streak;
         if(streak>0)document.getElementById('streak-flame').classList.add('flame-animate');
         const freezeHint=document.getElementById('freeze-hint'),freezeBtn=document.getElementById('use-freeze-btn');
@@ -487,6 +539,25 @@
         const improvement=getImprovement(nodes);
         const celebCard=document.getElementById('celebration-card');
         if(improvement){celebCard.style.display='block';celebCard.innerHTML='🎉 You improved "'+escapeHtml(improvement.label)+'" by '+Math.round((improvement.now-improvement.before)*100)+'%!';}
+
+        const chipsEl=document.getElementById('quick-topic-chips');
+        const sortedWeak=[...(nodes||[])].sort((a,b)=>(a.confidence??0.5)-(b.confidence??0.5));
+        const seen=new Set();
+        const top3=[];
+        for(const n of sortedWeak){
+          const lab=(n.label||'').trim();
+          if(!lab||seen.has(lab))continue;
+          seen.add(lab);
+          top3.push(n);
+          if(top3.length>=3)break;
+        }
+        if(top3.length){
+          chipsEl.style.display='flex';
+          chipsEl.innerHTML=top3.map(n=>'<a class="topic-chip" href="/knuut.html?topic='+encodeURIComponent(n.label)+'">'+escapeHtml(n.label)+'</a>').join('');
+        }else{
+          chipsEl.style.display='block';
+          chipsEl.innerHTML='<span style="font-size:14px;color:#9ca3af">Harjoittele Knuutin kanssa, niin näet henkilökohtaisia aiheita tähän.</span>';
+        }
 
         const skillGrid=document.getElementById('skill-grid');
         if(nodes&&nodes.length>0){
@@ -511,14 +582,18 @@
         const sessionsEl=document.getElementById('sessions-list');
         const recent=(episodes||[]).slice(0,5);
         if(recent.length){
-          sessionsEl.innerHTML=recent.map(e=>`<div class="session-item"><div class="session-meta"><span class="session-date">${relativeTime(e.created_at)}</span><span class="session-badge">${e.duration_s||0} min</span></div><div class="session-summary">${escapeHtml(e.summary||'—')}</div></div>`).join('');
-        }else{sessionsEl.innerHTML='<div class="empty-box"><p>No sessions yet. Start your first practice with Knuut!</p><a href="/knuut.html" class="btn-start">Start session →</a></div>';}
+          sessionsEl.innerHTML=recent.map(e=>{
+            const mins=Math.max(1,Math.round((e.duration_s||0)/60));
+            const title=escapeHtml(e.title||'Harjoitus');
+            return`<div class="session-item"><div style="font-weight:700;font-size:15px;color:#1a1a2e;margin-bottom:6px">${title}</div><div class="session-meta"><span class="session-date">${relativeTimeFi(e.created_at)}</span><span class="session-badge">${mins} min</span></div><div class="session-summary">${escapeHtml(e.summary||'—')}</div></div>`;
+          }).join('');
+        }else{sessionsEl.innerHTML='<div class="empty-box"><p>Ei harjoituksia vielä. Aloita ensimmäinen sessio Knuutin kanssa!</p><a href="/knuut.html" class="btn-start">Aloita harjoitus →</a></div>';}
 
         const ykiEl=document.getElementById('yki-card');
         const ykiList=yki_episodes||[];
         if(ykiList.length){
           ykiEl.innerHTML=ykiList.map(e=>{const meta=e.metadata||{},score=meta.yki_score||meta,ov=typeof score==='object'?score.overall_score:meta.cefr_score,result=(typeof score==='object'?score.yki_result:'')||'',cefr=(typeof score==='object'?score.cefr_level:null)||meta.cefr_score||'—';
-            return`<div class="yki-item"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="session-date">${relativeTime(e.created_at)}</span><span class="yki-badge ${result==='fail'?'yki-fail':'yki-pass'}">${cefr}</span>${ov!=null?'<span style="font-size:13px;color:#6b7280">'+ov+'/100</span>':''}</div><a href="/yki-results.html?episode=${e.id}" class="yki-link">View report →</a></div>`;
+            return`<div class="yki-item"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="session-date">${relativeTimeFi(e.created_at)}</span><span class="yki-badge ${result==='fail'?'yki-fail':'yki-pass'}">${cefr}</span>${ov!=null?'<span style="font-size:13px;color:#6b7280">'+ov+'/100</span>':''}</div><a href="/yki-results.html?episode=${e.id}" class="yki-link">View report →</a></div>`;
           }).join('');
         }else{ykiEl.innerHTML='<div class="empty-box"><p>No mock exams yet. Enable YKI mode in Knuut to practice for the exam.</p><a href="/knuut.html" class="btn-start">Try YKI mode →</a></div>';}
 

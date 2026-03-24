@@ -269,8 +269,8 @@ async function loadDashboard() {
           headers: authHdrs(),
           body: JSON.stringify({ message: msg }),
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Request failed');
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
         responseEl.textContent = data.reply || '(No response)';
         responseEl.style.display = 'block';
         if (episodeCountEl) episodeCountEl.textContent = String(parseInt(episodeCountEl.textContent || '0', 10) + 1);

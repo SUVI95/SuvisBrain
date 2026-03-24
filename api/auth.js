@@ -21,7 +21,7 @@ export default async function authHandler(req, res) {
 
   try {
     const learner = await query(
-      'SELECT id, name, email, org_id FROM learners WHERE LOWER(email) = LOWER($1)',
+      'SELECT id, name, email, org_id, cefr_level FROM learners WHERE LOWER(email) = LOWER($1)',
       [email.trim()]
     );
     if (learner.rows.length > 0) {
@@ -31,8 +31,14 @@ export default async function authHandler(req, res) {
         email: l.email,
         role: 'learner',
         org_id: l.org_id || null,
+        name: l.name,
+        cefr_level: l.cefr_level || 'A1',
       });
-      sendJson(res, 200, { token, role: 'learner', user: { id: l.id, name: l.name } });
+      sendJson(res, 200, {
+        token,
+        role: 'learner',
+        user: { id: l.id, name: l.name, cefr_level: l.cefr_level || 'A1' },
+      });
       return;
     }
 

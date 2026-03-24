@@ -51,8 +51,33 @@
       border-radius: 12px;
       font-size: 14px;
       color: #6B7280;
+      border-left: 4px solid #E5E7EB;
     }
     .stat-pill strong { color: #1A1A2E; }
+    .stat-pill.pill-active-good { border-left-color: #22c55e; }
+    .stat-pill.pill-active-warn { border-left-color: #f59e0b; }
+    .stat-pill.pill-risk { border-left-color: #ef4444; }
+    .card-badge-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+    .mini-badge {
+      font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px;
+    }
+    .mini-badge.risk { background: #fee2e2; color: #b91c1c; }
+    .mini-badge.ready { background: #d1fae5; color: #047857; }
+    .last-title { font-size: 12px; color: #9ca3af; margin-top: 6px; }
+    .streak-line { font-size: 13px; color: #6B7280; margin-top: 4px; }
+    .xp-line { font-size: 13px; font-weight: 700; color: #6C63FF; margin-top: 2px; }
+    .ai-insights { margin-top: 28px; padding: 20px; border-radius: 16px; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .ai-insights h3 { font-size: 15px; margin-bottom: 12px; }
+    .insight-block { border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+    .insight-block.risk-box { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; }
+    .insight-block.good-box { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+    .insight-block ul { margin: 10px 0 0 18px; font-size: 14px; }
+    .insight-block .btn-remind-all {
+      margin-top: 12px; padding: 10px 18px; background: #dc2626; color: #fff; border: none;
+      border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit;
+    }
+    .insight-block .btn-remind-all:hover { opacity: 0.92; }
+    .insight-block .btn-remind-all:disabled { opacity: 0.6; cursor: default; }
     .learner-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -180,10 +205,11 @@
     <header>
       <div class="greeting">Good morning, <span id="teacher-name">—</span></div>
       <div class="date-today" id="date-today"></div>
-      <div class="stat-pills">
-        <span class="stat-pill">👥 <strong id="total-learners">0</strong> learners</span>
-        <span class="stat-pill">📚 <strong id="total-sessions">0</strong> sessions this week</span>
-        <span class="stat-pill">📅 <strong id="need-attention">0</strong> inactive (3+ days)</span>
+      <div class="stat-pills" id="summary-pills">
+        <span class="stat-pill" id="pill-learners">👥 <strong id="total-learners">0</strong> opiskelijaa</span>
+        <span class="stat-pill" id="pill-active"><strong id="active-this-week">0</strong> aktiivista tällä viikolla</span>
+        <span class="stat-pill" id="pill-at-risk"><strong id="at-risk-count-pill">0</strong> ei harjoitellut 7 päivään</span>
+        <span class="stat-pill" id="pill-sessions-week">📚 <strong id="total-sessions-week">0</strong> harjoittelusessiota tällä viikolla</span>
       </div>
     </header>
 
@@ -200,6 +226,18 @@
         </div>
         <div id="loading-state" style="display:none;padding:24px;text-align:center;color:#6B7280">Loading learners...</div>
         <div class="learner-grid" id="learner-grid"></div>
+        <div class="ai-insights" id="ai-insights" style="display:none">
+          <h3>AI-näkemykset</h3>
+          <div class="insight-block risk-box" id="insights-at-risk-block" style="display:none">
+            <div id="insights-at-risk-title"></div>
+            <ul id="insights-at-risk-list"></ul>
+            <button type="button" class="btn-remind-all" id="btn-remind-all-at-risk">Lähetä muistutus</button>
+          </div>
+          <div class="insight-block good-box" id="insights-b1-block" style="display:none">
+            <div id="insights-b1-title"></div>
+            <ul id="insights-b1-list"></ul>
+          </div>
+        </div>
         <div id="error-state" style="display:none;padding:24px;background:#fef2f2;border-radius:12px;color:#b91c1c;margin-top:16px">
           <p>Could not load learners.</p>
           <button type="button" id="retry-btn" style="margin-top:12px;padding:10px 20px;background:#1d9e75;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">Retry</button>
@@ -253,6 +291,7 @@
     document.getElementById('date-today').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     let learnersData = [];
+    let summaryData = {};
 
     function relativeTime(dateStr) {
       if (!dateStr) return 'never';
@@ -276,28 +315,104 @@
       return days > 3;
     }
 
+    function escapeHtml(s) {
+      if (!s) return '';
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function renderAiInsights() {
+      const box = document.getElementById('ai-insights');
+      const atRisk = learnersData.filter((l) => l.at_risk);
+      const b1Track = learnersData.filter((l) => {
+        const c = (l.cefr_level || '').toUpperCase();
+        return (c === 'A1' || c === 'A2') && (l.sessions_total || 0) > 5;
+      });
+      const riskBlock = document.getElementById('insights-at-risk-block');
+      const goodBlock = document.getElementById('insights-b1-block');
+      if (!atRisk.length && !b1Track.length) {
+        box.style.display = 'none';
+        return;
+      }
+      box.style.display = 'block';
+      if (atRisk.length) {
+        riskBlock.style.display = 'block';
+        document.getElementById('insights-at-risk-title').textContent =
+          '⚠️ ' + atRisk.length + ' opiskelijaa ei ole harjoitellut tällä viikolla';
+        document.getElementById('insights-at-risk-list').innerHTML = atRisk.map((l) => '<li>' + (l.name || '—') + '</li>').join('');
+      } else {
+        riskBlock.style.display = 'none';
+      }
+      if (b1Track.length) {
+        goodBlock.style.display = 'block';
+        document.getElementById('insights-b1-title').textContent =
+          '🎯 ' + b1Track.length + ' opiskelijaa etenee hyvin kohti B1-tasoa';
+        document.getElementById('insights-b1-list').innerHTML = b1Track.map((l) => '<li>' + (l.name || '—') + '</li>').join('');
+      } else {
+        goodBlock.style.display = 'none';
+      }
+      document.getElementById('btn-remind-all-at-risk').onclick = async () => {
+        const btn = document.getElementById('btn-remind-all-at-risk');
+        const ids = atRisk.map((l) => l.id).filter(Boolean);
+        if (!ids.length) return;
+        btn.disabled = true;
+        try {
+          const r = await fetch('/api/teacher/nudge/bulk', {
+            method: 'POST',
+            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ learner_ids: ids }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(data.error || 'Failed');
+          alert('Muistutukset lähetetty: ' + (data.sent || 0));
+        } catch (e) {
+          alert(e.message || 'Muistutusten lähetys epäonnistui.');
+        }
+        btn.disabled = false;
+      };
+    }
+
     async function loadLearners() {
       document.getElementById('loading-state').style.display = 'block';
       document.getElementById('learner-grid').innerHTML = '';
       document.getElementById('error-state').style.display = 'none';
+      document.getElementById('ai-insights').style.display = 'none';
       try {
         const res = await fetch('/api/teacher/learners', { headers: authHeaders() });
         if (!res.ok) throw new Error('Failed to load');
         document.getElementById('loading-state').style.display = 'none';
-        learnersData = await res.json();
-        if (!Array.isArray(learnersData)) learnersData = [];
+        const payload = await res.json();
+        learnersData = Array.isArray(payload.learners) ? payload.learners : (Array.isArray(payload) ? payload : []);
+        summaryData = payload.summary || {};
 
-        const staleCount = learnersData.filter((l) => isStale(l.last_session)).length;
+        const total = summaryData.total_learners ?? learnersData.length;
+        const activeW = summaryData.active_this_week ?? 0;
+        const atRiskN = summaryData.at_risk_count ?? learnersData.filter((l) => l.at_risk).length;
+        const sessWeek = summaryData.total_sessions_this_week ?? learnersData.reduce((s, l) => s + (l.sessions_this_week || 0), 0);
 
-        document.getElementById('total-learners').textContent = learnersData.length;
-        document.getElementById('total-sessions').textContent = learnersData.reduce((s, l) => s + (l.sessions_this_week || 0), 0);
-        document.getElementById('need-attention').textContent = staleCount;
+        document.getElementById('total-learners').textContent = total;
+        document.getElementById('active-this-week').textContent = activeW;
+        document.getElementById('at-risk-count-pill').textContent = atRiskN;
+        document.getElementById('total-sessions-week').textContent = sessWeek;
+
+        const pillActive = document.getElementById('pill-active');
+        pillActive.classList.remove('pill-active-good', 'pill-active-warn');
+        pillActive.classList.add(activeW > total / 2 ? 'pill-active-good' : 'pill-active-warn');
+
+        const pillRisk = document.getElementById('pill-at-risk');
+        pillRisk.classList.toggle('pill-risk', atRiskN > 0);
 
         const grid = document.getElementById('learner-grid');
         grid.innerHTML = learnersData.map((l, idx) => {
           const stale = isStale(l.last_session);
           const initials = (l.name || '—').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-          const level = l.cefr_level || 'A1';
+          const level = (l.cefr_level || 'A1').toUpperCase();
+          const lastTitle = l.last_session_title ? ('Viimeksi: ' + escapeHtml(l.last_session_title)) : 'Ei viimeistä sessiota';
+          const streak = l.streak ?? 0;
+          const streakStr = streak > 0 ? `🔥 ${streak} pv` : '— 0 pv';
+          const xp = l.xp != null ? l.xp : (l.sessions_total || 0) * 50;
+          const readyB1 = (level === 'A1' || level === 'A2') && (l.sessions_total || 0) > 5;
           return `
             <div class="learner-card ${stale ? 'stale' : ''}" data-id="${l.id}" style="animation-delay:${idx * 0.05}s">
               <div class="learner-head" style="align-items:flex-start">
@@ -310,13 +425,21 @@
                     <span class="learner-name">${l.name || '—'}</span>
                     <span class="${cefrClass(level)}">${level}</span>
                   </div>
-                  <div class="learner-meta" style="margin-bottom:8px">Last session: ${relativeTime(l.last_session)}</div>
-                  <div class="learner-meta" style="margin-bottom:12px">${l.sessions_this_week || 0} sessions this week</div>
-                  <button class="btn-nudge btn-nudge-single" data-id="${l.id}" data-email="${l.email ? '1' : '0'}" ${!l.email ? 'disabled title="No email"' : ''}>Nudge</button>
+                  <div class="last-title">${lastTitle}</div>
+                  <div class="streak-line">${streakStr} · ${l.sessions_this_week || 0} tällä viikolla</div>
+                  <div class="xp-line">${xp} XP</div>
+                  <div class="learner-meta" style="margin-top:8px">Last session: ${relativeTime(l.last_session)}</div>
+                  <div class="card-badge-row">
+                    ${l.at_risk ? '<span class="mini-badge risk">Ei aktiivinen</span>' : ''}
+                    ${readyB1 ? '<span class="mini-badge ready">Valmis etenemään →</span>' : ''}
+                  </div>
+                  <button class="btn-nudge btn-nudge-single" style="margin-top:10px" data-id="${l.id}" data-email="${l.email ? '1' : '0'}" ${!l.email ? 'disabled title="No email"' : ''}>Muistuta</button>
                 </div>
               </div>
             </div>`;
         }).join('');
+
+        renderAiInsights();
 
         grid.querySelectorAll('.learner-card').forEach((card) => {
           card.addEventListener('click', (e) => {
@@ -330,15 +453,15 @@
             e.stopPropagation();
             const id = btn.dataset.id;
             if (!id || btn.disabled) return;
-            if (btn.dataset.email === '0') { alert('Learner has no email'); return; }
+            if (btn.dataset.email === '0') { alert('Opiskelijalla ei ole sähköpostia'); return; }
             try {
               btn.disabled = true;
               const r = await fetch(`/api/teacher/nudge/${id}`, { method: 'POST', headers: authHeaders() });
               if (!r.ok) throw new Error('Failed');
-              btn.textContent = 'Sent!';
-              setTimeout(() => { btn.textContent = 'Nudge'; btn.disabled = false; }, 3000);
+              btn.textContent = 'Muistutus lähetetty! ✓';
+              setTimeout(() => { btn.textContent = 'Muistuta'; btn.disabled = false; }, 3000);
             } catch (err) {
-              alert('Could not send nudge. Try again.');
+              alert('Muistutusta ei voitu lähettää. Yritä uudelleen.');
               btn.disabled = false;
             }
           });
@@ -371,12 +494,12 @@
             });
             const data = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(data.error || 'Failed');
-            alert(`Sent: ${data.sent || 0}, No email: ${data.no_email || 0}${(data.failed || 0) > 0 ? ', Failed: ' + data.failed : ''}`);
+            alert(`Lähetetty: ${data.sent || 0}, ilman sähköpostia: ${data.no_email || 0}${(data.failed || 0) > 0 ? ', epäonnistui: ' + data.failed : ''}`);
             grid.querySelectorAll('.learner-check:checked').forEach((cb) => { cb.checked = false; });
             document.getElementById('select-all-learners').checked = false;
             updateNudgeSelectedVisibility();
           } catch (err) {
-            alert(err.message || 'Could not send nudges. Try again.');
+            alert(err.message || 'Muistutuksia ei voitu lähettää.');
           }
           document.getElementById('btn-nudge-selected').disabled = false;
         };

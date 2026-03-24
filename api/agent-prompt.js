@@ -1,10 +1,19 @@
 // api/agent-prompt.js — POST /api/agents/:id/prompt
-// Prompts an agent via OpenRouter, saves episode + brain node, returns reply.
+//
+// FLOW: Dashboard → POST /api/agents/:id/prompt → this handler →
+//       1. Load agent from DB (agents table)
+//       2. Build system prompt from agent-personas.js
+//       3. Call OpenRouter API (https://openrouter.ai) with OPENROUTER_API_KEY
+//       4. Model: meta-llama/llama-3.3-70b-instruct:free
+//       5. Save episode + brain node, return reply
+//
+// REQUIRED: OPENROUTER_API_KEY or OPENROUTER_API_KEY_2 in .env (local) or Vercel env vars
 import { query } from './db.js';
 import { getPersona } from './agent-personas.js';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
+// Primary: 70B free. Fallback: 8B free (often more available under rate limits)
+const MODELS = ['meta-llama/llama-3.3-70b-instruct:free', 'meta-llama/llama-3.3-8b-instruct:free'];
 
 function sendJson(res, status, data) {
   res.writeHead(status, { 'Content-Type': 'application/json' });
@@ -77,28 +86,57 @@ export default async function agentPromptHandler(req, res, agentId) {
       }
     }
 
-    const response = await fetch(OPENROUTER_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://suvisbrain.vercel.app',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 800,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'system', content: memoryBlock },
-          { role: 'user', content: message },
-        ],
-      }),
-    });
+    // Single system message (some models struggle with multiple system messages)
+    const fullSystem = `${systemPrompt}\n\n${memoryBlock}`;
 
-    const data = await response.json();
-    const reply =
-      (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) ||
-      '';
+    let reply = '';
+    let lastError = null;
+
+    for (const model of MODELS) {
+      const response = await fetch(OPENROUTER_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${key}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://suvisbrain.vercel.app',
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 800,
+          messages: [
+            { role: 'system', content: fullSystem },
+            { role: 'user', content: message },
+          ],
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        lastError = data?.error?.message || data?.error || response.statusText || `OpenRouter ${response.status}`;
+        console.warn(`OpenRouter ${model}:`, response.status, lastError);
+        continue;
+      }
+
+      const msg = data.choices?.[0]?.message;
+      if (msg) {
+        let content = msg.content;
+        if (Array.isArray(content)) {
+          content = content.map((c) => (typeof c === 'string' ? c : c?.text || '')).join('');
+        }
+        reply = (content || '').trim();
+      }
+
+      if (reply) break;
+      lastError = 'Model returned empty response';
+    }
+
+    if (!reply) {
+      console.error('agent-prompt: no reply from any model', lastError);
+      return sendJson(res, 502, {
+        error: `AI returned no response. ${lastError || 'Try again in a moment.'}`,
+      });
+    }
 
     const title = message.slice(0, 60);
     const summary = reply.slice(0, 200);

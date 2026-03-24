@@ -16,7 +16,21 @@ function requireTeacher(req, res) {
   return true;
 }
 
-// GET /api/teacher/learners
+function streakFromDates(sessionDates, todayStr) {
+  const set = new Set(sessionDates || []);
+  let streak = 0;
+  const base = new Date(todayStr + 'T12:00:00Z');
+  for (let i = 0; i < 400; i++) {
+    const d = new Date(base);
+    d.setUTCDate(d.getUTCDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    if (set.has(key)) streak += 1;
+    else break;
+  }
+  return streak;
+}
+
+// GET /api/teacher/learners — { summary, learners: [...] }
 export async function getLearnersHandler(req, res) {
   if (!requireTeacher(req, res)) return;
   if (req.method !== 'GET') {
@@ -26,21 +40,100 @@ export async function getLearnersHandler(req, res) {
     const orgId = req.user.org_id || null;
     const whereClause = orgId ? 'WHERE l.org_id = $1' : '';
     const params = orgId ? [orgId] : [];
+
     const result = await query(
-      `SELECT
-        l.id, l.name, l.email, l.cefr_level, l.mother_tongue,
-        COUNT(e.id)::int as total_sessions,
-        MAX(e.created_at) as last_session,
-        SUM(CASE WHEN e.created_at > NOW() - INTERVAL '7 days'
-            THEN 1 ELSE 0 END)::int as sessions_this_week
+      `WITH ep AS (
+        SELECT
+          learner_id,
+          COUNT(*)::int AS sessions_total,
+          COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days')::int AS sessions_this_week,
+          MAX(created_at) AS last_session_at
+        FROM episodes
+        WHERE learner_id IS NOT NULL
+        GROUP BY learner_id
+      ),
+      last_ep AS (
+        SELECT DISTINCT ON (e.learner_id)
+          e.learner_id,
+          e.title AS last_session_title,
+          e.created_at AS last_ep_at
+        FROM episodes e
+        WHERE e.learner_id IS NOT NULL
+        ORDER BY e.learner_id, e.created_at DESC
+      )
+      SELECT
+        l.id,
+        l.name,
+        l.email,
+        l.cefr_level,
+        l.mother_tongue,
+        l.teacher_reviewed_at,
+        COALESCE(ep.sessions_this_week, 0)::int AS sessions_this_week,
+        COALESCE(ep.sessions_total, 0)::int AS sessions_total,
+        ep.last_session_at,
+        le.last_session_title,
+        COALESCE(ep.sessions_total, 0)::int AS total_sessions,
+        ep.last_session_at AS last_session
       FROM learners l
-      LEFT JOIN episodes e ON e.learner_id = l.id
+      LEFT JOIN ep ON ep.learner_id = l.id
+      LEFT JOIN last_ep le ON le.learner_id = l.id
       ${whereClause}
-      GROUP BY l.id
-      ORDER BY last_session DESC NULLS LAST`,
+      ORDER BY ep.last_session_at DESC NULLS LAST`,
       params
     );
-    sendJson(res, 200, result.rows);
+
+    const learnerIds = (result.rows || []).map((r) => r.id);
+    let dateRows = [];
+    if (learnerIds.length) {
+      const dr = await query(
+        `SELECT learner_id, (created_at AT TIME ZONE 'UTC')::date::text AS d
+         FROM episodes
+         WHERE learner_id = ANY($1::uuid[])
+         GROUP BY learner_id, (created_at AT TIME ZONE 'UTC')::date`,
+        [learnerIds]
+      );
+      dateRows = dr.rows || [];
+    }
+    const datesByLearner = new Map();
+    for (const row of dateRows) {
+      if (!datesByLearner.has(row.learner_id)) datesByLearner.set(row.learner_id, []);
+      datesByLearner.get(row.learner_id).push(row.d);
+    }
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const learners = (result.rows || []).map((r) => {
+      const sessionsTotal = r.sessions_total ?? 0;
+      const sessionsWeek = r.sessions_this_week ?? 0;
+      const lastAt = r.last_session_at;
+      const atRisk =
+        !lastAt || new Date(lastAt) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const streak = streakFromDates(datesByLearner.get(r.id) || [], todayStr);
+      return {
+        ...r,
+        last_session_at: lastAt,
+        streak,
+        xp: sessionsTotal * 50,
+        at_risk: atRisk,
+      };
+    });
+
+    const totalLearners = learners.length;
+    const activeThisWeek = learners.filter((l) => (l.sessions_this_week || 0) > 0).length;
+    const atRiskCount = learners.filter((l) => l.at_risk).length;
+    const totalSessionsThisWeek = learners.reduce((s, l) => s + (l.sessions_this_week || 0), 0);
+    const avgSessionsPerActiveLearner =
+      activeThisWeek > 0 ? Math.round((totalSessionsThisWeek / activeThisWeek) * 10) / 10 : 0;
+
+    sendJson(res, 200, {
+      summary: {
+        total_learners: totalLearners,
+        active_this_week: activeThisWeek,
+        at_risk_count: atRiskCount,
+        total_sessions_this_week: totalSessionsThisWeek,
+        avg_sessions_per_active_learner: avgSessionsPerActiveLearner,
+      },
+      learners,
+    });
   } catch (err) {
     console.error('GET /api/teacher/learners:', err);
     sendJson(res, 500, { error: err.message });

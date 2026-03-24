@@ -319,6 +319,107 @@
       .talk-button { padding: 14px 28px; font-size: 1.1rem; }
       .learning-card { right: 16px; bottom: 16px; width: calc(100vw - 32px); }
     }
+
+    /* Text chat fallback (when /api/session fails) — voice flow unchanged when session works */
+    body.knuut-text-fallback #orb-root { opacity: 0 !important; pointer-events: none; }
+    .orb-static-fallback {
+      display: none;
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(48vw, 260px);
+      height: min(48vw, 260px);
+      border-radius: 50%;
+      z-index: 1;
+      background: radial-gradient(circle at 38% 32%, rgba(167,139,250,0.9), rgba(29,158,117,0.45) 52%, rgba(13,13,26,0.2) 100%);
+      box-shadow: 0 0 60px rgba(167,139,250,0.35), inset 0 0 40px rgba(255,255,255,0.08);
+    }
+    body.knuut-text-fallback .orb-static-fallback { display: block; }
+    .text-fallback-banner {
+      display: none;
+      max-width: 520px;
+      margin: 0 auto 12px;
+      padding: 10px 16px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: rgba(224,224,240,0.85);
+      background: rgba(167,139,250,0.12);
+      border: 1px solid rgba(167,139,250,0.25);
+      border-radius: 12px;
+    }
+    body.knuut-text-fallback .text-fallback-banner { display: block; }
+    .text-fallback-chat {
+      display: none;
+      width: 100%;
+      max-width: 520px;
+      max-height: min(38vh, 320px);
+      overflow-y: auto;
+      margin: 8px auto 12px;
+      padding: 8px 4px;
+      text-align: left;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    body.knuut-text-fallback .text-fallback-chat { display: block; }
+    .chat-bubble {
+      max-width: 88%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+    .chat-bubble.user {
+      margin-left: auto;
+      background: rgba(167,139,250,0.35);
+      color: #f0f0ff;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-bubble.knuut {
+      margin-right: auto;
+      background: rgba(255,255,255,0.08);
+      color: rgba(224,224,240,0.95);
+      border-bottom-left-radius: 4px;
+    }
+    .text-fallback-input-row {
+      display: none;
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      gap: 8px;
+      align-items: stretch;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    body.knuut-text-fallback .text-fallback-input-row { display: flex; }
+    .text-fallback-input-row input {
+      flex: 1;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      color: #e0e0f0;
+      font-size: 15px;
+    }
+    .text-fallback-input-row input::placeholder { color: rgba(224,224,240,0.4); }
+    .text-fallback-input-row button {
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(135deg, #a78bfa, #1d9e75);
+      color: #fff;
+      font-family: inherit;
+    }
+    .text-fallback-input-row button:disabled { opacity: 0.6; cursor: not-allowed; }
+    body.knuut-text-fallback .content-overlay {
+      justify-content: flex-start;
+      padding-top: 72px;
+      overflow-y: auto;
+      max-height: 100vh;
+    }
+    body.knuut-text-fallback h1,
+    body.knuut-text-fallback .subtitle { display: none; }
   </style>
 </head>
 <body>
@@ -329,8 +430,15 @@
       <a href="student-dashboard.html" class="nav-link">My Progress</a>
       <a href="teacher-dashboard.html" class="nav-link">Teacher</a>
     </div>
-    <div class="orb-container" id="orb-root"></div>
+    <div class="orb-container">
+      <div class="orb-static-fallback" aria-hidden="true"></div>
+      <div id="orb-root"></div>
+    </div>
     <div class="content-overlay">
+      <div class="text-fallback-banner" id="text-fallback-banner">
+        💬 Tekstiharjoittelu — paina mikrofoni-ikonia äänikeskustelua varten
+      </div>
+      <div class="text-fallback-chat" id="text-fallback-chat"></div>
       <h1>KNUUT AI</h1>
       <p class="subtitle">Your voice teacher — speak any language. Practice with Knuut and get gentle corrections in real time.</p>
       <div id="voice-bars">
@@ -348,6 +456,10 @@
       </div>
       <button id="knuut-talk-btn" class="talk-button">Talk with Knuut</button>
       <div id="status-text" class="status-text"></div>
+      <div class="text-fallback-input-row" id="text-fallback-input-row">
+        <input type="text" id="text-fallback-input" placeholder="Kirjoita suomeksi..." autocomplete="off" />
+        <button type="button" id="text-fallback-send">Lähetä</button>
+      </div>
     </div>
   </div>
 
@@ -414,6 +526,95 @@
       var cardIdCounter = 0;
       var knuutTranscriptBuffer = '';
       var oaiChannel = null;
+      var textFallbackActive = false;
+      var nelliAgentIdCache = null;
+
+      function jwtPayload() {
+        try {
+          var t = localStorage.getItem('sb_token') || localStorage.getItem('knuut_token');
+          if (!t) return {};
+          var p = t.split('.')[1];
+          var json = atob(p.replace(/-/g, '+').replace(/_/g, '/'));
+          return JSON.parse(json);
+        } catch (e) { return {}; }
+      }
+
+      function deactivateTextFallback() {
+        textFallbackActive = false;
+        document.body.classList.remove('knuut-text-fallback');
+        var chat = document.getElementById('text-fallback-chat');
+        if (chat) chat.innerHTML = '';
+        var inp = document.getElementById('text-fallback-input');
+        if (inp) inp.value = '';
+      }
+
+      async function resolveNelliAgentId() {
+        if (nelliAgentIdCache) return nelliAgentIdCache;
+        try {
+          var res = await fetch(SERVER_URL + '/api/agents', { headers: authHeaders() });
+          if (!res.ok) return null;
+          var data = await res.json();
+          var agents = data.agents || [];
+          var a = agents.find(function(x) { return x.name === 'Nelli'; }) ||
+            agents.find(function(x) { return /finnish/i.test(x.role || ''); });
+          nelliAgentIdCache = a ? a.id : null;
+          return nelliAgentIdCache;
+        } catch (e) { return null; }
+      }
+
+      function appendChatBubble(role, text) {
+        var chat = document.getElementById('text-fallback-chat');
+        if (!chat) return;
+        var div = document.createElement('div');
+        div.className = 'chat-bubble ' + (role === 'user' ? 'user' : 'knuut');
+        div.textContent = text;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+      }
+
+      function activateTextChatFallback(err) {
+        textFallbackActive = true;
+        document.body.classList.add('knuut-text-fallback');
+        updateStatus(err && err.message ? String(err.message).slice(0, 120) : 'Tekstiharjoittelu', false);
+        var sendBtn = document.getElementById('text-fallback-send');
+        var inp = document.getElementById('text-fallback-input');
+        if (!sendBtn || !inp) return;
+
+        async function sendText() {
+          var userText = (inp.value || '').trim();
+          if (!userText) return;
+          appendChatBubble('user', userText);
+          inp.value = '';
+          sendBtn.disabled = true;
+          var agentId = await resolveNelliAgentId();
+          if (!agentId) {
+            appendChatBubble('knuut', 'En löytänyt agenttia (Nelli). Yritä myöhemmin uudelleen.');
+            sendBtn.disabled = false;
+            return;
+          }
+          var jwt = jwtPayload();
+          var cefr = (user && user.cefr_level) || jwt.cefr_level || 'A2';
+          var context = 'CEFR level ' + cefr + ' student';
+          try {
+            var r = await fetch(SERVER_URL + '/api/agents/' + encodeURIComponent(agentId) + '/prompt', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', ...authHeaders() },
+              body: JSON.stringify({ message: userText, context: context })
+            });
+            var data = await r.json().catch(function() { return ({}); });
+            if (!r.ok) throw new Error(data.error || 'Pyyntö epäonnistui');
+            appendChatBubble('knuut', data.reply || '—');
+          } catch (e) {
+            appendChatBubble('knuut', (e && e.message) || 'Virhe. Yritä uudelleen.');
+          }
+          sendBtn.disabled = false;
+        }
+
+        sendBtn.onclick = function() { sendText(); };
+        inp.onkeydown = function(ev) {
+          if (ev.key === 'Enter') { ev.preventDefault(); sendText(); }
+        };
+      }
 
       function extractAllCards(text) {
         if (!text || typeof text !== 'string') return [];
@@ -783,6 +984,7 @@
 
       async function startKnuut(){
         if (isActive || isStarting) return;
+        deactivateTextFallback();
         examMode = document.querySelector('.mode-tab[data-mode="yki"]')?.classList.contains('active');
         document.body.classList.toggle('yki-mode', examMode);
         document.getElementById('yki-banner').classList.toggle('visible', examMode);
@@ -948,22 +1150,43 @@
             review_words: reviewWords.length > 0 ? reviewWords : undefined,
             writing_sample: writingSample || undefined
           };
-          const resp = await fetch(SERVER_URL + '/api/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...authHeaders() },
-            body: JSON.stringify(sessionBody)
-          });
+          try {
+            const resp = await fetch(SERVER_URL + '/api/session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', ...authHeaders() },
+              body: JSON.stringify(sessionBody)
+            });
 
-          if (!resp.ok) {
-            const errText = await resp.text();
-            throw new Error('Session failed: ' + errText);
+            if (!resp.ok) {
+              const errText = await resp.text();
+              throw new Error('Session failed: ' + errText);
+            }
+
+            const data = await resp.json();
+            const answerSdp = typeof data.answer === 'string' ? data.answer : (data.sdp || '');
+            sessionInstructions = data.instructions || '';
+            await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+          } catch (sessionErr) {
+            console.error(sessionErr);
+            document.getElementById('yki-banner').classList.remove('visible');
+            document.body.classList.remove('yki-mode');
+            try { if (pc) pc.close(); } catch (e2) {}
+            pc = null;
+            oaiChannel = null;
+            if (micStream) {
+              micStream.getTracks().forEach(function(t) { t.stop(); });
+              micStream = null;
+            }
+            if (remoteAudioEl) remoteAudioEl.srcObject = null;
+            document.querySelectorAll('#voice-bars .vb').forEach(function(el) {
+              el.style.transform = 'scaleY(1)';
+              el.style.opacity = '0.5';
+            });
+            activateTextChatFallback(sessionErr);
+            return;
           }
 
-          const data = await resp.json();
-          const answerSdp = typeof data.answer === 'string' ? data.answer : (data.sdp || '');
-          sessionInstructions = data.instructions || '';
-          await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
-          try { await remoteAudioEl.play(); } catch {}
+          try { await remoteAudioEl.play(); } catch (e3) {}
 
           isActive = true;
           btn.textContent = 'Stop Knuut';
