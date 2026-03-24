@@ -20,6 +20,7 @@ async function main() {
   let selfLoopsRemoved = 0;
   let duplicateEdgesRemoved = 0;
   let orphanedEdgesRemoved = 0;
+  let sessionOrphanCount = 0;
 
   // 1. Find duplicate labels
   const dupLabels = await query(
@@ -90,7 +91,25 @@ async function main() {
     `);
   }
 
-  // 4. Delete orphaned edges
+  // 4. Delete orphaned "Session" nodes (no incoming or outgoing edges)
+  const sessionOrphans = await query(`
+    SELECT id FROM brain_nodes
+    WHERE label = 'Session'
+      AND id NOT IN (SELECT source_id FROM brain_edges UNION SELECT target_id FROM brain_edges)
+  `);
+  sessionOrphanCount = (sessionOrphans.rows || []).length;
+  if (!DRY_RUN && sessionOrphanCount > 0) {
+    await query(`
+      DELETE FROM brain_nodes
+      WHERE label = 'Session'
+        AND id NOT IN (SELECT source_id FROM brain_edges UNION SELECT target_id FROM brain_edges)
+    `);
+  }
+  if (sessionOrphanCount > 0) {
+    console.log(`Orphaned "Session" nodes removed: ${sessionOrphanCount}`);
+  }
+
+  // 5. Delete orphaned edges
   const orphanCount = await query(`
     SELECT COUNT(*)::int as c FROM brain_edges
     WHERE source_id NOT IN (SELECT id FROM brain_nodes)
@@ -110,6 +129,7 @@ async function main() {
   console.log('\n--- Summary ---');
   console.log(`Duplicate labels found:   ${duplicateLabels.length}`);
   console.log(`Nodes deleted:            ${nodesDeleted}`);
+  console.log(`Orphan Session nodes:     ${sessionOrphanCount}`);
   console.log(`Edges reassigned:         ${edgesReassigned}`);
   console.log(`Self-loops removed:        ${selfLoopsRemoved}`);
   console.log(`Duplicate edges removed:  ${duplicateEdgesRemoved}`);

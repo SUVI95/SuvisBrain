@@ -5,13 +5,21 @@ import { removePersonalData } from '../src/lib/safe-ai.js';
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const CEFR_ORDER = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
 
+function isNoiseTopic(label) {
+  if (!label || typeof label !== 'string') return true;
+  const s = label.trim();
+  if (s.length < 6) return true;
+  if (!s.includes(' ') && s.length < 8) return true;
+  return false;
+}
+
 const MODELS = [
-  'google/gemma-3-27b-it:free',      // biggest, best quality
-  'google/gemma-3-12b-it:free',      // solid fallback
-  'arcee-ai/trinity-large-preview:free', // large preview
-  'google/gemma-3-4b-it:free',       // fast small
-  'arcee-ai/trinity-mini:free',      // mini fallback
-  'meta-llama/llama-3.2-3b-instruct:free', // last resort free
+  'arcee-ai/trinity-large-preview:free',
+  'arcee-ai/trinity-mini:free',
+  'google/gemma-3-4b-it:free',
+  'meta-llama/llama-3.2-3b-instruct:free',
+  'google/gemma-3-12b-it:free',
+  'google/gemma-3-27b-it:free',
 ];
 
 const KEYS = [
@@ -227,8 +235,11 @@ export default async function sessionCompleteHandler(req, res) {
       const practicedLabels = new Set();
       const skillNodeIds = [];
 
+      const practiced = (analysis.topics_practiced || []).filter((t) => !isNoiseTopic(t?.label));
+      const struggled = (analysis.topics_struggled || []).filter((t) => !isNoiseTopic(t?.label));
+
       // STEP 1 — Update confidence on existing skill nodes
-      for (const topic of analysis.topics_practiced || []) {
+      for (const topic of practiced) {
         try {
           const existing = await query(
             'SELECT id, metadata FROM brain_nodes WHERE LOWER(label) = LOWER($1)',
@@ -259,7 +270,7 @@ export default async function sessionCompleteHandler(req, res) {
           console.error('session-complete: practiced update:', e.message);
         }
       }
-      for (const topic of analysis.topics_struggled || []) {
+      for (const topic of struggled) {
         try {
           const existing = await query(
             'SELECT id, metadata FROM brain_nodes WHERE LOWER(label) = LOWER($1)',
@@ -423,7 +434,7 @@ export default async function sessionCompleteHandler(req, res) {
             [learner_id]
           );
           const learnerAgentId = (learnerRes.rows?.[0]?.agent_id) || agent_id;
-          for (const topic of analysis.topics_struggled || []) {
+          for (const topic of struggled) {
             try {
               const label = `Struggles with ${topic.label}`;
               const existing = await query(
@@ -446,7 +457,7 @@ export default async function sessionCompleteHandler(req, res) {
               console.error('session-complete: struggles memory:', e.message);
             }
           }
-          for (const topic of analysis.topics_practiced || []) {
+          for (const topic of practiced) {
             try {
               const existing = await query(
                 'SELECT id, metadata FROM brain_nodes WHERE LOWER(label) = LOWER($1)',
@@ -482,7 +493,8 @@ export default async function sessionCompleteHandler(req, res) {
       }
     }
 
-    const practiced = (analysis.topics_practiced?.length || 0) + (analysis.topics_struggled?.length || 0);
+    const practicedCount = (analysis?.topics_practiced || []).filter((t) => !isNoiseTopic(t?.label)).length +
+      (analysis?.topics_struggled || []).filter((t) => !isNoiseTopic(t?.label)).length;
     const created = analysis.new_topics?.length || 0;
     if (!is_mock_exam) {
       console.log(`Brain update: ${practiced} practiced/struggled, ${created} new topics`);
@@ -491,7 +503,7 @@ export default async function sessionCompleteHandler(req, res) {
       success: true,
       episode_id: episodeId,
       summary: analysis.summary,
-      topics_updated: is_mock_exam ? 0 : practiced,
+      topics_updated: is_mock_exam ? 0 : practicedCount,
       new_nodes_created: is_mock_exam ? 0 : created,
       cefr_level: analysis.cefr_level_demonstrated,
     };
