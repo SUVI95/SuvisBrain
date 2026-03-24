@@ -86,27 +86,40 @@ export default async function agentPromptHandler(req, res, agentId) {
     const episodeId = episodeResult.rows[0].id;
 
     const nodeLabel = message.slice(0, 50);
-    const nodeResult = await query(
-      `INSERT INTO brain_nodes (label, type, agent_id, metadata)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id`,
-      [
-        nodeLabel,
-        'Conversation',
-        agent.id,
-        JSON.stringify({ confidence_score: 0.6, source: 'agent-prompt' }),
-      ]
+    const existingNode = await query(
+      'SELECT id FROM brain_nodes WHERE LOWER(label) = LOWER($1)',
+      [nodeLabel]
     );
-    const nodeId = nodeResult.rows[0].id;
-
-    const coreResult = await query(
-      'SELECT id FROM brain_nodes WHERE type = \'Core\' LIMIT 1'
-    );
-    if (coreResult.rows.length > 0) {
-      await query(
-        `INSERT INTO brain_edges (source_id, target_id, value) VALUES ($1, $2, 1)`,
-        [coreResult.rows[0].id, nodeId]
+    let nodeId;
+    let inserted = false;
+    if (existingNode.rows.length > 0) {
+      nodeId = existingNode.rows[0].id;
+    } else {
+      const nodeResult = await query(
+        `INSERT INTO brain_nodes (label, type, agent_id, metadata)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id`,
+        [
+          nodeLabel,
+          'Conversation',
+          agent.id,
+          JSON.stringify({ confidence_score: 0.6, source: 'agent-prompt' }),
+        ]
       );
+      nodeId = nodeResult.rows[0].id;
+      inserted = true;
+    }
+
+    if (inserted) {
+      const coreResult = await query(
+        'SELECT id FROM brain_nodes WHERE type = \'Core\' LIMIT 1'
+      );
+      if (coreResult.rows.length > 0) {
+        await query(
+          `INSERT INTO brain_edges (source_id, target_id, value) VALUES ($1, $2, 1)`,
+          [coreResult.rows[0].id, nodeId]
+        );
+      }
     }
 
     sendJson(res, 200, { reply, episode_id: episodeId, node_id: nodeId });

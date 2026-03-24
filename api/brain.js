@@ -53,6 +53,22 @@ export default async function brainHandler(req, res) {
       return;
     }
 
+    if (/\d{8,}/.test(label)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Label looks auto-generated. Use a human-readable name.' }));
+      return;
+    }
+
+    const existing = await query(
+      'SELECT id FROM brain_nodes WHERE LOWER(label) = LOWER($1)',
+      [label]
+    );
+    if (existing.rows.length > 0) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, id: existing.rows[0].id, existed: true }));
+      return;
+    }
+
     try {
       const nodeResult = await query(
         `INSERT INTO brain_nodes (label, type, agent_id, metadata)
