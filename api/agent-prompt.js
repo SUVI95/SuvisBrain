@@ -45,6 +45,38 @@ export default async function agentPromptHandler(req, res, agentId) {
       return sendJson(res, 500, { error: 'OPENROUTER_API_KEY not set' });
     }
 
+    const memoryResult = await query(
+      `SELECT title, summary, created_at
+       FROM episodes
+       WHERE agent_id = $1
+       ORDER BY created_at DESC
+       LIMIT 5`,
+      [agent.id]
+    );
+
+    let memoryBlock = (memoryResult.rows || []).length > 0
+      ? 'Your recent activity:\n' + (memoryResult.rows || []).map((e) =>
+          `- ${e.title}: ${e.summary || ''} (${new Date(e.created_at).toLocaleDateString()})`
+        ).join('\n')
+      : 'No recent activity yet.';
+
+    if (agent.role === 'Sales Qualifier') {
+      const leadsResult = await query(
+        `SELECT title, summary, created_at
+         FROM episodes
+         WHERE agent_id = $1 AND lead_qualified = true
+         ORDER BY created_at DESC
+         LIMIT 5`,
+        [agent.id]
+      );
+      const leads = leadsResult.rows || [];
+      if (leads.length > 0) {
+        memoryBlock += '\n\nQualified leads in your pipeline:\n' + leads.map((e) =>
+          `- ${e.title}: ${e.summary || ''} (${new Date(e.created_at).toLocaleDateString()})`
+        ).join('\n');
+      }
+    }
+
     const response = await fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
@@ -57,6 +89,7 @@ export default async function agentPromptHandler(req, res, agentId) {
         max_tokens: 800,
         messages: [
           { role: 'system', content: systemPrompt },
+          { role: 'system', content: memoryBlock },
           { role: 'user', content: message },
         ],
       }),
