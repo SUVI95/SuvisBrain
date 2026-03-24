@@ -181,18 +181,27 @@ export default async function sessionCompleteHandler(req, res) {
       ? `YKI mock exam — ${new Date().toLocaleDateString('fi-FI')}`
       : `Session ${new Date().toLocaleDateString('fi-FI')}`;
 
+    const orgId = req.user?.org_id || null;
+    const episodeCols = orgId
+      ? 'agent_id, learner_id, title, summary, language, duration_s, raw_transcript, org_id'
+      : 'agent_id, learner_id, title, summary, language, duration_s, raw_transcript';
+    const episodeVals = orgId
+      ? '$1, $2, $3, $4, $5, $6, $7, $8'
+      : '$1, $2, $3, $4, $5, $6, $7';
+    const episodeParams = [
+      agent_id != null ? agent_id : null,
+      learner_id != null ? learner_id : null,
+      title,
+      analysis ? analysis.summary : '',
+      learner_language != null ? learner_language : 'fi',
+      duration_s != null ? duration_s : 0,
+      transcript,
+    ];
+    if (orgId) episodeParams.push(orgId);
+
     const episodeResult = await query(
-      `INSERT INTO episodes (agent_id, learner_id, title, summary, language, duration_s, raw_transcript)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-      [
-        agent_id != null ? agent_id : null,
-        learner_id != null ? learner_id : null,
-        title,
-        analysis ? analysis.summary : '',
-        learner_language != null ? learner_language : 'fi',
-        duration_s != null ? duration_s : 0,
-        transcript,
-      ]
+      `INSERT INTO episodes (${episodeCols}) VALUES (${episodeVals}) RETURNING id`,
+      episodeParams
     );
     const episodeId = episodeResult.rows[0].id;
 
@@ -329,10 +338,14 @@ export default async function sessionCompleteHandler(req, res) {
             ...(learner_id && { learner_id }),
           });
           const hist = JSON.stringify([{ t: new Date().toISOString(), c: 0.5 }]);
+          const bnCols = orgId
+            ? 'label, type, agent_id, metadata, confidence_history, org_id'
+            : 'label, type, agent_id, metadata, confidence_history';
+          const bnVals = orgId ? '$1, $2, $3, $4::jsonb, $5::jsonb, $6' : '$1, $2, $3, $4::jsonb, $5::jsonb';
+          const bnParams = orgId ? [topic.label, t, agentForNew, meta, hist, orgId] : [topic.label, t, agentForNew, meta, hist];
           const newNode = await query(
-            `INSERT INTO brain_nodes (label, type, agent_id, metadata, confidence_history)
-             VALUES ($1, $2, $3, $4::jsonb, $5::jsonb) RETURNING id`,
-            [topic.label, t, agentForNew, meta, hist]
+            `INSERT INTO brain_nodes (${bnCols}) VALUES (${bnVals}) RETURNING id`,
+            bnParams
           );
           if (coreId) {
             await query(
@@ -353,10 +366,12 @@ export default async function sessionCompleteHandler(req, res) {
           confidence_score: 0.8,
           session_id: episodeId,
         });
+        const convCols = orgId ? 'label, type, agent_id, metadata, org_id' : 'label, type, agent_id, metadata';
+        const convVals = orgId ? '$1, \'Conversation\', $2, $3::jsonb, $4' : '$1, \'Conversation\', $2, $3::jsonb';
+        const convParams = orgId ? [convLabel, agent_id, convMeta, orgId] : [convLabel, agent_id, convMeta];
         const convNode = await query(
-          `INSERT INTO brain_nodes (label, type, agent_id, metadata)
-           VALUES ($1, 'Conversation', $2, $3::jsonb) RETURNING id`,
-          [convLabel, agent_id, convMeta]
+          `INSERT INTO brain_nodes (${convCols}) VALUES (${convVals}) RETURNING id`,
+          convParams
         );
         const convId = convNode.rows[0].id;
         for (const skillId of skillNodeIds) {
@@ -406,10 +421,14 @@ export default async function sessionCompleteHandler(req, res) {
                 [reachedLabel]
               );
               if (existingReached.rows.length === 0) {
+                const reachedCols = orgId ? 'label, type, metadata, confidence_history, org_id' : 'label, type, metadata, confidence_history';
+                const reachedVals = orgId ? '$1, \'Memory\', $2::jsonb, $3::jsonb, $4' : '$1, \'Memory\', $2::jsonb, $3::jsonb';
+                const reachedParams = orgId
+                  ? [reachedLabel, JSON.stringify({ confidence_score: 1.0 }), JSON.stringify([{ t: new Date().toISOString(), c: 1.0 }]), orgId]
+                  : [reachedLabel, JSON.stringify({ confidence_score: 1.0 }), JSON.stringify([{ t: new Date().toISOString(), c: 1.0 }])];
                 const reachedNode = await query(
-                  `INSERT INTO brain_nodes (label, type, metadata, confidence_history)
-                   VALUES ($1, 'Memory', $2::jsonb, $3::jsonb) RETURNING id`,
-                  [reachedLabel, JSON.stringify({ confidence_score: 1.0 }), JSON.stringify([{ t: new Date().toISOString(), c: 1.0 }])]
+                  `INSERT INTO brain_nodes (${reachedCols}) VALUES (${reachedVals}) RETURNING id`,
+                  reachedParams
                 );
                 if (coreId) {
                   await query(
@@ -442,10 +461,14 @@ export default async function sessionCompleteHandler(req, res) {
                 [label]
               );
               if (existing.rows.length > 0) continue;
+              const struggleCols = orgId ? 'label, type, agent_id, metadata, org_id' : 'label, type, agent_id, metadata';
+              const struggleVals = orgId ? '$1, \'Memory\', $2, $3::jsonb, $4' : '$1, \'Memory\', $2, $3::jsonb';
+              const struggleParams = orgId
+                ? [label, learnerAgentId, JSON.stringify({ confidence_score: 0.6, learner_id }), orgId]
+                : [label, learnerAgentId, JSON.stringify({ confidence_score: 0.6, learner_id })];
               const newNode = await query(
-                `INSERT INTO brain_nodes (label, type, agent_id, metadata)
-                 VALUES ($1, 'Memory', $2, $3::jsonb) RETURNING id`,
-                [label, learnerAgentId, JSON.stringify({ confidence_score: 0.6, learner_id })]
+                `INSERT INTO brain_nodes (${struggleCols}) VALUES (${struggleVals}) RETURNING id`,
+                struggleParams
               );
               if (coreId) {
                 await query(
@@ -472,10 +495,14 @@ export default async function sessionCompleteHandler(req, res) {
                 [label]
               );
               if (existingMastered.rows.length > 0) continue;
+              const masteredCols = orgId ? 'label, type, agent_id, metadata, org_id' : 'label, type, agent_id, metadata';
+              const masteredVals = orgId ? '$1, \'Memory\', $2, $3::jsonb, $4' : '$1, \'Memory\', $2, $3::jsonb';
+              const masteredParams = orgId
+                ? [label, learnerAgentId, JSON.stringify({ confidence_score: 1.0, learner_id }), orgId]
+                : [label, learnerAgentId, JSON.stringify({ confidence_score: 1.0, learner_id })];
               const newNode = await query(
-                `INSERT INTO brain_nodes (label, type, agent_id, metadata)
-                 VALUES ($1, 'Memory', $2, $3::jsonb) RETURNING id`,
-                [label, learnerAgentId, JSON.stringify({ confidence_score: 1.0, learner_id })]
+                `INSERT INTO brain_nodes (${masteredCols}) VALUES (${masteredVals}) RETURNING id`,
+                masteredParams
               );
               if (coreId) {
                 await query(

@@ -23,8 +23,11 @@ export async function getLearnersHandler(req, res) {
     return sendJson(res, 405, { error: 'GET only' });
   }
   try {
-    const result = await query(`
-      SELECT
+    const orgId = req.user.org_id || null;
+    const whereClause = orgId ? 'WHERE l.org_id = $1' : '';
+    const params = orgId ? [orgId] : [];
+    const result = await query(
+      `SELECT
         l.id, l.name, l.email, l.cefr_level, l.mother_tongue,
         COUNT(e.id)::int as total_sessions,
         MAX(e.created_at) as last_session,
@@ -32,9 +35,11 @@ export async function getLearnersHandler(req, res) {
             THEN 1 ELSE 0 END)::int as sessions_this_week
       FROM learners l
       LEFT JOIN episodes e ON e.learner_id = l.id
+      ${whereClause}
       GROUP BY l.id
-      ORDER BY last_session DESC NULLS LAST
-    `);
+      ORDER BY last_session DESC NULLS LAST`,
+      params
+    );
     sendJson(res, 200, result.rows);
   } catch (err) {
     console.error('GET /api/teacher/learners:', err);
@@ -52,9 +57,14 @@ export async function nudgeHandler(req, res, learnerId) {
     return sendJson(res, 400, { error: 'Learner ID required' });
   }
   try {
+    const orgId = req.user.org_id || null;
+    const learnerWhere = orgId
+      ? 'id = $1 AND (org_id = $2 OR org_id IS NULL)'
+      : 'id = $1';
+    const learnerParams = orgId ? [learnerId, orgId] : [learnerId];
     const learnerResult = await query(
-      'SELECT id, name, email FROM learners WHERE id = $1',
-      [learnerId]
+      `SELECT id, name, email FROM learners WHERE ${learnerWhere}`,
+      learnerParams
     );
     if (learnerResult.rows.length === 0) {
       return sendJson(res, 404, { error: 'Learner not found' });

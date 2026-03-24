@@ -4,8 +4,13 @@ import { query } from './db.js';
 export default async function agentsHandler(req, res) {
   if (req.method === 'GET') {
     try {
-      const result = await query(`
-        SELECT 
+      const orgId = req.user?.org_id || null;
+      const whereClause = orgId
+        ? 'WHERE (a.org_id = $1 OR a.org_id IS NULL)'
+        : '';
+      const params = orgId ? [orgId] : [];
+      const result = await query(
+        `SELECT 
           a.id,
           a.name,
           a.role,
@@ -18,9 +23,11 @@ export default async function agentsHandler(req, res) {
         FROM agents a
         LEFT JOIN episodes e ON e.agent_id = a.id
         LEFT JOIN brain_nodes bn ON bn.agent_id = a.id
+        ${whereClause}
         GROUP BY a.id, a.name, a.role, a.color, a.status, a.tick
-        ORDER BY a.name ASC
-      `);
+        ORDER BY a.name ASC`,
+        params
+      );
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ agents: result.rows }));

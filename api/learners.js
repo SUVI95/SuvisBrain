@@ -12,15 +12,18 @@ export default async function learnersHandler(req, res, pathname) {
       return;
     }
     try {
-      const result = await query(`
-        SELECT l.*,
+      const orgId = req.user.org_id || null;
+      const result = await query(
+        `SELECT l.*,
                COUNT(DISTINCT e.id)::int as session_count,
                MAX(e.created_at) as last_session
         FROM learners l
         LEFT JOIN episodes e ON e.learner_id = l.id
+        ${orgId ? 'WHERE l.org_id = $1' : ''}
         GROUP BY l.id
-        ORDER BY l.created_at ASC
-      `);
+        ORDER BY l.created_at ASC`,
+        orgId ? [orgId] : []
+      );
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const rows = result.rows.map((r) => {
         const sessionCount = parseInt(r.session_count) || 0;
@@ -54,8 +57,14 @@ export default async function learnersHandler(req, res, pathname) {
       return;
     }
     try {
+      const orgId = req.user?.org_id || null;
+      const learnerWhere = orgId
+        ? `id = $1 AND (org_id = $2 OR org_id IS NULL)`
+        : `id = $1`;
+      const learnerParams = orgId ? [learnerId, orgId] : [learnerId];
+
       const [learnerResult, nodesResult, episodesResult] = await Promise.all([
-        query(`SELECT * FROM learners WHERE id = $1`, [learnerId]),
+        query(`SELECT * FROM learners WHERE ${learnerWhere}`, learnerParams),
         query(
           `SELECT label, type, metadata,
                   (metadata->>'confidence_score')::float as confidence
@@ -69,9 +78,10 @@ export default async function learnersHandler(req, res, pathname) {
           `SELECT id, title, summary, duration_s, created_at, metadata
            FROM episodes
            WHERE learner_id = $1
+           ${orgId ? 'AND (org_id = $2 OR org_id IS NULL)' : ''}
            ORDER BY created_at DESC
            LIMIT 20`,
-          [learnerId]
+          orgId ? [learnerId, orgId] : [learnerId]
         ),
       ]);
 

@@ -21,6 +21,7 @@ import userDataHandler from './user-data.js';
 import teacherOverrideHandler, { teacherCefrOverrideHandler } from './teacher-override.js';
 import { getLearnersHandler, nudgeHandler } from './teacher-dashboard.js';
 import { getLeadsHandler, patchLeadHandler } from './leads.js';
+import adminOrganisationsHandler from './admin-organisations.js';
 import { query } from './db.js';
 
 function toNodeRes(res) {
@@ -200,6 +201,9 @@ export default async function handler(req, res) {
         nres.writeHead(404);
         nres.end();
         return;
+      }
+      if (route === 'admin' && pathSegs[1] === 'organisations' && req.method === 'POST') {
+        return adminOrganisationsHandler(wrappedReq, nres);
       }
     } catch (err) {
       console.error('[api]', err);

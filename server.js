@@ -31,6 +31,7 @@ import userDataHandler from './api/user-data.js';
 import teacherOverrideHandler, { teacherCefrOverrideHandler } from './api/teacher-override.js';
 import { getLearnersHandler, nudgeHandler } from './api/teacher-dashboard.js';
 import { getLeadsHandler, patchLeadHandler } from './api/leads.js';
+import adminOrganisationsHandler from './api/admin-organisations.js';
 import { query } from './api/db.js';
 import { getSystemPrompt, langToIso } from './api/knuut-prompt.js';
 
@@ -401,6 +402,10 @@ async function handleApi(pathname, req, res, body) {
       }
       res.writeHead(404);
       res.end();
+      return true;
+    }
+    if (route === 'admin' && path.split('/').filter(Boolean)[1] === 'organisations' && req.method === 'POST') {
+      await adminOrganisationsHandler(wrappedReq, res);
       return true;
     }
   } catch (err) {

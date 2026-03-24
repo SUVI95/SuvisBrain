@@ -12,14 +12,23 @@ export default async function brainStatsHandler(req, res) {
     return res.end(JSON.stringify({ error: 'Unauthorized' }));
   }
   const learnerId = user.id;
+  const orgId = user.org_id || null;
 
   try {
+    const learnerWhere = orgId
+      ? `id = $1 AND (org_id = $2 OR org_id IS NULL)`
+      : `id = $1`;
+    const episodeWhere = orgId
+      ? `learner_id = $1 AND (org_id = $2 OR org_id IS NULL)`
+      : `learner_id = $1`;
+    const learnerParams = orgId ? [learnerId, orgId] : [learnerId];
+
     const [learnerResult, episodesResult] = await Promise.all([
-      query(`SELECT cefr_level, name FROM learners WHERE id = $1`, [learnerId]),
+      query(`SELECT cefr_level, name FROM learners WHERE ${learnerWhere}`, learnerParams),
       query(
         `SELECT created_at, duration_s FROM episodes
-         WHERE learner_id = $1 ORDER BY created_at DESC`,
-        [learnerId]
+         WHERE ${episodeWhere} ORDER BY created_at DESC`,
+        learnerParams
       ),
     ]);
 

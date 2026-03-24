@@ -21,18 +21,23 @@ export default async function authHandler(req, res) {
 
   try {
     const learner = await query(
-      'SELECT id, name, email FROM learners WHERE LOWER(email) = LOWER($1)',
+      'SELECT id, name, email, org_id FROM learners WHERE LOWER(email) = LOWER($1)',
       [email.trim()]
     );
     if (learner.rows.length > 0) {
       const l = learner.rows[0];
-      const token = signToken({ id: l.id, email: l.email, role: 'learner' });
+      const token = signToken({
+        id: l.id,
+        email: l.email,
+        role: 'learner',
+        org_id: l.org_id || null,
+      });
       sendJson(res, 200, { token, role: 'learner', user: { id: l.id, name: l.name } });
       return;
     }
 
     const teacher = await query(
-      'SELECT id, name, email, password_hash FROM teachers WHERE LOWER(email) = LOWER($1)',
+      'SELECT id, name, email, password_hash, org_id, COALESCE(admin, false) as admin FROM teachers WHERE LOWER(email) = LOWER($1)',
       [email.trim()]
     );
     if (teacher.rows.length > 0) {
@@ -46,8 +51,14 @@ export default async function authHandler(req, res) {
         sendJson(res, 401, { error: 'Invalid email or password' });
         return;
       }
-      const token = signToken({ id: t.id, email: t.email, role: 'teacher' });
-      sendJson(res, 200, { token, role: 'teacher', user: { id: t.id, name: t.name } });
+      const role = t.admin ? 'admin' : 'teacher';
+      const token = signToken({
+        id: t.id,
+        email: t.email,
+        role,
+        org_id: t.org_id || null,
+      });
+      sendJson(res, 200, { token, role, user: { id: t.id, name: t.name } });
       return;
     }
 

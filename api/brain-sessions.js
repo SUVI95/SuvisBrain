@@ -12,15 +12,21 @@ export default async function brainSessionsHandler(req, res) {
     return res.end(JSON.stringify({ error: 'Unauthorized' }));
   }
   const learnerId = user.id;
+  const orgId = user.org_id || null;
 
   try {
+    const episodeWhere = orgId
+      ? `learner_id = $1 AND (org_id = $2 OR org_id IS NULL)`
+      : `learner_id = $1`;
+    const params = orgId ? [learnerId, orgId] : [learnerId];
+
     const result = await query(
       `SELECT id, title, summary, duration_s, created_at, metadata
        FROM episodes
-       WHERE learner_id = $1
+       WHERE ${episodeWhere}
        ORDER BY created_at DESC
        LIMIT 20`,
-      [learnerId]
+      params
     );
 
     const sessions = (result.rows || []).map((r) => ({
