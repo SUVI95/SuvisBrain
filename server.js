@@ -30,6 +30,7 @@ import ykiScoreHandler from './api/yki-score.js';
 import userDataHandler from './api/user-data.js';
 import teacherOverrideHandler, { teacherCefrOverrideHandler } from './api/teacher-override.js';
 import { getLearnersHandler, nudgeHandler } from './api/teacher-dashboard.js';
+import { getLeadsHandler, patchLeadHandler } from './api/leads.js';
 import { query } from './api/db.js';
 import { getSystemPrompt, langToIso } from './api/knuut-prompt.js';
 
@@ -388,6 +389,20 @@ async function handleApi(pathname, req, res, body) {
       await userDataHandler(wrappedReq, res, '/api/user-data/' + sub);
       return true;
     }
+    if (route === 'leads') {
+      const pathSegs = path.split('/').filter(Boolean);
+      if (req.method === 'GET' && !pathSegs[1]) {
+        await getLeadsHandler(wrappedReq, res);
+        return true;
+      }
+      if (req.method === 'PATCH' && pathSegs[1]) {
+        await patchLeadHandler(wrappedReq, res, pathSegs[1]);
+        return true;
+      }
+      res.writeHead(404);
+      res.end();
+      return true;
+    }
   } catch (err) {
     console.error('[api]', err);
     sendError(res, 500);
@@ -416,7 +431,7 @@ const server = createServer(async (req, res) => {
   if (voiceHandled) return;
 
   let body = '';
-  if (req.method === 'POST' && pathname.startsWith('/api')) {
+  if ((req.method === 'POST' || req.method === 'PATCH') && pathname.startsWith('/api')) {
     body = await collectBody(req);
   }
 

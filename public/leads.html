@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Nova's Lead Pipeline — Knuut AI</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#0d0d1a; color:#e0e0f0; font-family:'Courier New',monospace; min-height:100vh; padding:20px; }
+
+    header {
+      display:flex; align-items:center; gap:16px;
+      padding:16px 0 24px;
+      border-bottom:1px solid rgba(255,255,255,0.07);
+      margin-bottom:28px;
+    }
+    .logo { font-size:18px; font-weight:bold; color:#f472b6; letter-spacing:3px; }
+    .subtitle { font-size:12px; color:rgba(255,255,255,0.3); }
+    .status-dot { width:8px; height:8px; border-radius:50%; background:#f472b6; margin-left:auto; box-shadow:0 0 8px #f472b6; }
+
+    nav { display:flex; gap:4px; margin-bottom:28px; }
+    .nav-btn {
+      padding:6px 16px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);
+      background:transparent; color:rgba(255,255,255,0.4); font-size:12px;
+      cursor:pointer; font-family:inherit; transition:all 0.15s;
+      text-decoration:none; display:inline-block;
+    }
+    .nav-btn:hover, .nav-btn.active {
+      background:rgba(244,114,182,0.15); border-color:#f472b6; color:#f472b6;
+    }
+
+    .stats-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
+    .stat-card {
+      background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+      border-radius:10px; padding:16px; min-width:120px;
+    }
+    .stat-label { font-size:10px; color:rgba(255,255,255,0.35); margin-bottom:6px; text-transform:uppercase; letter-spacing:1px; }
+    .stat-value { font-size:24px; font-weight:bold; }
+    .stat-value.total { color:#fff; }
+    .stat-value.won { color:#1d9e75; }
+    .stat-value.follow_up { color:#f59e0b; }
+    .stat-value.lost { color:#9ca3af; }
+
+    .filter-bar {
+      display:flex; gap:8px; align-items:center; margin-bottom:24px; flex-wrap:wrap;
+    }
+    .filter-bar select {
+      padding:8px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.05); color:#e0e0f0; font-size:12px; font-family:inherit;
+      min-width:140px;
+    }
+
+    .lead-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
+    .lead-card {
+      background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+      border-radius:12px; padding:16px; transition:border-color 0.2s;
+    }
+    .lead-card:hover { border-color:rgba(244,114,182,0.3); }
+    .lead-title { font-size:14px; font-weight:bold; margin-bottom:8px; color:#fff; line-height:1.4; }
+    .lead-summary { font-size:11px; color:rgba(255,255,255,0.6); margin-bottom:12px; line-height:1.5; }
+    .lead-meta { font-size:10px; color:rgba(255,255,255,0.35); margin-bottom:12px; }
+    .lead-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+    .status-pill {
+      font-size:10px; padding:4px 10px; border-radius:6px; font-weight:600; text-transform:lowercase;
+    }
+    .status-pill.open { background:rgba(244,114,182,0.2); color:#f472b6; }
+    .status-pill.won { background:rgba(29,158,117,0.2); color:#1d9e75; }
+    .status-pill.follow_up { background:rgba(245,158,11,0.2); color:#f59e0b; }
+    .status-pill.lost { background:rgba(156,163,175,0.2); color:#9ca3af; }
+    .lead-actions select {
+      padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.05); color:#e0e0f0; font-size:11px; font-family:inherit;
+    }
+    .btn-ask {
+      padding:6px 12px; border-radius:6px; border:1px solid rgba(244,114,182,0.4);
+      background:rgba(244,114,182,0.2); color:#f472b6; font-size:11px; font-family:inherit;
+      cursor:pointer; white-space:nowrap;
+    }
+    .btn-ask:hover:not(:disabled) { background:rgba(244,114,182,0.3); }
+    .btn-ask:disabled { opacity:0.6; cursor:not-allowed; }
+
+    .ask-inline { margin-top:12px; display:none; }
+    .ask-inline.visible { display:block; }
+    .ask-inline input {
+      width:100%; padding:10px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.05); color:#e0e0f0; font-size:12px; font-family:inherit;
+      margin-bottom:8px;
+    }
+    .ask-inline input::placeholder { color:rgba(255,255,255,0.35); }
+    .ask-inline button {
+      padding:8px 16px; border-radius:6px; border:1px solid rgba(244,114,182,0.4);
+      background:rgba(244,114,182,0.2); color:#f472b6; font-size:12px; font-family:inherit;
+      cursor:pointer; margin-bottom:10px;
+    }
+    .ask-inline button:hover:not(:disabled) { background:rgba(244,114,182,0.3); }
+    .ask-inline button:disabled { opacity:0.6; cursor:not-allowed; }
+    .ask-reply {
+      margin-top:10px; padding:10px 12px; border-radius:6px; font-size:11px;
+      background:rgba(255,255,255,0.03); border-left:2px solid #f472b6; line-height:1.5;
+      color:rgba(255,255,255,0.8);
+    }
+    .ask-reply.error { color:#ff6b6b; border-left-color:#ff6b6b; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">NOVA'S LEAD PIPELINE</div>
+    <div class="subtitle">Qualified leads from Nova · Sales Qualifier</div>
+  </div>
+  <div class="status-dot"></div>
+</header>
+
+<nav>
+  <a class="nav-btn" href="dashboard.html">Dashboard</a>
+  <a class="nav-btn active" href="leads.html">Lead Pipeline</a>
+  <a class="nav-btn" href="index.html">Brain Graph</a>
+  <a class="nav-btn" href="knuut.html">Knuut</a>
+</nav>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-label">Total leads</div>
+    <div class="stat-value total" id="stat-total">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Won</div>
+    <div class="stat-value won" id="stat-won">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Follow up</div>
+    <div class="stat-value follow_up" id="stat-follow-up">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Lost</div>
+    <div class="stat-value lost" id="stat-lost">0</div>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <span style="font-size:11px;color:rgba(255,255,255,0.5)">Filter:</span>
+  <select id="filter-status">
+    <option value="">All statuses</option>
+    <option value="open">Open</option>
+    <option value="won">Won</option>
+    <option value="follow_up">Follow up</option>
+    <option value="lost">Lost</option>
+  </select>
+</div>
+
+<div class="lead-grid" id="lead-grid"></div>
+
+<script>
+const token = localStorage.getItem('sb_token') || localStorage.getItem('knuut_token');
+if (!token) location.replace('/login.html?next=' + encodeURIComponent(location.pathname || '/leads.html'));
+function authHdrs() { return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }; }
+
+const now = new Date();
+function relativeTime(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  const days = Math.floor((now - d) / (24 * 60 * 60 * 1000));
+  if (days < 1) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return days + ' days ago';
+  if (days < 30) return Math.floor(days / 7) + ' weeks ago';
+  return d.toLocaleDateString('fi-FI');
+}
+
+function getStatus(lead) {
+  return (lead.metadata && lead.metadata.lead_status) || 'open';
+}
+
+let leadsData = [];
+let novaId = null;
+
+async function loadAgents() {
+  try {
+    const res = await fetch('/api/agents', { headers: authHdrs() });
+    const data = await res.json();
+    const agents = data.agents || [];
+    const nova = agents.find(a => a.name === 'Nova');
+    if (nova) novaId = nova.id;
+  } catch (e) {}
+}
+
+async function loadLeads() {
+  try {
+    const res = await fetch('/api/leads', { headers: authHdrs() });
+    if (!res.ok) throw new Error('Failed');
+    leadsData = await res.json();
+    if (!Array.isArray(leadsData)) leadsData = [];
+    if (leadsData.length > 0 && !novaId) novaId = leadsData[0].agent_id;
+  } catch (err) {
+    console.error(err);
+    document.getElementById('lead-grid').innerHTML = '<p style="color:rgba(255,255,255,0.3);font-size:12px">Could not load leads.</p>';
+    return;
+  }
+
+  const filterVal = document.getElementById('filter-status').value;
+  const filtered = filterVal ? leadsData.filter(l => getStatus(l) === filterVal) : leadsData;
+
+  const won = leadsData.filter(l => getStatus(l) === 'won').length;
+  const followUp = leadsData.filter(l => getStatus(l) === 'follow_up').length;
+  const lost = leadsData.filter(l => getStatus(l) === 'lost').length;
+
+  document.getElementById('stat-total').textContent = leadsData.length;
+  document.getElementById('stat-won').textContent = won;
+  document.getElementById('stat-follow-up').textContent = followUp;
+  document.getElementById('stat-lost').textContent = lost;
+
+  const grid = document.getElementById('lead-grid');
+  grid.innerHTML = filtered.map(lead => {
+    const status = getStatus(lead);
+    const title = (lead.title || '').slice(0, 60) || 'Untitled';
+    const summary = (lead.summary || '').slice(0, 200);
+    return `
+      <div class="lead-card" data-id="${lead.id}">
+        <div class="lead-title">${title}</div>
+        <div class="lead-summary">${summary || '—'}</div>
+        <div class="lead-meta">${relativeTime(lead.created_at)}</div>
+        <div class="lead-actions">
+          <span class="status-pill ${status}">${status}</span>
+          <select data-lead-id="${lead.id}" data-status>
+            <option value="open" ${status === 'open' ? 'selected' : ''}>open</option>
+            <option value="won" ${status === 'won' ? 'selected' : ''}>won</option>
+            <option value="follow_up" ${status === 'follow_up' ? 'selected' : ''}>follow up</option>
+            <option value="lost" ${status === 'lost' ? 'selected' : ''}>lost</option>
+          </select>
+          <button class="btn-ask" data-lead-id="${lead.id}">Ask Nova</button>
+        </div>
+        <div class="ask-inline" data-lead-id="${lead.id}">
+          <input type="text" placeholder="Ask Nova about this lead..." data-prompt maxlength="500">
+          <button data-send>Send</button>
+          <div class="ask-reply" data-reply style="display:none"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  grid.querySelectorAll('[data-status]').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      const id = sel.dataset.leadId;
+      const status = sel.value;
+      try {
+        const r = await fetch(`/api/leads/${id}`, {
+          method: 'PATCH',
+          headers: authHdrs(),
+          body: JSON.stringify({ status }),
+        });
+        if (!r.ok) throw new Error('Failed');
+        const lead = leadsData.find(l => l.id === id);
+        if (lead) lead.metadata = { ...(lead.metadata || {}), lead_status: status };
+        const pill = sel.closest('.lead-card').querySelector('.status-pill');
+        if (pill) { pill.textContent = status; pill.className = 'status-pill ' + status; }
+        const won = leadsData.filter(l => getStatus(l) === 'won').length;
+        const followUp = leadsData.filter(l => getStatus(l) === 'follow_up').length;
+        const lost = leadsData.filter(l => getStatus(l) === 'lost').length;
+        document.getElementById('stat-won').textContent = won;
+        document.getElementById('stat-follow-up').textContent = followUp;
+        document.getElementById('stat-lost').textContent = lost;
+      } catch (e) {
+        alert('Could not update status.');
+      }
+    });
+  });
+
+  grid.querySelectorAll('.btn-ask').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.leadId;
+      const inline = grid.querySelector(`.ask-inline[data-lead-id="${id}"]`);
+      inline.classList.toggle('visible');
+    });
+  });
+
+  grid.querySelectorAll('[data-send]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const card = btn.closest('.lead-card');
+      const id = card.dataset.id;
+      const input = card.querySelector('[data-prompt]');
+      const replyEl = card.querySelector('[data-reply]');
+      const msg = (input.value || '').trim();
+      if (!msg || !novaId) return;
+      btn.disabled = true;
+      replyEl.style.display = 'none';
+      replyEl.classList.remove('error');
+      try {
+        const lead = leadsData.find(l => l.id === id);
+        const context = lead ? `Lead: ${lead.title || ''}\n${lead.summary || ''}` : '';
+        const res = await fetch(`/api/agents/${novaId}/prompt`, {
+          method: 'POST',
+          headers: authHdrs(),
+          body: JSON.stringify({ message: msg, context }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+        replyEl.textContent = data.reply || '';
+        replyEl.style.display = 'block';
+        input.value = '';
+      } catch (err) {
+        replyEl.textContent = 'Something went wrong — try again';
+        replyEl.classList.add('error');
+        replyEl.style.display = 'block';
+      }
+      btn.disabled = false;
+    });
+  });
+}
+
+document.getElementById('filter-status').addEventListener('change', () => loadLeads());
+
+(async () => {
+  await loadAgents();
+  await loadLeads();
+})();
+</script>
+</body>
+</html>

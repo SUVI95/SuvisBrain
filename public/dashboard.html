@@ -80,6 +80,12 @@
 
     .pulse { animation: pulse 2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .lead-pipeline-btn {
+      display:inline-block; padding:6px 12px; border-radius:6px; border:1px solid rgba(244,114,182,0.4);
+      background:rgba(244,114,182,0.15); color:#f472b6; font-size:11px; text-decoration:none;
+      font-family:inherit; text-align:center; margin-top:4px;
+    }
+    .lead-pipeline-btn:hover { background:rgba(244,114,182,0.25); }
   </style>
 </head>
 <body>
@@ -99,7 +105,7 @@
   <a class="nav-btn" href="student-dashboard.html">Student</a>
   <a class="nav-btn" href="teacher-dashboard.html">Teacher</a>
   <a class="nav-btn" href="#">Conversations</a>
-  <a class="nav-btn" href="#">Leads</a>
+  <a class="nav-btn" href="leads.html">Lead Pipeline</a>
   <a class="nav-btn" href="#">Settings</a>
 </nav>
 
@@ -196,8 +202,9 @@ async function loadDashboard() {
           <button type="button" data-agent-id="${a.id}" data-run>Run</button>
         </div>
         <div class="agent-response" data-agent-id="${a.id}" style="border-left-color:${a.color || '#888'}"></div>
-        <div class="agent-footer">
+        <div class="agent-footer" style="display:flex;flex-direction:column;gap:8px">
           <span>last active: ${lastActive}</span>
+          ${a.name === 'Nova' ? '<a href="leads.html" class="lead-pipeline-btn">Lead Pipeline →</a>' : ''}
         </div>
       </div>`;
   });

@@ -20,6 +20,7 @@ import ykiScoreHandler from './yki-score.js';
 import userDataHandler from './user-data.js';
 import teacherOverrideHandler, { teacherCefrOverrideHandler } from './teacher-override.js';
 import { getLearnersHandler, nudgeHandler } from './teacher-dashboard.js';
+import { getLeadsHandler, patchLeadHandler } from './leads.js';
 import { query } from './db.js';
 
 function toNodeRes(res) {
@@ -84,7 +85,7 @@ export default async function handler(req, res) {
       return res.status(429).json({ error: 'Too many requests' });
     }
 
-    const body = req.method === 'POST' ? await collectBody(req) : {};
+    const body = (req.method === 'POST' || req.method === 'PATCH') ? await collectBody(req) : {};
     const wrappedReq = { method: req.method, headers: req.headers || {}, body, user: null, url: req.url || req.originalUrl || '' };
     const nres = toNodeRes(res);
 
@@ -193,6 +194,13 @@ export default async function handler(req, res) {
       if (route === 'session-focus') return sessionFocusHandler(wrappedReq, nres);
       if (route === 'save-card') return saveCardHandler(wrappedReq, nres);
       if (route === 'user-data') return userDataHandler(wrappedReq, nres, '/api/user-data/' + (pathSegs[1] || ''));
+      if (route === 'leads') {
+        if (req.method === 'GET' && !pathSegs[1]) return getLeadsHandler(wrappedReq, nres);
+        if (req.method === 'PATCH' && pathSegs[1]) return patchLeadHandler(wrappedReq, nres, pathSegs[1]);
+        nres.writeHead(404);
+        nres.end();
+        return;
+      }
     } catch (err) {
       console.error('[api]', err);
       return sendError(res, 500);
