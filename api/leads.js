@@ -36,19 +36,36 @@ export async function patchLeadHandler(req, res, leadId) {
   if (!leadId) {
     return sendJson(res, 400, { error: 'Lead ID required' });
   }
-  const { status } = req.body || {};
-  const s = String(status || '').toLowerCase().trim();
-  if (!VALID_STATUS.includes(s)) {
-    return sendJson(res, 400, { error: 'status must be one of: open, won, lost, follow_up' });
+  const { status, notes } = req.body || {};
+  const params = [];
+  let idx = 1;
+  const metaUpdates = [];
+  if (status !== undefined) {
+    const s = String(status || '').toLowerCase().trim();
+    if (!VALID_STATUS.includes(s)) {
+      return sendJson(res, 400, { error: 'status must be one of: open, won, lost, follow_up' });
+    }
+    metaUpdates.push(['lead_status', JSON.stringify(s)]);
   }
+  if (notes !== undefined) {
+    metaUpdates.push(['lead_notes', JSON.stringify(String(notes || '').slice(0, 5000))]);
+  }
+  if (metaUpdates.length === 0) {
+    return sendJson(res, 400, { error: 'Provide status and/or notes' });
+  }
+  let inner = "COALESCE(metadata, '{}')";
+  for (const [key, val] of metaUpdates) {
+    params.push(val);
+    inner = `jsonb_set(${inner}, '{${key}}', $${idx}::jsonb)`;
+    idx++;
+  }
+  params.push(leadId);
   try {
     await query(
-      `UPDATE episodes
-       SET metadata = jsonb_set(COALESCE(metadata, '{}'), '{lead_status}', $1::jsonb)
-       WHERE id = $2 AND lead_qualified = true`,
-      [JSON.stringify(s), leadId]
+      `UPDATE episodes SET metadata = ${inner} WHERE id = $${idx} AND lead_qualified = true`,
+      params
     );
-    sendJson(res, 200, { success: true, status: s });
+    sendJson(res, 200, { success: true, status: status !== undefined ? String(status).toLowerCase().trim() : undefined, notes: notes !== undefined ? String(notes).slice(0, 5000) : undefined });
   } catch (err) {
     console.error('PATCH /api/leads:', err);
     sendJson(res, 500, { error: err.message });

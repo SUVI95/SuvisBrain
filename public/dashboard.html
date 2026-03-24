@@ -138,7 +138,12 @@
 </div>
 
 <h2>Agent Fleet</h2>
+<div id="dashboard-loading" style="display:none;padding:24px;text-align:center;color:rgba(255,255,255,0.5)">Loading agents...</div>
 <div class="agent-grid" id="agent-grid"></div>
+<div id="dashboard-error" style="display:none;padding:24px;background:rgba(255,255,255,0.05);border-radius:12px;color:#ff6b6b;margin-top:16px">
+  <p>Could not reach API — is the server running?</p>
+  <button type="button" id="dashboard-retry" style="margin-top:12px;padding:10px 20px;background:#a78bfa;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">Retry</button>
+</div>
 
 <script>
 const token = localStorage.getItem('sb_token') || localStorage.getItem('knuut_token');
@@ -146,15 +151,19 @@ if (!token) location.replace('/login.html?next=' + encodeURIComponent(location.p
 function authHdrs() { return { 'Authorization': 'Bearer ' + (localStorage.getItem('sb_token') || localStorage.getItem('knuut_token') || ''), 'Content-Type': 'application/json' }; }
 
 async function loadDashboard() {
+  document.getElementById('dashboard-loading').style.display = 'block';
+  document.getElementById('agent-grid').innerHTML = '';
+  document.getElementById('dashboard-error').style.display = 'none';
   let agentData = [];
   try {
     const res = await fetch('/api/agents', { headers: authHdrs() });
     const data = await res.json();
+    document.getElementById('dashboard-loading').style.display = 'none';
     agentData = data.agents || [];
   } catch (err) {
     console.error('Failed to load agents:', err);
-    document.getElementById('agent-grid').innerHTML =
-      '<p style="color:rgba(255,255,255,0.3);font-size:12px">Could not reach API — is the server running?</p>';
+    document.getElementById('dashboard-loading').style.display = 'none';
+    document.getElementById('dashboard-error').style.display = 'block';
     return;
   }
 
@@ -245,6 +254,7 @@ async function loadDashboard() {
   });
 }
 
+document.getElementById('dashboard-retry')?.addEventListener('click', loadDashboard);
 loadDashboard();
 </script>
 </body>

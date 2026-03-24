@@ -120,3 +120,72 @@ export async function nudgeHandler(req, res, learnerId) {
     sendJson(res, 500, { error: err.message });
   }
 }
+
+// POST /api/teacher/nudge/bulk — nudge multiple learners at once
+export async function nudgeBulkHandler(req, res) {
+  if (!requireTeacher(req, res)) return;
+  if (req.method !== 'POST') {
+    return sendJson(res, 405, { error: 'POST only' });
+  }
+  const { learner_ids: learnerIds } = req.body || {};
+  if (!Array.isArray(learnerIds) || learnerIds.length === 0) {
+    return sendJson(res, 400, { error: 'learner_ids array required' });
+  }
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return sendJson(res, 500, { error: 'RESEND_API_KEY not set' });
+  }
+  const orgId = req.user.org_id || null;
+  const learnerWhere = orgId
+    ? 'id = ANY($1::uuid[]) AND (org_id = $2 OR org_id IS NULL)'
+    : 'id = ANY($1::uuid[])';
+  const learnerParams = orgId ? [learnerIds, orgId] : [learnerIds];
+  try {
+    const learnerResult = await query(
+      `SELECT id, name, email FROM learners WHERE ${learnerWhere}`,
+      learnerParams
+    );
+    const withEmail = learnerResult.rows.filter((l) => l.email);
+    const sent = [];
+    const failed = [];
+    const from = process.env.RESEND_FROM || 'Knuut <onboarding@resend.dev>';
+    for (const learner of withEmail) {
+      try {
+        const name = (learner.name || 'learner').trim();
+        const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;padding:24px">
+  <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+    <h1 style="margin:0 0 24px;color:#1d9e75;font-size:24px">Knuut AI</h1>
+    <p style="margin:0 0 24px;font-size:16px">Hi ${name.replace(/</g, '&lt;')}, you haven't practiced Finnish in a few days. Come back and keep your streak going!</p>
+    <a href="https://suvisbrain.vercel.app/knuut.html" style="display:inline-block;padding:14px 28px;background:#1d9e75;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px">Practice now →</a>
+    <p style="margin:24px 0 0;font-size:12px;color:#999">Knuut AI by HSBRIDGE AI · Kajaani, Finland</p>
+  </div>
+</body>
+</html>`;
+        const resendRes = await fetch(RESEND_URL, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from,
+            to: learner.email,
+            subject: 'Knuut misses you! 🇫🇮',
+            html,
+          }),
+        });
+        if (resendRes.ok) sent.push(learner.id); else failed.push({ id: learner.id, reason: resendRes.statusText });
+      } catch (e) {
+        failed.push({ id: learner.id, reason: e.message });
+      }
+    }
+    return sendJson(res, 200, { sent: sent.length, failed: failed.length, no_email: learnerIds.length - withEmail.length, details: failed });
+  } catch (err) {
+    console.error('POST /api/teacher/nudge/bulk:', err);
+    return sendJson(res, 500, { error: err.message });
+  }
+}

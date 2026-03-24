@@ -64,6 +64,8 @@ async function getLearnerStats(learnerId) {
   ]);
 
   const xp = Number(xpResult.rows[0]?.xp) || 0;
+  const freezeResult = await query(`SELECT streak_freezes_used FROM learners WHERE id = $1`, [learnerId]);
+  const freezeRaw = freezeResult.rows[0]?.streak_freezes_used;
   const sessions = await query(
     `SELECT COUNT(*)::int as c FROM episodes
      WHERE learner_id = $1 AND created_at > NOW() - INTERVAL '7 days'`,
@@ -75,15 +77,16 @@ async function getLearnerStats(learnerId) {
     confidence: Math.round(Number(row.confidence_pct) || 0),
   }));
 
-  // Streak: consecutive days with at least one episode
-  const dates = (streakResult.rows || []).map(r => r.d);
+  const epDateStrs = (streakResult.rows || []).map(r => (typeof r.d === 'string' ? r.d : r.d?.toISOString?.()?.slice(0, 10))).filter(Boolean);
+  const freezeDateStrs = Array.isArray(freezeRaw) ? freezeRaw.map(d => (typeof d === 'string' ? d : d?.date || '')).filter(Boolean) : [];
+  const dates = [...new Set([...epDateStrs, ...freezeDateStrs])].sort().reverse();
+
   let streak = 0;
   if (dates.length > 0) {
-    const dateStrs = dates.map(d => (typeof d === 'string' ? d : d?.toISOString?.()?.slice(0, 10))).filter(Boolean);
     streak = 1;
-    for (let i = 1; i < dateStrs.length; i++) {
-      const prev = new Date(dateStrs[i - 1]);
-      const curr = new Date(dateStrs[i]);
+    for (let i = 1; i < dates.length; i++) {
+      const prev = new Date(dates[i - 1]);
+      const curr = new Date(dates[i]);
       const diffDays = Math.round((prev - curr) / (24 * 60 * 60 * 1000));
       if (diffDays === 1) streak++;
       else break;

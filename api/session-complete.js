@@ -432,6 +432,12 @@ export default async function sessionCompleteHandler(req, res) {
                 'UPDATE learners SET cefr_level = $2, updated_at = now() WHERE id = $1',
                 [learner_id, demonstrated]
               );
+              try {
+                await query(
+                  `INSERT INTO cefr_history (learner_id, from_level, to_level, reason) VALUES ($1, $2, $3, 'session_demonstrated')`,
+                  [learner_id, currentLevel, demonstrated]
+                );
+              } catch (_) { /* cefr_history may not exist yet */ }
               const reachedLabel = `Reached ${demonstrated}`;
               const existingReached = await query(
                 'SELECT id FROM brain_nodes WHERE LOWER(label) = LOWER($1)',

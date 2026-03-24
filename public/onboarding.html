@@ -2,19 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Knuut — Get Started</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { -webkit-tap-highlight-color: transparent; }
     body {
       font-family: system-ui, -apple-system, sans-serif;
       background: #f0f0f0;
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 16px;
+    }
+    @media (max-width: 480px) {
+      body { padding: 12px; justify-content: flex-start; padding-top: min(24px, env(safe-area-inset-top)); }
+      .card { padding: 24px 20px; border-radius: 20px; }
+      .btn, input, select { min-height: 48px; font-size: 16px; }
+      .goal-card { padding: 24px 16px; min-height: 90px; display: flex; flex-direction: column; justify-content: center; }
+      .quiz-opt { min-height: 48px; padding: 14px 16px; }
     }
     .card {
       background: #fff;
@@ -108,6 +117,9 @@
       grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
+    @media (max-width: 400px) {
+      .goal-cards { grid-template-columns: 1fr; gap: 10px; }
+    }
     .goal-card {
       padding: 20px 16px;
       border: 2px solid #e5e7eb;
@@ -147,10 +159,15 @@
     .quiz-opt.selected { border-color: #1d9e75; background: rgba(29, 158, 117, 0.1); }
     .err { color: #dc2626; font-size: 13px; margin-top: 8px; }
     .loading { opacity: 0.7; pointer-events: none; }
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-banner { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 14px; border-radius: 10px; font-size: 14px; margin-bottom: 20px; display: none; }
+    .error-banner.show { display: block; }
   </style>
 </head>
 <body>
   <div class="card">
+    <div class="error-banner" id="error-banner"></div>
     <div class="dots">
       <span class="dot active" data-step="0"></span>
       <span class="dot" data-step="1"></span>
@@ -279,7 +296,9 @@
       if (answers.some((a) => a === null)) return;
       const btn = document.getElementById('btn-step2');
       const errEl = document.getElementById('err-register');
+      const banner = document.getElementById('error-banner');
       errEl.style.display = 'none';
+      banner.classList.remove('show');
       btn.classList.add('loading');
       btn.textContent = 'Creating account...';
 
@@ -307,8 +326,8 @@
         }
         location.replace('/student-dashboard.html');
       } catch (e) {
-        errEl.textContent = e.message || 'Something went wrong';
-        errEl.style.display = 'block';
+        banner.textContent = e.message || 'Something went wrong. Check your connection and try again.';
+        banner.classList.add('show');
       } finally {
         btn.classList.remove('loading');
         btn.textContent = 'Start learning';

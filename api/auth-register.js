@@ -25,15 +25,25 @@ export default async function registerHandler(req, res) {
     : 'A1';
 
   try {
+    const defaultOrg = await query(
+      `SELECT id FROM organisations ORDER BY created_at ASC LIMIT 1`
+    );
+    const orgId = defaultOrg.rows[0]?.id || null;
+
     const email = `onboard-${Date.now()}-${Math.random().toString(36).slice(2, 10)}@knuut.fi`;
     const result = await query(
-      `INSERT INTO learners (name, email, mother_tongue, learning_goal, cefr_level)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO learners (name, email, mother_tongue, learning_goal, cefr_level, org_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, name, email`,
-      [trimmedName, email, trimmedMotherTongue, trimmedGoal, level]
+      [trimmedName, email, trimmedMotherTongue, trimmedGoal, level, orgId]
     );
     const learner = result.rows[0];
-    const token = signToken({ id: learner.id, email: learner.email, role: 'learner' });
+    const token = signToken({
+      id: learner.id,
+      email: learner.email,
+      role: 'learner',
+      org_id: orgId,
+    });
     sendJson(res, 200, { 
       token, 
       role: 'learner', 

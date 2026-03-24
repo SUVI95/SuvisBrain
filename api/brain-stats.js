@@ -24,7 +24,7 @@ export default async function brainStatsHandler(req, res) {
     const learnerParams = orgId ? [learnerId, orgId] : [learnerId];
 
     const [learnerResult, episodesResult] = await Promise.all([
-      query(`SELECT cefr_level, name FROM learners WHERE ${learnerWhere}`, learnerParams),
+      query(`SELECT cefr_level, name, COALESCE(streak_freezes_remaining, 2) as streak_freezes_remaining, COALESCE(streak_freezes_used, '[]'::jsonb) as streak_freezes_used FROM learners WHERE ${learnerWhere}`, learnerParams),
       query(
         `SELECT created_at, duration_s FROM episodes
          WHERE ${episodeWhere} ORDER BY created_at DESC`,
@@ -35,6 +35,9 @@ export default async function brainStatsHandler(req, res) {
     const learner = learnerResult.rows?.[0];
     const episodes = episodesResult.rows || [];
     const level = learner?.cefr_level || 'A1';
+    const freezesRemaining = Math.max(0, parseInt(learner?.streak_freezes_remaining) || 2);
+    const raw = learner?.streak_freezes_used;
+    const freezesUsed = Array.isArray(raw) ? raw.map((d) => (typeof d === 'string' ? d : d?.date || '')).filter(Boolean) : [];
 
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -42,7 +45,10 @@ export default async function brainStatsHandler(req, res) {
       .filter((e) => new Date(e.created_at) >= weekAgo)
       .reduce((sum, e) => sum + Math.min((e.duration_s || 0) / 60 * 50, 100), 0);
 
-    const dates = [...new Set(episodes.map((e) => (e.created_at || '').slice(0, 10)))].sort().reverse();
+    const episodeDates = [...new Set(episodes.map((e) => (e.created_at || '').slice(0, 10)))];
+    const freezeDates = (freezesUsed || []).map((d) => (typeof d === 'string' ? d : d?.date || '')).filter(Boolean);
+    const dates = [...new Set([...episodeDates, ...freezeDates])].sort().reverse();
+
     let streak = 0;
     const today = new Date().toISOString().slice(0, 10);
     for (let i = 0; i < dates.length; i++) {
@@ -59,6 +65,7 @@ export default async function brainStatsHandler(req, res) {
       xp_goal: 500,
       streak,
       level,
+      streak_freezes_remaining: freezesRemaining,
     }));
   } catch (err) {
     console.error('brain/stats error:', err);

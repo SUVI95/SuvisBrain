@@ -15,6 +15,7 @@ import { setSecurityHeaders, getClientIp, sendError } from './src/lib/security.j
 import { checkLimit, LIMITS } from './src/lib/rate-limit.js';
 import brainHandler from './api/brain.js';
 import brainSearchHandler from './api/brain-search.js';
+import brainUseFreezeHandler from './api/brain-use-freeze.js';
 import brainSkillsHandler from './api/brain-skills.js';
 import brainStatsHandler from './api/brain-stats.js';
 import brainSessionsHandler from './api/brain-sessions.js';
@@ -30,7 +31,7 @@ import weeklyEmailHandler from './api/cron-weekly.js';
 import ykiScoreHandler from './api/yki-score.js';
 import userDataHandler from './api/user-data.js';
 import teacherOverrideHandler, { teacherCefrOverrideHandler } from './api/teacher-override.js';
-import { getLearnersHandler, nudgeHandler } from './api/teacher-dashboard.js';
+import { getLearnersHandler, nudgeHandler, nudgeBulkHandler } from './api/teacher-dashboard.js';
 import { getLeadsHandler, patchLeadHandler } from './api/leads.js';
 import adminOrganisationsHandler from './api/admin-organisations.js';
 import { query } from './api/db.js';
@@ -268,16 +269,39 @@ async function handleApi(pathname, req, res, body) {
         query('SELECT COUNT(*) FROM episodes'),
         query('SELECT COUNT(*) FROM learners'),
       ]);
+      const counts = {
+        brain_nodes: parseInt(nodes.rows[0]?.count || 0),
+        brain_edges: parseInt(edges.rows[0]?.count || 0),
+        episodes: parseInt(episodes.rows[0]?.count || 0),
+        learners: parseInt(learners.rows[0]?.count || 0),
+      };
+      const checks = { database: 'ok' };
+      if (process.env.OPENAI_API_KEY) {
+        try {
+          const oaiRes = await fetch('https://api.openai.com/v1/models', {
+            headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+          });
+          checks.openai = oaiRes.ok ? 'ok' : `fail:${oaiRes.status}`;
+        } catch (e) {
+          checks.openai = 'fail:' + (e.message || 'error');
+        }
+      } else {
+        checks.openai = 'skipped';
+      }
+      if (process.env.RESEND_API_KEY) {
+        try {
+          const resendRes = await fetch('https://api.resend.com/domains', {
+            headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
+          });
+          checks.resend = resendRes.ok ? 'ok' : `fail:${resendRes.status}`;
+        } catch (e) {
+          checks.resend = 'fail:' + (e.message || 'error');
+        }
+      } else {
+        checks.resend = 'skipped';
+      }
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        status: 'ok',
-        counts: {
-          brain_nodes: parseInt(nodes.rows[0]?.count || 0),
-          brain_edges: parseInt(edges.rows[0]?.count || 0),
-          episodes: parseInt(episodes.rows[0]?.count || 0),
-          learners: parseInt(learners.rows[0]?.count || 0),
-        },
-      }));
+      res.end(JSON.stringify({ status: 'ok', counts, checks }));
     } catch (err) {
       console.error('health:', err);
       sendError(res, 500);
@@ -337,7 +361,11 @@ async function handleApi(pathname, req, res, body) {
         return true;
       }
       if (pathSegs[1] === 'nudge' && pathSegs[2] && req.method === 'POST') {
-        await nudgeHandler(wrappedReq, res, pathSegs[2]);
+        if (pathSegs[2] === 'bulk') {
+          await nudgeBulkHandler(wrappedReq, res);
+        } else {
+          await nudgeHandler(wrappedReq, res, pathSegs[2]);
+        }
         return true;
       }
       res.writeHead(404);
@@ -361,6 +389,7 @@ async function handleApi(pathname, req, res, body) {
       const pathSegs = path.split('/').filter(Boolean);
       const sub = pathSegs[1];
       if (sub === 'search') { await brainSearchHandler(wrappedReq, res); return true; }
+      if (sub === 'use-freeze') { await brainUseFreezeHandler(wrappedReq, res); return true; }
       if (sub === 'skills') { await brainSkillsHandler(wrappedReq, res); return true; }
       if (sub === 'stats') { await brainStatsHandler(wrappedReq, res); return true; }
       if (sub === 'sessions') { await brainSessionsHandler(wrappedReq, res); return true; }

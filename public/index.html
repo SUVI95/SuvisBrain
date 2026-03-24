@@ -214,6 +214,20 @@ function runSearch(q) {
     });
 }
 
+function relativeTime(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  const ms = Date.now() - d.getTime();
+  if (ms < 60000) return 'just now';
+  if (ms < 3600000) return Math.floor(ms / 60000) + ' min ago';
+  if (ms < 86400000) return Math.floor(ms / 3600000) + ' h ago';
+  const days = Math.floor(ms / 86400000);
+  if (days === 1) return 'yesterday';
+  if (days < 7) return days + ' days ago';
+  if (days < 30) return Math.floor(days / 7) + ' weeks ago';
+  return d.toLocaleDateString('fi-FI');
+}
+
 // ── LOAD FROM API ────────────────────────────────────────────────────
 let nodes = [];
 let links = [];
@@ -304,11 +318,8 @@ async function loadBrainData() {
   `;
 
   if (data.last_session) {
-    const d = new Date(data.last_session);
-    const label = d.toLocaleDateString('fi-FI', {
-      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-    });
-    document.getElementById('last-session').textContent = `Last session: ${label}`;
+    const rel = relativeTime(data.last_session);
+    document.getElementById('last-session').textContent = `Last session: ${rel}`;
   } else {
     document.getElementById('last-session').textContent =
       'No sessions yet — brain grows after first Knuut session';
@@ -462,6 +473,7 @@ document.getElementById('brain-search').addEventListener('input', (e) => {
   searchDebounceTimer = setTimeout(() => runSearch(q), 400);
 });
 
+window.loadBrainData = loadBrainData;
 loadBrainData();
 </script>
 </body>

@@ -149,7 +149,12 @@
   </select>
 </div>
 
+<div id="leads-loading" style="display:none;padding:24px;text-align:center;color:rgba(255,255,255,0.5)">Loading leads...</div>
 <div class="lead-grid" id="lead-grid"></div>
+<div id="leads-error" style="display:none;padding:24px;background:rgba(255,255,255,0.05);border-radius:12px;color:#ff6b6b;margin-top:16px">
+  <p>Could not load leads.</p>
+  <button type="button" id="leads-retry" style="margin-top:12px;padding:10px 20px;background:#f472b6;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">Retry</button>
+</div>
 
 <script>
 const token = localStorage.getItem('sb_token') || localStorage.getItem('knuut_token');
@@ -168,6 +173,7 @@ function relativeTime(dateStr) {
   return d.toLocaleDateString('fi-FI');
 }
 
+function escapeHtml(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function getStatus(lead) {
   return (lead.metadata && lead.metadata.lead_status) || 'open';
 }
@@ -186,15 +192,20 @@ async function loadAgents() {
 }
 
 async function loadLeads() {
+  document.getElementById('leads-loading').style.display = 'block';
+  document.getElementById('lead-grid').innerHTML = '';
+  document.getElementById('leads-error').style.display = 'none';
   try {
     const res = await fetch('/api/leads', { headers: authHdrs() });
     if (!res.ok) throw new Error('Failed');
+    document.getElementById('leads-loading').style.display = 'none';
     leadsData = await res.json();
     if (!Array.isArray(leadsData)) leadsData = [];
     if (leadsData.length > 0 && !novaId) novaId = leadsData[0].agent_id;
   } catch (err) {
     console.error(err);
-    document.getElementById('lead-grid').innerHTML = '<p style="color:rgba(255,255,255,0.3);font-size:12px">Could not load leads.</p>';
+    document.getElementById('leads-loading').style.display = 'none';
+    document.getElementById('leads-error').style.display = 'block';
     return;
   }
 
@@ -229,6 +240,10 @@ async function loadLeads() {
             <option value="lost" ${status === 'lost' ? 'selected' : ''}>lost</option>
           </select>
           <button class="btn-ask" data-lead-id="${lead.id}">Ask Nova</button>
+        </div>
+        <div class="lead-notes" data-lead-id="${lead.id}" style="margin-top:12px">
+          <div class="lead-notes-label" style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:4px">Notes</div>
+          <textarea class="lead-notes-input" data-lead-id="${lead.id}" placeholder="Add notes..." rows="2" style="width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#e0e0f0;font-size:12px;font-family:inherit;resize:vertical">${escapeHtml((lead.metadata && lead.metadata.lead_notes) || '')}</textarea>
         </div>
         <div class="ask-inline" data-lead-id="${lead.id}">
           <input type="text" placeholder="Ask Nova about this lead..." data-prompt maxlength="500">
@@ -273,6 +288,27 @@ async function loadLeads() {
     });
   });
 
+  grid.querySelectorAll('.lead-notes-input').forEach(ta => {
+    let debounce;
+    ta.addEventListener('input', () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(async () => {
+        const id = ta.dataset.leadId;
+        const notes = ta.value;
+        try {
+          const r = await fetch(`/api/leads/${id}`, {
+            method: 'PATCH',
+            headers: authHdrs(),
+            body: JSON.stringify({ notes }),
+          });
+          if (!r.ok) throw new Error('Failed');
+          const lead = leadsData.find(l => l.id === id);
+          if (lead) lead.metadata = { ...(lead.metadata || {}), lead_notes: notes };
+        } catch (e) { /* silent */ }
+      }, 600);
+    });
+  });
+
   grid.querySelectorAll('[data-send]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const card = btn.closest('.lead-card');
@@ -308,6 +344,7 @@ async function loadLeads() {
 }
 
 document.getElementById('filter-status').addEventListener('change', () => loadLeads());
+document.getElementById('leads-retry')?.addEventListener('click', loadLeads);
 
 (async () => {
   await loadAgents();

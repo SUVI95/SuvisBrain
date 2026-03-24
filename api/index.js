@@ -4,6 +4,7 @@ import { setSecurityHeaders, getClientIp, sendError } from '../src/lib/security.
 import { checkLimit, LIMITS } from '../src/lib/rate-limit.js';
 import brainHandler from './brain.js';
 import brainSearchHandler from './brain-search.js';
+import brainUseFreezeHandler from './brain-use-freeze.js';
 import brainSkillsHandler from './brain-skills.js';
 import brainStatsHandler from './brain-stats.js';
 import brainSessionsHandler from './brain-sessions.js';
@@ -20,7 +21,7 @@ import weeklyEmailHandler from './cron-weekly.js';
 import ykiScoreHandler from './yki-score.js';
 import userDataHandler from './user-data.js';
 import teacherOverrideHandler, { teacherCefrOverrideHandler } from './teacher-override.js';
-import { getLearnersHandler, nudgeHandler } from './teacher-dashboard.js';
+import { getLearnersHandler, nudgeHandler, nudgeBulkHandler } from './teacher-dashboard.js';
 import { getLeadsHandler, patchLeadHandler } from './leads.js';
 import adminOrganisationsHandler from './admin-organisations.js';
 import { query } from './db.js';
@@ -116,15 +117,38 @@ export default async function handler(req, res) {
           query('SELECT COUNT(*) FROM episodes'),
           query('SELECT COUNT(*) FROM learners'),
         ]);
-        return res.status(200).json({
-          status: 'ok',
-          counts: {
+        const counts = {
           brain_nodes: parseInt((nodes.rows[0] && nodes.rows[0].count) || 0),
           brain_edges: parseInt((edges.rows[0] && edges.rows[0].count) || 0),
           episodes: parseInt((episodes.rows[0] && episodes.rows[0].count) || 0),
           learners: parseInt((learners.rows[0] && learners.rows[0].count) || 0),
-          },
-        });
+        };
+        const checks = { database: 'ok' };
+        if (process.env.OPENAI_API_KEY) {
+          try {
+            const oaiRes = await fetch('https://api.openai.com/v1/models', {
+              headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+            });
+            checks.openai = oaiRes.ok ? 'ok' : `fail:${oaiRes.status}`;
+          } catch (e) {
+            checks.openai = 'fail:' + (e.message || 'error');
+          }
+        } else {
+          checks.openai = 'skipped';
+        }
+        if (process.env.RESEND_API_KEY) {
+          try {
+            const resendRes = await fetch('https://api.resend.com/domains', {
+              headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
+            });
+            checks.resend = resendRes.ok ? 'ok' : `fail:${resendRes.status}`;
+          } catch (e) {
+            checks.resend = 'fail:' + (e.message || 'error');
+          }
+        } else {
+          checks.resend = 'skipped';
+        }
+        return res.status(200).json({ status: 'ok', counts, checks });
       } catch (err) {
         console.error('health:', err);
         return sendError(res, 500);
@@ -166,7 +190,10 @@ export default async function handler(req, res) {
     try {
       if (route === 'teacher') {
         if (pathSegs[1] === 'learners' && req.method === 'GET') return getLearnersHandler(wrappedReq, nres);
-        if (pathSegs[1] === 'nudge' && pathSegs[2] && req.method === 'POST') return nudgeHandler(wrappedReq, nres, pathSegs[2]);
+        if (pathSegs[1] === 'nudge' && pathSegs[2] && req.method === 'POST') {
+          if (pathSegs[2] === 'bulk') return nudgeBulkHandler(wrappedReq, nres);
+          return nudgeHandler(wrappedReq, nres, pathSegs[2]);
+        }
         nres.writeHead(404);
         nres.end();
         return;
@@ -182,6 +209,7 @@ export default async function handler(req, res) {
       if (route === 'brain') {
         const sub = pathSegs[1];
         if (sub === 'search') return await brainSearchHandler(wrappedReq, nres);
+        if (sub === 'use-freeze') return await brainUseFreezeHandler(wrappedReq, nres);
         if (sub === 'skills') return await brainSkillsHandler(wrappedReq, nres);
         if (sub === 'stats') return await brainStatsHandler(wrappedReq, nres);
         if (sub === 'sessions') return await brainSessionsHandler(wrappedReq, nres);

@@ -191,7 +191,19 @@
       <div class="main">
         <h2 style="font-size:14px;font-weight:600;color:#6B7280;margin-bottom:16px;">Your learners</h2>
         <p style="font-size:13px;color:#6B7280;margin-bottom:16px;">Sorted by last session. Send a nudge to re-engage inactive learners.</p>
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="select-all-learners" style="width:18px;height:18px">
+            <span>Select all</span>
+          </label>
+          <button type="button" id="btn-nudge-selected" class="btn-nudge" style="display:none">Nudge selected (<span id="nudge-count">0</span>)</button>
+        </div>
+        <div id="loading-state" style="display:none;padding:24px;text-align:center;color:#6B7280">Loading learners...</div>
         <div class="learner-grid" id="learner-grid"></div>
+        <div id="error-state" style="display:none;padding:24px;background:#fef2f2;border-radius:12px;color:#b91c1c;margin-top:16px">
+          <p>Could not load learners.</p>
+          <button type="button" id="retry-btn" style="margin-top:12px;padding:10px 20px;background:#1d9e75;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">Retry</button>
+        </div>
       </div>
 
       <div class="side-panel" id="side-panel">
@@ -265,9 +277,13 @@
     }
 
     async function loadLearners() {
+      document.getElementById('loading-state').style.display = 'block';
+      document.getElementById('learner-grid').innerHTML = '';
+      document.getElementById('error-state').style.display = 'none';
       try {
         const res = await fetch('/api/teacher/learners', { headers: authHeaders() });
         if (!res.ok) throw new Error('Failed to load');
+        document.getElementById('loading-state').style.display = 'none';
         learnersData = await res.json();
         if (!Array.isArray(learnersData)) learnersData = [];
 
@@ -284,24 +300,32 @@
           const level = l.cefr_level || 'A1';
           return `
             <div class="learner-card ${stale ? 'stale' : ''}" data-id="${l.id}" style="animation-delay:${idx * 0.05}s">
-              <div class="learner-head">
-                <div class="learner-avatar">${initials}</div>
-                <span class="learner-name">${l.name || '—'}</span>
-                <span class="${cefrClass(level)}">${level}</span>
+              <div class="learner-head" style="align-items:flex-start">
+                <label style="flex-shrink:0;cursor:pointer;margin-top:4px" onclick="event.stopPropagation()">
+                  <input type="checkbox" class="learner-check" data-id="${l.id}" data-email="${l.email ? '1' : '0'}" ${!l.email ? 'disabled title="No email"' : ''} style="width:18px;height:18px">
+                </label>
+                <div style="flex:1;min-width:0">
+                  <div class="learner-head" style="margin-bottom:4px">
+                    <div class="learner-avatar">${initials}</div>
+                    <span class="learner-name">${l.name || '—'}</span>
+                    <span class="${cefrClass(level)}">${level}</span>
+                  </div>
+                  <div class="learner-meta" style="margin-bottom:8px">Last session: ${relativeTime(l.last_session)}</div>
+                  <div class="learner-meta" style="margin-bottom:12px">${l.sessions_this_week || 0} sessions this week</div>
+                  <button class="btn-nudge btn-nudge-single" data-id="${l.id}" data-email="${l.email ? '1' : '0'}" ${!l.email ? 'disabled title="No email"' : ''}>Nudge</button>
+                </div>
               </div>
-              <div class="learner-meta" style="margin-bottom:8px">Last session: ${relativeTime(l.last_session)}</div>
-              <div class="learner-meta" style="margin-bottom:12px">${l.sessions_this_week || 0} sessions this week</div>
-              <button class="btn-nudge" data-id="${l.id}" data-email="${l.email ? '1' : '0'}" ${!l.email ? 'disabled title="No email"' : ''}>Nudge</button>
             </div>`;
         }).join('');
 
         grid.querySelectorAll('.learner-card').forEach((card) => {
           card.addEventListener('click', (e) => {
-            if (!e.target.classList.contains('btn-nudge')) showLearnerPanel(card.dataset.id);
+            if (e.target.closest('.btn-nudge') || e.target.classList.contains('learner-check') || e.target.closest('label')) return;
+            showLearnerPanel(card.dataset.id);
           });
         });
 
-        grid.querySelectorAll('.btn-nudge').forEach((btn) => {
+        grid.querySelectorAll('.btn-nudge-single').forEach((btn) => {
           btn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const id = btn.dataset.id;
@@ -319,11 +343,50 @@
             }
           });
         });
+
+        document.getElementById('select-all-learners').onchange = function() {
+          grid.querySelectorAll('.learner-check:not(:disabled)').forEach((cb) => { cb.checked = this.checked; });
+          updateNudgeSelectedVisibility();
+        };
+        grid.querySelectorAll('.learner-check').forEach((cb) => {
+          cb.addEventListener('change', updateNudgeSelectedVisibility);
+          cb.addEventListener('click', (e) => e.stopPropagation());
+        });
+        function updateNudgeSelectedVisibility() {
+          const checked = [...grid.querySelectorAll('.learner-check:checked:not(:disabled)')];
+          const btn = document.getElementById('btn-nudge-selected');
+          const countEl = document.getElementById('nudge-count');
+          countEl.textContent = checked.length;
+          btn.style.display = checked.length > 0 ? 'inline-block' : 'none';
+        }
+        document.getElementById('btn-nudge-selected').onclick = async () => {
+          const ids = [...grid.querySelectorAll('.learner-check:checked:not(:disabled)')].map((cb) => cb.dataset.id);
+          if (!ids.length) return;
+          try {
+            document.getElementById('btn-nudge-selected').disabled = true;
+            const r = await fetch('/api/teacher/nudge/bulk', {
+              method: 'POST',
+              headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+              body: JSON.stringify({ learner_ids: ids }),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(data.error || 'Failed');
+            alert(`Sent: ${data.sent || 0}, No email: ${data.no_email || 0}${(data.failed || 0) > 0 ? ', Failed: ' + data.failed : ''}`);
+            grid.querySelectorAll('.learner-check:checked').forEach((cb) => { cb.checked = false; });
+            document.getElementById('select-all-learners').checked = false;
+            updateNudgeSelectedVisibility();
+          } catch (err) {
+            alert(err.message || 'Could not send nudges. Try again.');
+          }
+          document.getElementById('btn-nudge-selected').disabled = false;
+        };
       } catch (err) {
         console.error(err);
-        document.getElementById('learner-grid').innerHTML = '<div style="color:#6B7280;padding:24px">Could not load learners.</div>';
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('error-state').style.display = 'block';
       }
     }
+    document.getElementById('retry-btn')?.addEventListener('click', loadLearners);
 
     async function showLearnerPanel(learnerId) {
       document.querySelectorAll('.learner-card').forEach((c) => c.classList.remove('selected'));
@@ -408,7 +471,7 @@
         document.getElementById('panel-sessions').innerHTML = recent.length > 0
           ? recent.map((e) => `
               <div class="panel-session">
-                <div class="panel-session-date">${new Date(e.created_at).toLocaleDateString('fi-FI')}</div>
+                <div class="panel-session-date">${relativeTime(e.created_at)}</div>
                 <div>${e.summary || '—'}</div>
               </div>`).join('')
           : '<div style="color:#6B7280">No sessions yet.</div>';

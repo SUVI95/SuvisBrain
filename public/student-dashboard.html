@@ -71,6 +71,9 @@
     .stat { background: rgba(255,255,255,0.15); border-radius: 14px; padding: 12px; text-align: center; }
     .stat-val { font-size: 26px; font-weight: 800; }
     .stat-key { font-size: 12px; opacity: 0.75; margin-top: 3px; }
+    .freeze-btn { background:none; border:none; color:rgba(255,255,255,0.9); text-decoration:underline; cursor:pointer; font-size:11px; padding:0; }
+    .freeze-btn:hover { opacity:0.9; }
+    .freeze-btn:disabled { opacity:0.5; cursor:not-allowed; }
 
     /* CONTINUE BTN */
     .continue-btn {
@@ -246,7 +249,7 @@
       <div class="stats-row">
         <div class="stat">
           <div class="stat-val"><span id="streak-flame">🔥</span><span id="streak-count">0</span></div>
-          <div class="stat-key">day streak</div>
+          <div class="stat-key">day streak <span id="freeze-hint" style="display:none;font-weight:400">· <button type="button" id="use-freeze-btn" class="freeze-btn">Use freeze</button></span></div>
         </div>
         <div class="stat">
           <div class="stat-val" id="xp-week">0</div>
@@ -429,6 +432,7 @@
     function showMasteryToast(name) { const t=document.getElementById('mastery-toast'); t.textContent='🏆 You mastered "'+name+'"!'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500); }
     function computeStreak(eps) { if(!eps?.length)return 0; const dates=[...new Set(eps.map(e=>(e.created_at||'').slice(0,10)))].sort().reverse(); let s=0,today=new Date().toISOString().slice(0,10); for(let i=0;i<dates.length;i++){const exp=new Date(today);exp.setDate(exp.getDate()-i);if(dates.includes(exp.toISOString().slice(0,10)))s++;else break;} return s; }
     function escapeHtml(s) { if(!s)return''; const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+    function relativeTime(dateStr) { if(!dateStr)return'—'; const d=new Date(dateStr); const ms=Date.now()-d.getTime(); if(ms<60000)return'just now'; if(ms<3600000)return Math.floor(ms/60000)+' min ago'; if(ms<86400000)return Math.floor(ms/3600000)+' h ago'; const days=Math.floor(ms/86400000); if(days===1)return'yesterday'; if(days<7)return days+' days ago'; if(days<30)return Math.floor(days/7)+' weeks ago'; return d.toLocaleDateString('fi-FI'); }
 
     let skillsFilter='all', allSkills=[];
     function renderSkillCards(skills) {
@@ -465,10 +469,13 @@
         }
 
         const stats=statsRes.ok?await statsRes.json():{};
-        const xpWeek=stats.xp||0,xpGoal=stats.xp_goal||500,streak=stats.streak!=null?stats.streak:computeStreak(episodes);
+        const xpWeek=stats.xp||0,xpGoal=stats.xp_goal||500,streak=stats.streak!=null?stats.streak:computeStreak(episodes),freezesRemaining=stats.streak_freezes_remaining??2;
         document.getElementById('cefr-badge').textContent=learner?.cefr_level||'A1';
         document.getElementById('streak-count').textContent=streak;
         if(streak>0)document.getElementById('streak-flame').classList.add('flame-animate');
+        const freezeHint=document.getElementById('freeze-hint'),freezeBtn=document.getElementById('use-freeze-btn');
+        if(freezesRemaining>0){freezeHint.style.display='inline';freezeBtn.onclick=async()=>{freezeBtn.disabled=true;try{const r=await fetch(API_BASE+'/api/brain/use-freeze',{method:'POST',headers:authHeaders()});if(!r.ok)throw new Error((await r.json()).error||'Failed');loadStudentDashboard();}catch(e){alert(e.message);freezeBtn.disabled=false;}};}
+        else freezeHint.style.display='none';
         document.getElementById('xp-week').textContent=xpWeek;
         document.getElementById('lessons-count').textContent=(episodes||[]).length;
         document.getElementById('avatar').textContent=(learner?.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
@@ -504,20 +511,20 @@
         const sessionsEl=document.getElementById('sessions-list');
         const recent=(episodes||[]).slice(0,5);
         if(recent.length){
-          sessionsEl.innerHTML=recent.map(e=>`<div class="session-item"><div class="session-meta"><span class="session-date">${new Date(e.created_at).toLocaleDateString('fi-FI')}</span><span class="session-badge">${e.duration_s||0} min</span></div><div class="session-summary">${escapeHtml(e.summary||'—')}</div></div>`).join('');
+          sessionsEl.innerHTML=recent.map(e=>`<div class="session-item"><div class="session-meta"><span class="session-date">${relativeTime(e.created_at)}</span><span class="session-badge">${e.duration_s||0} min</span></div><div class="session-summary">${escapeHtml(e.summary||'—')}</div></div>`).join('');
         }else{sessionsEl.innerHTML='<div class="empty-box"><p>No sessions yet. Start your first practice with Knuut!</p><a href="/knuut.html" class="btn-start">Start session →</a></div>';}
 
         const ykiEl=document.getElementById('yki-card');
         const ykiList=yki_episodes||[];
         if(ykiList.length){
           ykiEl.innerHTML=ykiList.map(e=>{const meta=e.metadata||{},score=meta.yki_score||meta,ov=typeof score==='object'?score.overall_score:meta.cefr_score,result=(typeof score==='object'?score.yki_result:'')||'',cefr=(typeof score==='object'?score.cefr_level:null)||meta.cefr_score||'—';
-            return`<div class="yki-item"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="session-date">${new Date(e.created_at).toLocaleDateString('fi-FI')}</span><span class="yki-badge ${result==='fail'?'yki-fail':'yki-pass'}">${cefr}</span>${ov!=null?'<span style="font-size:13px;color:#6b7280">'+ov+'/100</span>':''}</div><a href="/yki-results.html?episode=${e.id}" class="yki-link">View report →</a></div>`;
+            return`<div class="yki-item"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="session-date">${relativeTime(e.created_at)}</span><span class="yki-badge ${result==='fail'?'yki-fail':'yki-pass'}">${cefr}</span>${ov!=null?'<span style="font-size:13px;color:#6b7280">'+ov+'/100</span>':''}</div><a href="/yki-results.html?episode=${e.id}" class="yki-link">View report →</a></div>`;
           }).join('');
         }else{ykiEl.innerHTML='<div class="empty-box"><p>No mock exams yet. Enable YKI mode in Knuut to practice for the exam.</p><a href="/knuut.html" class="btn-start">Try YKI mode →</a></div>';}
 
       } catch(err) {
         console.error(err);
-        document.getElementById('skill-cards').innerHTML='<div style="grid-column:1/-1;color:#ef4444;padding:24px;border-radius:14px;background:#fef2f2;font-size:14px">'+escapeHtml(err.message||'Could not load dashboard.')+'</div>';
+        document.getElementById('skill-cards').innerHTML='<div style="grid-column:1/-1;color:#ef4444;padding:24px;border-radius:14px;background:#fef2f2;font-size:14px">'+escapeHtml(err.message||'Could not load dashboard.')+' <button type="button" onclick="loadStudentDashboard()" style="margin-top:12px;padding:10px 20px;background:#6C63FF;color:#fff;border:none;border-radius:10px;cursor:pointer;font-weight:600">Retry</button></div>';
       }
     }
 

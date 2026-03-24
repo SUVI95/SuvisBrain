@@ -58,10 +58,18 @@ export async function teacherCefrOverrideHandler(req, res) {
     return;
   }
   try {
+    const learnerRow = await query('SELECT cefr_level FROM learners WHERE id = $1', [learnerId]);
+    const fromLevel = learnerRow.rows[0]?.cefr_level || 'A1';
     await query(
       'UPDATE learners SET cefr_level = $2, updated_at = now() WHERE id = $1',
       [learnerId, level]
     );
+    try {
+      await query(
+        `INSERT INTO cefr_history (learner_id, from_level, to_level, reason) VALUES ($1, $2, $3, 'teacher_override')`,
+        [learnerId, fromLevel, level]
+      );
+    } catch (_) { /* cefr_history may not exist yet */ }
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, message: 'CEFR level updated' }));
   } catch (err) {
