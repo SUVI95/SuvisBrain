@@ -18,7 +18,8 @@ import sessionHandler from './session.js';
 import weeklyEmailHandler from './cron-weekly.js';
 import ykiScoreHandler from './yki-score.js';
 import userDataHandler from './user-data.js';
-import teacherOverrideHandler from './teacher-override.js';
+import teacherOverrideHandler, { teacherCefrOverrideHandler } from './teacher-override.js';
+import { getLearnersHandler, nudgeHandler } from './teacher-dashboard.js';
 import { query } from './db.js';
 
 function toNodeRes(res) {
@@ -160,6 +161,16 @@ export default async function handler(req, res) {
     wrappedReq.user = user;
 
     try {
+      if (route === 'teacher') {
+        if (pathSegs[1] === 'learners' && req.method === 'GET') return getLearnersHandler(wrappedReq, nres);
+        if (pathSegs[1] === 'nudge' && pathSegs[2] && req.method === 'POST') return nudgeHandler(wrappedReq, nres, pathSegs[2]);
+        nres.writeHead(404);
+        nres.end();
+        return;
+      }
+      if (route === 'teacher-override' && req.method === 'POST') {
+        return teacherCefrOverrideHandler(wrappedReq, nres);
+      }
       if (route === 'learners') {
         const pathname = '/api/learners' + (pathSegs.length > 1 ? '/' + pathSegs.slice(1).join('/') : '');
         if (pathSegs[2] === 'reviewed') return teacherOverrideHandler(wrappedReq, nres, pathname);

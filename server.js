@@ -28,7 +28,8 @@ import registerHandler from './api/auth-register.js';
 import weeklyEmailHandler from './api/cron-weekly.js';
 import ykiScoreHandler from './api/yki-score.js';
 import userDataHandler from './api/user-data.js';
-import teacherOverrideHandler from './api/teacher-override.js';
+import teacherOverrideHandler, { teacherCefrOverrideHandler } from './api/teacher-override.js';
+import { getLearnersHandler, nudgeHandler } from './api/teacher-dashboard.js';
 import { query } from './api/db.js';
 import { getSystemPrompt, langToIso } from './api/knuut-prompt.js';
 
@@ -325,6 +326,24 @@ async function handleApi(pathname, req, res, body) {
   wrappedReq.user = user;
 
   try {
+    if (route === 'teacher') {
+      const pathSegs = path.split('/').filter(Boolean);
+      if (pathSegs[1] === 'learners' && req.method === 'GET') {
+        await getLearnersHandler(wrappedReq, res);
+        return true;
+      }
+      if (pathSegs[1] === 'nudge' && pathSegs[2] && req.method === 'POST') {
+        await nudgeHandler(wrappedReq, res, pathSegs[2]);
+        return true;
+      }
+      res.writeHead(404);
+      res.end();
+      return true;
+    }
+    if (route === 'teacher-override' && req.method === 'POST') {
+      await teacherCefrOverrideHandler(wrappedReq, res);
+      return true;
+    }
     if (route === 'learners') {
       const pathSegs = path.split('/').filter(Boolean);
       if (pathSegs[2] === 'reviewed') {

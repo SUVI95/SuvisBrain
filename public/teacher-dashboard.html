@@ -79,6 +79,16 @@
     .learner-card.active { border-left-color: #58CC02; }
     .learner-card.idle { border-left-color: #FFC800; }
     .learner-card.inactive { border-left-color: #FF4B4B; }
+    .learner-card.stale { border-left-color: #ef4444; }
+    .cefr-badge { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; }
+    .cefr-badge.a1 { background: #9ca3af; color: #fff; }
+    .cefr-badge.a2 { background: #3b82f6; color: #fff; }
+    .cefr-badge.b1 { background: #1d9e75; color: #fff; }
+    .cefr-badge.b2 { background: #0d9488; color: #fff; }
+    .cefr-badge.c1, .cefr-badge.c2 { background: #0f766e; color: #fff; }
+    .btn-nudge { padding: 8px 16px; background: #1d9e75; color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit; }
+    .btn-nudge:hover:not(:disabled) { opacity: 0.9; }
+    .btn-nudge:disabled { opacity: 0.7; cursor: default; }
     .learner-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
     .learner-avatar { width: 44px; height: 44px; border-radius: 50%; background: #6C63FF; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
     .learner-name { font-weight: 600; font-size: 16px; }
@@ -173,14 +183,14 @@
       <div class="stat-pills">
         <span class="stat-pill">👥 <strong id="total-learners">0</strong> learners</span>
         <span class="stat-pill">📚 <strong id="total-sessions">0</strong> sessions this week</span>
-        <span class="stat-pill">⚠ <strong id="need-attention">0</strong> high risk</span>
+        <span class="stat-pill">📅 <strong id="need-attention">0</strong> inactive (3+ days)</span>
       </div>
     </header>
 
     <div class="layout">
       <div class="main">
-        <h2 style="font-size:14px;font-weight:600;color:#6B7280;margin-bottom:16px;">Students needing attention</h2>
-        <p style="font-size:13px;color:#6B7280;margin-bottom:16px;">Sorted by risk level (HIGH first). AI suggestions require your review.</p>
+        <h2 style="font-size:14px;font-weight:600;color:#6B7280;margin-bottom:16px;">Your learners</h2>
+        <p style="font-size:13px;color:#6B7280;margin-bottom:16px;">Sorted by last session. Send a nudge to re-engage inactive learners.</p>
         <div class="learner-grid" id="learner-grid"></div>
       </div>
 
@@ -189,6 +199,16 @@
         <div class="panel-meta" id="panel-meta"></div>
         <div id="panel-bars"></div>
         <div class="panel-sessions" id="panel-sessions"></div>
+        <div class="panel-bar" style="margin-top:16px">
+          <div class="label"><span>CEFR level override</span></div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+            <select id="cefr-select" style="padding:8px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:14px">
+              <option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option>
+              <option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option>
+            </select>
+            <button class="btn-cefr-save" id="btn-cefr-save" style="padding:8px 16px;background:#1d9e75;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer">Save</button>
+          </div>
+        </div>
         <button class="btn-session" id="btn-start-session">Start session with learner</button>
         <button class="btn-reviewed" id="btn-reviewed" style="display:none">Mark as Reviewed by Teacher</button>
       </div>
@@ -221,80 +241,88 @@
     document.getElementById('date-today').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     let learnersData = [];
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    function getStatus(lastSession) {
-      if (!lastSession) return 'inactive';
-      const d = new Date(lastSession);
-      const days = (now - d) / (24 * 60 * 60 * 1000);
-      if (days < 3) return 'active';
-      if (days < 7) return 'idle';
-      return 'inactive';
+    function relativeTime(dateStr) {
+      if (!dateStr) return 'never';
+      const d = new Date(dateStr);
+      const days = Math.floor((now - d) / (24 * 60 * 60 * 1000));
+      if (days < 1) return 'today';
+      if (days === 1) return 'yesterday';
+      if (days < 7) return days + ' days ago';
+      if (days < 30) return Math.floor(days / 7) + ' weeks ago';
+      return d.toLocaleDateString('fi-FI');
+    }
+
+    function cefrClass(level) {
+      const l = (level || 'A1').toUpperCase();
+      return 'cefr-badge ' + (['A1','A2','B1','B2','C1','C2'].includes(l) ? l.toLowerCase() : 'a1');
+    }
+
+    function isStale(lastSession) {
+      if (!lastSession) return true;
+      const days = (now - new Date(lastSession)) / (24 * 60 * 60 * 1000);
+      return days > 3;
     }
 
     async function loadLearners() {
       try {
-        const res = await fetch('/api/learners', { headers: authHeaders() });
+        const res = await fetch('/api/teacher/learners', { headers: authHeaders() });
+        if (!res.ok) throw new Error('Failed to load');
         learnersData = await res.json();
         if (!Array.isArray(learnersData)) learnersData = [];
 
-        const highRiskCount = learnersData.filter((l) => l.risk_level === 'HIGH').length;
+        const staleCount = learnersData.filter((l) => isStale(l.last_session)).length;
 
         document.getElementById('total-learners').textContent = learnersData.length;
-        document.getElementById('total-sessions').textContent = learnersData.reduce((s, l) => s + (l.session_count || 0), 0);
-        document.getElementById('need-attention').textContent = highRiskCount;
+        document.getElementById('total-sessions').textContent = learnersData.reduce((s, l) => s + (l.sessions_this_week || 0), 0);
+        document.getElementById('need-attention').textContent = staleCount;
 
         const grid = document.getElementById('learner-grid');
         grid.innerHTML = learnersData.map((l, idx) => {
-          const last = l.last_session ? new Date(l.last_session) : null;
-          const daysAgo = last ? Math.floor((now - last) / (24 * 60 * 60 * 1000)) : null;
-          const status = getStatus(l.last_session);
+          const stale = isStale(l.last_session);
           const initials = (l.name || '—').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-          const risk = (l.risk_level || 'LOW').toLowerCase();
+          const level = l.cefr_level || 'A1';
           return `
-            <div class="learner-card ${status}" data-id="${l.id}" style="animation-delay:${idx * 0.05}s">
+            <div class="learner-card ${stale ? 'stale' : ''}" data-id="${l.id}" style="animation-delay:${idx * 0.05}s">
               <div class="learner-head">
                 <div class="learner-avatar">${initials}</div>
-                <span class="learner-name">${l.name}</span>
-                <span class="risk-badge ${risk}">${l.risk_level || 'LOW'}</span>
-                <span class="learner-cefr">${l.cefr_level || '—'}</span>
+                <span class="learner-name">${l.name || '—'}</span>
+                <span class="${cefrClass(level)}">${level}</span>
               </div>
-              <div class="skill-dots learner-dots-${l.id}"></div>
-              <div class="learner-meta">Last active: ${daysAgo != null ? daysAgo + ' days ago' : 'never'}</div>
-              <div class="learner-weakest weakest-${l.id}">—</div>
+              <div class="learner-meta" style="margin-bottom:8px">Last session: ${relativeTime(l.last_session)}</div>
+              <div class="learner-meta" style="margin-bottom:12px">${l.sessions_this_week || 0} sessions this week</div>
+              <button class="btn-nudge" data-id="${l.id}" data-email="${l.email ? '1' : '0'}" ${!l.email ? 'disabled title="No email"' : ''}>Nudge</button>
             </div>`;
         }).join('');
 
         grid.querySelectorAll('.learner-card').forEach((card) => {
-          card.addEventListener('click', () => showLearnerPanel(card.dataset.id));
+          card.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('btn-nudge')) showLearnerPanel(card.dataset.id);
+          });
         });
 
-        learnersData.forEach((l) => fetchWeakestAndDots(l.id));
+        grid.querySelectorAll('.btn-nudge').forEach((btn) => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const id = btn.dataset.id;
+            if (!id || btn.disabled) return;
+            if (btn.dataset.email === '0') { alert('Learner has no email'); return; }
+            try {
+              btn.disabled = true;
+              const r = await fetch(`/api/teacher/nudge/${id}`, { method: 'POST', headers: authHeaders() });
+              if (!r.ok) throw new Error('Failed');
+              btn.textContent = 'Sent!';
+              setTimeout(() => { btn.textContent = 'Nudge'; btn.disabled = false; }, 3000);
+            } catch (err) {
+              alert('Could not send nudge. Try again.');
+              btn.disabled = false;
+            }
+          });
+        });
       } catch (err) {
         console.error(err);
         document.getElementById('learner-grid').innerHTML = '<div style="color:#6B7280;padding:24px">Could not load learners.</div>';
       }
-    }
-
-    async function fetchWeakestAndDots(learnerId) {
-      try {
-        const res = await fetch(`/api/learners/${learnerId}/progress`, { headers: authHeaders() });
-        const data = await res.json();
-        const nodes = data.nodes || [];
-        const weakest = nodes[0]?.label;
-        const el = document.querySelector(`.weakest-${learnerId}`);
-        if (el && weakest) el.textContent = weakest;
-
-        const dotsEl = document.querySelector(`.learner-dots-${learnerId}`);
-        if (dotsEl && nodes.length > 0) {
-          const top5 = nodes.slice(0, 5);
-          dotsEl.innerHTML = top5.map((n) => {
-            const c = n.confidence ?? 0.5;
-            const cls = c > 0.8 ? 'high' : c >= 0.4 ? 'medium' : 'low';
-            return `<span class="skill-dot fill ${cls}" style="background:${c > 0.8 ? '#58CC02' : c >= 0.4 ? '#FFC800' : '#FF4B4B'}"></span>`;
-          }).join('');
-        }
-      } catch (e) {}
     }
 
     async function showLearnerPanel(learnerId) {
@@ -306,6 +334,28 @@
       document.getElementById('panel-meta').textContent = `${learner?.cefr_level || '—'} · ${learner?.mother_tongue || '—'}`;
       document.getElementById('btn-start-session').textContent = 'Start session with ' + (learner?.name || 'learner');
       document.getElementById('btn-start-session').onclick = () => { window.location.href = '/knuut.html?learner_id=' + learnerId; };
+
+      const cefrSelect = document.getElementById('cefr-select');
+      const btnCefrSave = document.getElementById('btn-cefr-save');
+      cefrSelect.value = (learner?.cefr_level || 'A1').toUpperCase();
+      btnCefrSave.onclick = async () => {
+        const newLevel = cefrSelect.value;
+        try {
+          const r = await fetch('/api/teacher-override', {
+            method: 'POST',
+            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ learnerId, newLevel }),
+          });
+          if (!r.ok) throw new Error('Failed');
+          const ld = learnersData.find((l) => l.id === learnerId);
+          if (ld) ld.cefr_level = newLevel;
+          document.getElementById('panel-meta').textContent = `${newLevel} · ${learner?.mother_tongue || '—'}`;
+          const badge = document.querySelector(`.learner-card[data-id="${learnerId}"] .cefr-badge`);
+          if (badge) { badge.textContent = newLevel; badge.className = cefrClass(newLevel); }
+        } catch (e) {
+          alert('Could not update CEFR level. Try again.');
+        }
+      };
 
       const panel = document.getElementById('side-panel');
       panel.classList.add('visible');
