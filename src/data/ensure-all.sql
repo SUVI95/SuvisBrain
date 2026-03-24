@@ -43,3 +43,6 @@ ALTER TABLE learners ADD COLUMN IF NOT EXISTS native_language varchar(10) DEFAUL
 
 -- 6. Teacher override (human-in-the-loop, EU AI Act)
 ALTER TABLE learners ADD COLUMN IF NOT EXISTS teacher_reviewed_at timestamptz DEFAULT NULL;
+
+-- 7. Learners: learning_goal (onboarding)
+ALTER TABLE learners ADD COLUMN IF NOT EXISTS learning_goal text DEFAULT NULL;

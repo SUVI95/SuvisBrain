@@ -13,6 +13,7 @@ import sessionFocusHandler from './session-focus.js';
 import saveCardHandler from './save-card.js';
 import learnersHandler from './learners.js';
 import authHandler from './auth.js';
+import registerHandler from './auth-register.js';
 import sessionHandler from './session.js';
 import weeklyEmailHandler from './cron-weekly.js';
 import ykiScoreHandler from './yki-score.js';
@@ -87,7 +88,11 @@ export default async function handler(req, res) {
     const nres = toNodeRes(res);
 
     if (route === 'auth') {
-      await authHandler(wrappedReq, nres);
+      if (pathSegs[1] === 'register') {
+        await registerHandler(wrappedReq, nres);
+      } else {
+        await authHandler(wrappedReq, nres);
+      }
       return;
     }
     if (route === 'session') {

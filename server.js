@@ -24,6 +24,7 @@ import sessionFocusHandler from './api/session-focus.js';
 import saveCardHandler from './api/save-card.js';
 import learnersHandler from './api/learners.js';
 import authHandler from './api/auth.js';
+import registerHandler from './api/auth-register.js';
 import weeklyEmailHandler from './api/cron-weekly.js';
 import ykiScoreHandler from './api/yki-score.js';
 import userDataHandler from './api/user-data.js';
@@ -246,7 +247,12 @@ async function handleApi(pathname, req, res, body) {
       res.end(JSON.stringify({ error: 'Too many requests' }));
       return true;
     }
-    await authHandler(wrappedReq, res);
+    const pathSegs = path.split('/').filter(Boolean);
+    if (pathSegs[1] === 'register') {
+      await registerHandler(wrappedReq, res);
+    } else {
+      await authHandler(wrappedReq, res);
+    }
     return true;
   }
   if (route === 'health') {

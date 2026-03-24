@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knuut — Get Started</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f0f0f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      width: 100%;
+      max-width: 480px;
+      padding: 32px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #d1d5db;
+      transition: all 0.25s ease;
+    }
+    .dot.active {
+      background: #1d9e75;
+      transform: scale(1.2);
+    }
+    .step {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .step.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h1 {
+      font-size: 20px;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+    .sub {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 15px;
+      margin-bottom: 18px;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #1d9e75;
+      box-shadow: 0 0 0 2px rgba(29, 158, 117, 0.2);
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #1d9e75;
+      color: #fff;
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #178a63;
+    }
+    .btn:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    .goal-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .goal-card {
+      padding: 20px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .goal-card:hover {
+      border-color: #1d9e75;
+      background: rgba(29, 158, 117, 0.05);
+    }
+    .goal-card.selected {
+      border-color: #1d9e75;
+      background: rgba(29, 158, 117, 0.1);
+    }
+    .goal-card .emoji { font-size: 28px; margin-bottom: 8px; }
+    .goal-card .label { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+    .quiz-q {
+      margin-bottom: 24px;
+    }
+    .quiz-q .q { font-size: 15px; font-weight: 500; color: #1a1a2e; margin-bottom: 12px; }
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .quiz-opt {
+      padding: 12px 14px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .quiz-opt:hover { border-color: #1d9e75; }
+    .quiz-opt.selected { border-color: #1d9e75; background: rgba(29, 158, 117, 0.1); }
+    .err { color: #dc2626; font-size: 13px; margin-top: 8px; }
+    .loading { opacity: 0.7; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="dots">
+      <span class="dot active" data-step="0"></span>
+      <span class="dot" data-step="1"></span>
+      <span class="dot" data-step="2"></span>
+    </div>
+
+    <div class="step active" data-step="0">
+      <h1>Who are you?</h1>
+      <p class="sub">Let's personalize your experience</p>
+      <label for="name">Full name</label>
+      <input type="text" id="name" placeholder="e.g. Amira Hassan" maxlength="200">
+      <label for="lang">Native language</label>
+      <select id="lang">
+        <option value="">Select...</option>
+        <option value="Arabic">Arabic</option>
+        <option value="Russian">Russian</option>
+        <option value="Somali">Somali</option>
+        <option value="Mandarin">Mandarin</option>
+        <option value="Ukrainian">Ukrainian</option>
+        <option value="English">English</option>
+        <option value="Spanish">Spanish</option>
+        <option value="Persian">Persian</option>
+        <option value="Other">Other</option>
+      </select>
+      <button class="btn" id="btn-step0">Continue</button>
+    </div>
+
+    <div class="step" data-step="1">
+      <h1>Why are you learning Finnish?</h1>
+      <p class="sub">Choose one</p>
+      <div class="goal-cards">
+        <div class="goal-card" data-goal="For work"><div class="emoji">💼</div><div class="label">For work</div></div>
+        <div class="goal-card" data-goal="For citizenship"><div class="emoji">🇫🇮</div><div class="label">For citizenship</div></div>
+        <div class="goal-card" data-goal="For family"><div class="emoji">👨‍👩‍👧</div><div class="label">For family</div></div>
+        <div class="goal-card" data-goal="For school"><div class="emoji">📚</div><div class="label">For school</div></div>
+      </div>
+    </div>
+
+    <div class="step" data-step="2">
+      <h1>Quick placement</h1>
+      <p class="sub">3 quick questions to find your level</p>
+
+      <div class="quiz-q">
+        <div class="q">What does "hei" mean?</div>
+        <div class="quiz-options">
+          <div class="quiz-opt" data-q="0" data-a="0">Hello</div>
+          <div class="quiz-opt" data-q="0" data-a="1">Goodbye</div>
+          <div class="quiz-opt" data-q="0" data-a="2">Thank you</div>
+          <div class="quiz-opt" data-q="0" data-a="3">Yes</div>
+        </div>
+      </div>
+      <div class="quiz-q">
+        <div class="q">Which is correct?</div>
+        <div class="quiz-options">
+          <div class="quiz-opt" data-q="1" data-a="0">Minä olen</div>
+          <div class="quiz-opt" data-q="1" data-a="1">Minä ole</div>
+          <div class="quiz-opt" data-q="1" data-a="2">Minä on</div>
+          <div class="quiz-opt" data-q="1" data-a="3">Minä oleva</div>
+        </div>
+      </div>
+      <div class="quiz-q">
+        <div class="q">What number is "viisi"?</div>
+        <div class="quiz-options">
+          <div class="quiz-opt" data-q="2" data-a="0">3</div>
+          <div class="quiz-opt" data-q="2" data-a="1">4</div>
+          <div class="quiz-opt" data-q="2" data-a="2">5</div>
+          <div class="quiz-opt" data-q="2" data-a="3">6</div>
+        </div>
+      </div>
+
+      <div id="err-register" class="err" style="display:none;"></div>
+      <button class="btn" id="btn-step2">Start learning</button>
+    </div>
+  </div>
+
+  <script>
+    const CORRECT = [0, 0, 2]; // Hello, Minä olen, 5
+    let state = { name: '', mother_tongue: '', learning_goal: '' };
+
+    function go(step) {
+      document.querySelectorAll('.step').forEach((s) => s.classList.remove('active'));
+      document.querySelectorAll('.dot').forEach((d) => d.classList.remove('active'));
+      const s = document.querySelector(`.step[data-step="${step}"]`);
+      const d = document.querySelector(`.dot[data-step="${step}"]`);
+      if (s) s.classList.add('active');
+      if (d) d.classList.add('active');
+    }
+
+    document.getElementById('btn-step0').addEventListener('click', () => {
+      const name = document.getElementById('name').value.trim();
+      const lang = document.getElementById('lang').value;
+      if (!name) return;
+      state.name = name;
+      state.mother_tongue = lang || 'Other';
+      go(1);
+    });
+
+    document.querySelectorAll('.goal-card').forEach((c) => {
+      c.addEventListener('click', () => {
+        document.querySelectorAll('.goal-card').forEach((x) => x.classList.remove('selected'));
+        c.classList.add('selected');
+        state.learning_goal = c.dataset.goal;
+        setTimeout(() => go(2), 300);
+      });
+    });
+
+    const answers = [null, null, null];
+    document.querySelectorAll('.quiz-opt').forEach((o) => {
+      o.addEventListener('click', () => {
+        const q = parseInt(o.dataset.q, 10);
+        const a = parseInt(o.dataset.a, 10);
+        document.querySelectorAll(`.quiz-opt[data-q="${q}"]`).forEach((x) => x.classList.remove('selected'));
+        o.classList.add('selected');
+        answers[q] = a;
+      });
+    });
+
+    function getCefr() {
+      const correct = answers.filter((a, i) => a === CORRECT[i]).length;
+      if (correct <= 1) return 'A1';
+      if (correct === 2) return 'A2';
+      return 'B1';
+    }
+
+    document.getElementById('btn-step2').addEventListener('click', async () => {
+      if (answers.some((a) => a === null)) return;
+      const btn = document.getElementById('btn-step2');
+      const errEl = document.getElementById('err-register');
+      errEl.style.display = 'none';
+      btn.classList.add('loading');
+      btn.textContent = 'Creating account...';
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: state.name,
+            mother_tongue: state.mother_tongue,
+            learning_goal: state.learning_goal,
+            cefr_level: getCefr(),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Registration failed');
+        if (data.token) {
+          localStorage.setItem('sb_token', data.token);
+          localStorage.setItem('knuut_token', data.token);
+        }
+        if (data.user) {
+          const u = { ...data.user, role: 'learner' };
+          localStorage.setItem('sb_user', JSON.stringify(u));
+          localStorage.setItem('knuut_user', JSON.stringify(u));
+        }
+        location.replace('/student-dashboard.html');
+      } catch (e) {
+        errEl.textContent = e.message || 'Something went wrong';
+        errEl.style.display = 'block';
+      } finally {
+        btn.classList.remove('loading');
+        btn.textContent = 'Start learning';
+      }
+    });
+  </script>
+</body>
+</html>
