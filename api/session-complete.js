@@ -5,6 +5,20 @@ import { removePersonalData } from '../src/lib/safe-ai.js';
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const CEFR_ORDER = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
 
+const MODELS = [
+  'google/gemma-3-27b-it:free',      // biggest, best quality
+  'google/gemma-3-12b-it:free',      // solid fallback
+  'arcee-ai/trinity-large-preview:free', // large preview
+  'google/gemma-3-4b-it:free',       // fast small
+  'arcee-ai/trinity-mini:free',      // mini fallback
+  'meta-llama/llama-3.2-3b-instruct:free', // last resort free
+];
+
+const KEYS = [
+  process.env.OPENROUTER_API_KEY,
+  process.env.OPENROUTER_API_KEY_2,
+].filter(Boolean);
+
 async function analyseTranscript(transcript) {
   const safeInput = removePersonalData(transcript || '');
   const prompt = `You are analysing a Finnish language learning session transcript.
@@ -34,27 +48,46 @@ Rules:
 - type for new_topics must be one of: Skill, Memory, Conversation
 - cefr_level_demonstrated must be one of: A1, A2, B1, B2, C1`;
 
-  const key = process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY_2;
-  if (!key) throw new Error('OPENROUTER_API_KEY not set');
+  for (const model of MODELS) {
+    for (const key of KEYS) {
+      try {
+        const response = await fetch(OPENROUTER_URL, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${key}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://suvisbrain.vercel.app',
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: 1000,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        });
 
-  const response = await fetch(OPENROUTER_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://suvisbrain.vercel.app',
-    },
-    body: JSON.stringify({
-      model: 'meta-llama/llama-3.3-70b-instruct:free',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  });
+        const data = await response.json();
 
-  const data = await response.json();
-  const text = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '{}';
-  const clean = text.replace(/```json|```/g, '').trim();
-  return JSON.parse(clean);
+        if (data.error) {
+          console.log(`Model ${model} key ${key.slice(-6)}: ${data.error.message}`);
+          continue;
+        }
+
+        const text = data.choices?.[0]?.message?.content || '';
+        if (!text) continue;
+
+        const clean = text.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        console.log(`SUCCESS with model: ${model}`);
+        return parsed;
+      } catch (err) {
+        console.log(`Failed ${model}:`, err.message);
+        continue;
+      }
+    }
+  }
+
+  console.error('All models rate limited or failed');
+  return null;
 }
 
 async function scoreCefrRubric(transcript) {
@@ -72,29 +105,44 @@ Return ONLY valid JSON:
 
 Apply CEFR criteria: range, accuracy, fluency, interaction. Be strict but fair.`;
 
-  const key = process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY_2;
-  if (!key) return null;
+  for (const model of MODELS) {
+    for (const key of KEYS) {
+      try {
+        const response = await fetch(OPENROUTER_URL, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${key}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://suvisbrain.vercel.app',
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: 300,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        });
 
-  const res = await fetch(OPENROUTER_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://suvisbrain.vercel.app',
-    },
-    body: JSON.stringify({
-      model: 'meta-llama/llama-3.3-70b-instruct:free',
-      max_tokens: 300,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  });
-  const data = await res.json();
-  const text = ((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '{}').replace(/```json|```/g, '').trim();
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    return null;
+        const data = await response.json();
+
+        if (data.error) {
+          console.log(`Cefr model ${model} key ${key.slice(-6)}: ${data.error.message}`);
+          continue;
+        }
+
+        const text = data.choices?.[0]?.message?.content || '';
+        if (!text) continue;
+
+        const clean = text.replace(/```json|```/g, '').trim();
+        return JSON.parse(clean);
+      } catch (err) {
+        console.log(`Cefr failed ${model}:`, err.message);
+        continue;
+      }
+    }
   }
+
+  console.error('All CEFR models rate limited or failed');
+  return null;
 }
 
 export default async function sessionCompleteHandler(req, res) {
@@ -113,12 +161,13 @@ export default async function sessionCompleteHandler(req, res) {
   }
 
   try {
-    const analysis = await analyseTranscript(transcript);
-    let cefrScore = null;
-    if (is_mock_exam) {
-      const scored = await scoreCefrRubric(transcript);
-      cefrScore = (scored && scored.cefr_level) || analysis.cefr_level_demonstrated;
+    if (KEYS.length === 0) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'OPENROUTER_API_KEY not set' }));
+      return;
     }
+
+    const analysis = await analyseTranscript(transcript);
 
     const title = is_mock_exam
       ? `YKI mock exam — ${new Date().toLocaleDateString('fi-FI')}`
@@ -131,13 +180,31 @@ export default async function sessionCompleteHandler(req, res) {
         agent_id != null ? agent_id : null,
         learner_id != null ? learner_id : null,
         title,
-        analysis.summary,
+        analysis ? analysis.summary : '',
         learner_language != null ? learner_language : 'fi',
         duration_s != null ? duration_s : 0,
         transcript,
       ]
     );
     const episodeId = episodeResult.rows[0].id;
+
+    if (!analysis) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: true,
+        episode_id: episodeId,
+        warning: 'AI analysis unavailable — brain not updated this session',
+        topics_updated: 0,
+        new_nodes_created: 0,
+      }));
+      return;
+    }
+
+    let cefrScore = null;
+    if (is_mock_exam) {
+      const scored = await scoreCefrRubric(transcript);
+      cefrScore = (scored && scored.cefr_level) || analysis.cefr_level_demonstrated;
+    }
     const isYki = is_yki_exam || is_mock_exam;
     if (isYki) {
       try {
