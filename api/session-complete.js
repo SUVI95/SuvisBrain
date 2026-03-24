@@ -3,6 +3,7 @@ import { query } from './db.js';
 import { removePersonalData } from '../src/lib/safe-ai.js';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const CEFR_ORDER = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
 
 async function analyseTranscript(transcript) {
   const safeInput = removePersonalData(transcript || '');
@@ -140,110 +141,284 @@ export default async function sessionCompleteHandler(req, res) {
     const isYki = is_yki_exam || is_mock_exam;
     if (isYki) {
       try {
-        const meta = { mock_exam: true, is_yki_exam: true };
-        if (cefrScore) meta.cefr_score = cefrScore;
         await query(
           `UPDATE episodes SET metadata = jsonb_set(COALESCE(metadata, '{}'), '{is_yki_exam}', 'true') WHERE id = $1`,
           [episodeId]
         );
-      } catch (_) { /* metadata column may not exist */ }
+        if (cefrScore) {
+          await query(
+            `UPDATE episodes SET metadata = jsonb_set(COALESCE(metadata, '{}'), '{cefr_score}', $2::jsonb) WHERE id = $1`,
+            [episodeId, JSON.stringify(cefrScore)]
+          );
+        }
+      } catch (e) {
+        console.error('session-complete: episode metadata:', e.message);
+      }
     }
 
     if (!is_mock_exam) {
-    const learnerFilter = learner_id
-      ? ` AND (metadata->>'learner_id' = $3 OR metadata->>'learner_id' IS NULL)`
-      : '';
-    const learnerIdWrap = (inner) =>
-      learner_id ? `jsonb_set(${inner}, '{learner_id}', to_jsonb($3::text))` : inner;
-    const practicedParams = (delta, label) => (learner_id ? [delta, `%${label}%`, learner_id] : [delta, `%${label}%`]);
-    const practicedMeta = `jsonb_set(COALESCE(metadata, '{}'), '{confidence_score}', to_jsonb(LEAST(1.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1)))`;
-    const struggledMeta = `jsonb_set(COALESCE(metadata, '{}'), '{confidence_score}', to_jsonb(GREATEST(0.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1)))`;
-    const updatePracticed = `UPDATE brain_nodes
-         SET metadata = ${learnerIdWrap(practicedMeta)},
-           confidence_history = (
-             SELECT jsonb_agg(e ORDER BY (e->>'date') ASC)
-             FROM (
-               SELECT e FROM jsonb_array_elements(
-                 COALESCE(confidence_history, '[]'::jsonb) || jsonb_build_array(
-                   jsonb_build_object(
-                     'score', LEAST(1.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1),
-                     'date', NOW()::date
-                   )
-                 )
-               ) AS e
-               OFFSET GREATEST(0, jsonb_array_length(COALESCE(confidence_history, '[]'::jsonb)) - 29)
-               LIMIT 30
-             ) t(e)
-           ),
-           updated_at = NOW()
-         WHERE label ILIKE $2${learnerFilter}`;
-    const updateStruggled = `UPDATE brain_nodes
-         SET metadata = ${learnerIdWrap(struggledMeta)},
-           confidence_history = (
-             SELECT jsonb_agg(e ORDER BY (e->>'date') ASC)
-             FROM (
-               SELECT e FROM jsonb_array_elements(
-                 COALESCE(confidence_history, '[]'::jsonb) || jsonb_build_array(
-                   jsonb_build_object(
-                     'score', GREATEST(0.0::float, COALESCE((metadata->>'confidence_score')::float, 0.5) + $1),
-                     'date', NOW()::date
-                   )
-                 )
-               ) AS e
-               OFFSET GREATEST(0, jsonb_array_length(COALESCE(confidence_history, '[]'::jsonb)) - 29)
-               LIMIT 30
-             ) t(e)
-           ),
-           updated_at = NOW()
-         WHERE label ILIKE $2${learnerFilter}`;
+      const practicedLabels = new Set();
+      const skillNodeIds = [];
 
-    for (const topic of analysis.topics_practiced || []) {
-      await query(updatePracticed, practicedParams(topic.confidence_delta, topic.label));
-    }
-    for (const topic of analysis.topics_struggled || []) {
-      await query(updateStruggled, practicedParams(topic.confidence_delta, topic.label));
-    }
-    }
-
-    const newTopicMeta = (topic) =>
-      JSON.stringify({
-        confidence_score: 0.3,
-        source: 'session',
-        ...(learner_id && { learner_id }),
-      });
-    for (const topic of analysis.new_topics || []) {
-      const existingWhere = learner_id
-        ? `label ILIKE $1 AND metadata->>'learner_id' = $2`
-        : `label ILIKE $1`;
-      const existingParams = learner_id ? [`%${topic.label}%`, learner_id] : [`%${topic.label}%`];
-      const existing = await query(
-        `SELECT id FROM brain_nodes WHERE ${existingWhere}`,
-        existingParams
-      );
-      if (existing.rows.length === 0) {
-        const newNode = await query(
-          `INSERT INTO brain_nodes (label, type, metadata)
-           VALUES ($1, $2, $3) RETURNING id`,
-          [
-            topic.label,
-            topic.type || 'Skill',
-            newTopicMeta(topic),
-          ]
-        );
-        const core = await query(`SELECT id FROM brain_nodes WHERE type = 'Core' LIMIT 1`);
-        if (core.rows.length > 0) {
-          await query(
-            `INSERT INTO brain_edges (source_id, target_id, value) VALUES ($1, $2, 1)`,
-            [core.rows[0].id, newNode.rows[0].id]
+      // STEP 1 — Update confidence on existing skill nodes
+      for (const topic of analysis.topics_practiced || []) {
+        try {
+          const existing = await query(
+            'SELECT id, metadata FROM brain_nodes WHERE LOWER(label) = LOWER($1)',
+            [topic.label]
           );
+          if (existing.rows.length === 0) continue;
+          const row = existing.rows[0];
+          const current = parseFloat(row.metadata?.confidence_score ?? 0.5) || 0.5;
+          const delta = parseFloat(topic.confidence_delta) || 0.1;
+          const newScore = Math.min(1, Math.max(0, current + delta));
+          const isoNow = new Date().toISOString();
+          const newEntry = JSON.stringify({ t: isoNow, c: newScore });
+          const metaUpdate = learner_id
+            ? `jsonb_set(jsonb_set(COALESCE(metadata, '{}'), '{confidence_score}', to_jsonb($2::float)), '{learner_id}', to_jsonb($4::text))`
+            : `jsonb_set(COALESCE(metadata, '{}'), '{confidence_score}', to_jsonb($2::float))`;
+          const practicedParams = learner_id ? [row.id, newScore, newEntry, learner_id] : [row.id, newScore, newEntry];
+          await query(
+            `UPDATE brain_nodes SET
+              metadata = ${metaUpdate},
+              confidence_history = COALESCE(confidence_history, '[]'::jsonb) || jsonb_build_array($3::jsonb),
+              updated_at = now()
+            WHERE id = $1`,
+            practicedParams
+          );
+          practicedLabels.add(topic.label);
+          skillNodeIds.push(row.id);
+        } catch (e) {
+          console.error('session-complete: practiced update:', e.message);
+        }
+      }
+      for (const topic of analysis.topics_struggled || []) {
+        try {
+          const existing = await query(
+            'SELECT id, metadata FROM brain_nodes WHERE LOWER(label) = LOWER($1)',
+            [topic.label]
+          );
+          if (existing.rows.length === 0) continue;
+          const row = existing.rows[0];
+          const current = parseFloat(row.metadata?.confidence_score ?? 0.5) || 0.5;
+          const delta = parseFloat(topic.confidence_delta) || -0.05;
+          const newScore = Math.min(1, Math.max(0, current + delta));
+          const isoNow = new Date().toISOString();
+          const newEntry = JSON.stringify({ t: isoNow, c: newScore });
+          const metaUpdate = learner_id
+            ? `jsonb_set(jsonb_set(COALESCE(metadata, '{}'), '{confidence_score}', to_jsonb($2::float)), '{learner_id}', to_jsonb($4::text))`
+            : `jsonb_set(COALESCE(metadata, '{}'), '{confidence_score}', to_jsonb($2::float))`;
+          const struggledParams = learner_id ? [row.id, newScore, newEntry, learner_id] : [row.id, newScore, newEntry];
+          await query(
+            `UPDATE brain_nodes SET
+              metadata = ${metaUpdate},
+              confidence_history = COALESCE(confidence_history, '[]'::jsonb) || jsonb_build_array($3::jsonb),
+              updated_at = now()
+            WHERE id = $1`,
+            struggledParams
+          );
+          practicedLabels.add(topic.label);
+          skillNodeIds.push(row.id);
+        } catch (e) {
+          console.error('session-complete: struggled update:', e.message);
+        }
+      }
+
+      // STEP 2 — Create new skill/memory nodes for new_topics
+      let nelliId = null;
+      if (agent_id) {
+        try {
+          const nelliRes = await query("SELECT id FROM agents WHERE name = 'Nelli' LIMIT 1");
+          if (nelliRes.rows.length > 0) nelliId = nelliRes.rows[0].id;
+        } catch (_) {}
+      }
+      const agentForNew = nelliId || agent_id;
+
+      const coreRes = await query(`SELECT id FROM brain_nodes WHERE type = 'Core' LIMIT 1`);
+      const coreId = coreRes.rows.length > 0 ? coreRes.rows[0].id : null;
+
+      for (const topic of analysis.new_topics || []) {
+        try {
+          const t = topic.type === 'Memory' || topic.type === 'Conversation' ? topic.type : 'Skill';
+          const existing = await query(
+            'SELECT id FROM brain_nodes WHERE LOWER(label) = LOWER($1)',
+            [topic.label]
+          );
+          if (existing.rows.length > 0) continue;
+          const meta = JSON.stringify({
+            confidence_score: 0.5,
+            source: 'session',
+            ...(learner_id && { learner_id }),
+          });
+          const hist = JSON.stringify([{ t: new Date().toISOString(), c: 0.5 }]);
+          const newNode = await query(
+            `INSERT INTO brain_nodes (label, type, agent_id, metadata, confidence_history)
+             VALUES ($1, $2, $3, $4::jsonb, $5::jsonb) RETURNING id`,
+            [topic.label, t, agentForNew, meta, hist]
+          );
+          if (coreId) {
+            await query(
+              `INSERT INTO brain_edges (source_id, target_id, value) VALUES ($1, $2, 1)`,
+              [coreId, newNode.rows[0].id]
+            );
+          }
+        } catch (e) {
+          console.error('session-complete: new topic:', e.message);
+        }
+      }
+
+      // STEP 3 — Save Conversation node for this session
+      try {
+        let convLabel = (analysis.summary || '').slice(0, 50).trim() || 'Session';
+        if (/\d{8,}/.test(convLabel)) convLabel = 'Session';
+        const convMeta = JSON.stringify({
+          confidence_score: 0.8,
+          session_id: episodeId,
+        });
+        const convNode = await query(
+          `INSERT INTO brain_nodes (label, type, agent_id, metadata)
+           VALUES ($1, 'Conversation', $2, $3::jsonb) RETURNING id`,
+          [convLabel, agent_id, convMeta]
+        );
+        const convId = convNode.rows[0].id;
+        for (const skillId of skillNodeIds) {
+          try {
+            await query(
+              `INSERT INTO brain_edges (source_id, target_id, value) VALUES ($1, $2, 1)`,
+              [convId, skillId]
+            );
+          } catch (_) {
+            /* edge may exist */
+          }
+        }
+      } catch (e) {
+        console.error('session-complete: conversation node:', e.message);
+      }
+
+      // STEP 4 — Update learner CEFR if warranted
+      if (learner_id && analysis.cefr_level_demonstrated) {
+        try {
+          const learnerRes = await query(
+            'SELECT cefr_level, agent_id FROM learners WHERE id = $1',
+            [learner_id]
+          );
+          if (learnerRes.rows.length > 0) {
+          const learner = learnerRes.rows[0];
+          const currentLevel = learner.cefr_level || 'A1';
+          const demonstrated = String(analysis.cefr_level_demonstrated).trim().toUpperCase();
+          const currentOrd = CEFR_ORDER[currentLevel] || 0;
+          const demoOrd = CEFR_ORDER[demonstrated] || 0;
+          if (demoOrd > currentOrd) {
+            const countRes = await query(
+              `SELECT COUNT(*)::int as c FROM brain_nodes
+               WHERE type = 'Skill'
+                 AND COALESCE((metadata->>'confidence_score')::float, 0) >= 0.75
+                 AND (metadata->>'learner_id' = $1 OR metadata->>'learner_id' IS NULL)`,
+              [learner_id]
+            );
+            const count = (countRes.rows?.[0]?.c) ?? 0;
+            if (count >= 5) {
+              await query(
+                'UPDATE learners SET cefr_level = $2, updated_at = now() WHERE id = $1',
+                [learner_id, demonstrated]
+              );
+              const reachedLabel = `Reached ${demonstrated}`;
+              const existingReached = await query(
+                'SELECT id FROM brain_nodes WHERE LOWER(label) = LOWER($1)',
+                [reachedLabel]
+              );
+              if (existingReached.rows.length === 0) {
+                const reachedNode = await query(
+                  `INSERT INTO brain_nodes (label, type, metadata, confidence_history)
+                   VALUES ($1, 'Memory', $2::jsonb, $3::jsonb) RETURNING id`,
+                  [reachedLabel, JSON.stringify({ confidence_score: 1.0 }), JSON.stringify([{ t: new Date().toISOString(), c: 1.0 }])]
+                );
+                if (coreId) {
+                  await query(
+                    `INSERT INTO brain_edges (source_id, target_id, value) VALUES ($1, $2, 1)`,
+                    [coreId, reachedNode.rows[0].id]
+                  );
+                }
+              }
+            }
+          }
+          }
+        } catch (e) {
+          console.error('session-complete: CEFR update:', e.message);
+        }
+      }
+
+      // STEP 5 — Learner-specific memory
+      if (learner_id) {
+        try {
+          const learnerRes = await query(
+            'SELECT agent_id FROM learners WHERE id = $1',
+            [learner_id]
+          );
+          const learnerAgentId = (learnerRes.rows?.[0]?.agent_id) || agent_id;
+          for (const topic of analysis.topics_struggled || []) {
+            try {
+              const label = `Struggles with ${topic.label}`;
+              const existing = await query(
+                'SELECT id FROM brain_nodes WHERE LOWER(label) = LOWER($1)',
+                [label]
+              );
+              if (existing.rows.length > 0) continue;
+              const newNode = await query(
+                `INSERT INTO brain_nodes (label, type, agent_id, metadata)
+                 VALUES ($1, 'Memory', $2, $3::jsonb) RETURNING id`,
+                [label, learnerAgentId, JSON.stringify({ confidence_score: 0.6, learner_id })]
+              );
+              if (coreId) {
+                await query(
+                  `INSERT INTO brain_edges (source_id, target_id, value) VALUES ($1, $2, 1)`,
+                  [coreId, newNode.rows[0].id]
+                );
+              }
+            } catch (e) {
+              console.error('session-complete: struggles memory:', e.message);
+            }
+          }
+          for (const topic of analysis.topics_practiced || []) {
+            try {
+              const existing = await query(
+                'SELECT id, metadata FROM brain_nodes WHERE LOWER(label) = LOWER($1)',
+                [topic.label]
+              );
+              if (existing.rows.length === 0) continue;
+              const score = parseFloat(existing.rows[0].metadata?.confidence_score ?? 0) || 0;
+              if (score < 0.85) continue;
+              const label = `Mastered ${topic.label}`;
+              const existingMastered = await query(
+                'SELECT id FROM brain_nodes WHERE LOWER(label) = LOWER($1)',
+                [label]
+              );
+              if (existingMastered.rows.length > 0) continue;
+              const newNode = await query(
+                `INSERT INTO brain_nodes (label, type, agent_id, metadata)
+                 VALUES ($1, 'Memory', $2, $3::jsonb) RETURNING id`,
+                [label, learnerAgentId, JSON.stringify({ confidence_score: 1.0, learner_id })]
+              );
+              if (coreId) {
+                await query(
+                  `INSERT INTO brain_edges (source_id, target_id, value) VALUES ($1, $2, 1)`,
+                  [coreId, newNode.rows[0].id]
+                );
+              }
+            } catch (e) {
+              console.error('session-complete: mastered memory:', e.message);
+            }
+          }
+        } catch (e) {
+          console.error('session-complete: learner memory:', e.message);
         }
       }
     }
 
-    const practiced = (analysis.topics_practiced && analysis.topics_practiced.length || 0) + (analysis.topics_struggled && analysis.topics_struggled.length || 0);
-    const created = (analysis.new_topics && analysis.new_topics.length) || 0;
+    const practiced = (analysis.topics_practiced?.length || 0) + (analysis.topics_struggled?.length || 0);
+    const created = analysis.new_topics?.length || 0;
     if (!is_mock_exam) {
-      console.log(`Brain update: ${practiced} nodes updated, ${created} nodes created`);
+      console.log(`Brain update: ${practiced} practiced/struggled, ${created} new topics`);
     }
     const payload = {
       success: true,
