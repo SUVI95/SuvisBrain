@@ -1,6 +1,21 @@
 // api/session-complete.js — post-session brain update via OpenRouter
 import { query } from './db.js';
 import { removePersonalData } from '../src/lib/safe-ai.js';
+import { getEmbedding } from '../src/lib/embeddings.js';
+
+async function setNodeEmbedding(nodeId, label) {
+  const embedding = await getEmbedding(label);
+  if (embedding && Array.isArray(embedding)) {
+    try {
+      await query(
+        'UPDATE brain_nodes SET embedding = $1::vector WHERE id = $2',
+        [JSON.stringify(embedding), nodeId]
+      );
+    } catch (e) {
+      console.error('session-complete: set embedding:', e.message);
+    }
+  }
+}
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const CEFR_ORDER = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
@@ -347,6 +362,7 @@ export default async function sessionCompleteHandler(req, res) {
             `INSERT INTO brain_nodes (${bnCols}) VALUES (${bnVals}) RETURNING id`,
             bnParams
           );
+          setNodeEmbedding(newNode.rows[0].id, topic.label).catch(() => {});
           if (coreId) {
             await query(
               `INSERT INTO brain_edges (source_id, target_id, value) VALUES ($1, $2, 1)`,
@@ -374,6 +390,7 @@ export default async function sessionCompleteHandler(req, res) {
           convParams
         );
         const convId = convNode.rows[0].id;
+        setNodeEmbedding(convId, convLabel).catch(() => {});
         for (const skillId of skillNodeIds) {
           try {
             await query(
@@ -430,6 +447,7 @@ export default async function sessionCompleteHandler(req, res) {
                   `INSERT INTO brain_nodes (${reachedCols}) VALUES (${reachedVals}) RETURNING id`,
                   reachedParams
                 );
+                setNodeEmbedding(reachedNode.rows[0].id, reachedLabel).catch(() => {});
                 if (coreId) {
                   await query(
                     `INSERT INTO brain_edges (source_id, target_id, value) VALUES ($1, $2, 1)`,
@@ -470,6 +488,7 @@ export default async function sessionCompleteHandler(req, res) {
                 `INSERT INTO brain_nodes (${struggleCols}) VALUES (${struggleVals}) RETURNING id`,
                 struggleParams
               );
+              setNodeEmbedding(newNode.rows[0].id, label).catch(() => {});
               if (coreId) {
                 await query(
                   `INSERT INTO brain_edges (source_id, target_id, value) VALUES ($1, $2, 1)`,
@@ -504,6 +523,7 @@ export default async function sessionCompleteHandler(req, res) {
                 `INSERT INTO brain_nodes (${masteredCols}) VALUES (${masteredVals}) RETURNING id`,
                 masteredParams
               );
+              setNodeEmbedding(newNode.rows[0].id, label).catch(() => {});
               if (coreId) {
                 await query(
                   `INSERT INTO brain_edges (source_id, target_id, value) VALUES ($1, $2, 1)`,

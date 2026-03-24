@@ -14,6 +14,7 @@ import { getTokenFromRequest, verifyToken } from './src/lib/auth.js';
 import { setSecurityHeaders, getClientIp, sendError } from './src/lib/security.js';
 import { checkLimit, LIMITS } from './src/lib/rate-limit.js';
 import brainHandler from './api/brain.js';
+import brainSearchHandler from './api/brain-search.js';
 import brainSkillsHandler from './api/brain-skills.js';
 import brainStatsHandler from './api/brain-stats.js';
 import brainSessionsHandler from './api/brain-sessions.js';
@@ -241,6 +242,7 @@ async function handleApi(pathname, req, res, body) {
     headers: req.headers,
     body: body ? (() => { try { return JSON.parse(body); } catch { return {}; } })() : {},
     user: null,
+    url: req.url || '',
   };
 
   if (route === 'auth') {
@@ -358,6 +360,7 @@ async function handleApi(pathname, req, res, body) {
     if (route === 'brain') {
       const pathSegs = path.split('/').filter(Boolean);
       const sub = pathSegs[1];
+      if (sub === 'search') { await brainSearchHandler(wrappedReq, res); return true; }
       if (sub === 'skills') { await brainSkillsHandler(wrappedReq, res); return true; }
       if (sub === 'stats') { await brainStatsHandler(wrappedReq, res); return true; }
       if (sub === 'sessions') { await brainSessionsHandler(wrappedReq, res); return true; }

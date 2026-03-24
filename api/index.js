@@ -3,6 +3,7 @@ import { getTokenFromRequest, verifyToken } from '../src/lib/auth.js';
 import { setSecurityHeaders, getClientIp, sendError } from '../src/lib/security.js';
 import { checkLimit, LIMITS } from '../src/lib/rate-limit.js';
 import brainHandler from './brain.js';
+import brainSearchHandler from './brain-search.js';
 import brainSkillsHandler from './brain-skills.js';
 import brainStatsHandler from './brain-stats.js';
 import brainSessionsHandler from './brain-sessions.js';
@@ -180,6 +181,7 @@ export default async function handler(req, res) {
       }
       if (route === 'brain') {
         const sub = pathSegs[1];
+        if (sub === 'search') return await brainSearchHandler(wrappedReq, nres);
         if (sub === 'skills') return await brainSkillsHandler(wrappedReq, nres);
         if (sub === 'stats') return await brainStatsHandler(wrappedReq, nres);
         if (sub === 'sessions') return await brainSessionsHandler(wrappedReq, nres);

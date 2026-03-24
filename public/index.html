@@ -79,6 +79,13 @@
 <div id="topbar">
   <span class="logo">KNUUT</span>
   <div class="divider"></div>
+  <input type="text" id="brain-search" placeholder="Search semantically..." style="
+    padding:6px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.15);
+    background:rgba(255,255,255,0.05); color:#e0e0f0; font-size:12px; font-family:inherit;
+    min-width:180px; margin-right:8px;
+  ">
+  <span id="search-count" style="font-size:11px;color:rgba(255,255,255,0.4);display:none"></span>
+  <div class="divider"></div>
   <span>Knuut's Memory Graph</span>
   <span class="info-btn" tabindex="0">
     ⓘ
@@ -161,6 +168,51 @@ const DEMO_GRAPH = {
     { source: 'Greetings', target: 'Trial lesson', value: 1 },
   ],
 };
+
+// ── SEARCH ────────────────────────────────────────────────────────────
+let searchMatchLabels = new Set();
+let searchDebounceTimer = null;
+
+function updateSearchHighlight() {
+  if (!nodeSel || !nodeSel.node()) return;
+  const circles = nodeSel.selectAll('circle');
+  const labels = labelSel ? labelSel.selectAll('text') : null;
+  if (searchMatchLabels.size === 0) {
+    circles.transition().duration(200)
+      .attr('r', d => RADIUS[d.type])
+      .attr('fill-opacity', d => 0.4 + ((d.confidence_score ?? 0.5) * 0.6));
+    if (labels) labels.transition().duration(200).attr('opacity', 0.55);
+  } else {
+    circles.transition().duration(200)
+      .attr('r', d => searchMatchLabels.has(d.id) ? RADIUS[d.type] * 1.3 : RADIUS[d.type])
+      .attr('fill-opacity', d => searchMatchLabels.has(d.id) ? 1 : 0.2);
+    if (labels) labels.transition().duration(200).attr('opacity', d => searchMatchLabels.has(d.id) ? 1 : 0.2);
+  }
+}
+
+function runSearch(q) {
+  const countEl = document.getElementById('search-count');
+  if (!q.trim()) {
+    searchMatchLabels.clear();
+    countEl.style.display = 'none';
+    updateSearchHighlight();
+    return;
+  }
+  fetch('/api/brain/search?q=' + encodeURIComponent(q), { headers: authHdrs() })
+    .then((r) => r.json())
+    .then((data) => {
+      const resultNodes = data.nodes || [];
+      searchMatchLabels = new Set(resultNodes.map((n) => n.label));
+      countEl.textContent = searchMatchLabels.size + ' node' + (searchMatchLabels.size !== 1 ? 's' : '') + ' found';
+      countEl.style.display = 'inline';
+      updateSearchHighlight();
+    })
+    .catch(() => {
+      searchMatchLabels.clear();
+      countEl.style.display = 'none';
+      updateSearchHighlight();
+    });
+}
 
 // ── LOAD FROM API ────────────────────────────────────────────────────
 let nodes = [];
@@ -403,6 +455,12 @@ window.addNode = async function(type) {
     console.warn('Failed to save node to DB:', err);
   }
 };
+
+document.getElementById('brain-search').addEventListener('input', (e) => {
+  clearTimeout(searchDebounceTimer);
+  const q = (e.target.value || '').trim();
+  searchDebounceTimer = setTimeout(() => runSearch(q), 400);
+});
 
 loadBrainData();
 </script>

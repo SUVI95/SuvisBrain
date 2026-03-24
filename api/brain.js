@@ -1,5 +1,6 @@
 // api/brain.js — GET/POST brain nodes and edges
 import { query } from './db.js';
+import { getEmbedding } from '../src/lib/embeddings.js';
 
 export default async function brainHandler(req, res) {
   if (req.method === 'GET') {
@@ -76,6 +77,12 @@ export default async function brainHandler(req, res) {
         [label, type, agent_id != null ? agent_id : null, JSON.stringify({ confidence_score: 0.5 })]
       );
       const newId = nodeResult.rows[0].id;
+
+      getEmbedding(label).then((embedding) => {
+        if (embedding && Array.isArray(embedding)) {
+          query('UPDATE brain_nodes SET embedding = $1::vector WHERE id = $2', [JSON.stringify(embedding), newId]).catch((e) => console.error('brain: set embedding:', e.message));
+        }
+      }).catch(() => {});
 
       const coreResult = await query(
         `SELECT id FROM brain_nodes WHERE type = 'Core' LIMIT 1`
