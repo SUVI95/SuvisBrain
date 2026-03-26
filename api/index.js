@@ -156,15 +156,108 @@ export default async function handler(req, res) {
     }
     if (route === 'schema-check') {
       try {
-        const cols = await query(`SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name IN ('episodes', 'brain_nodes') AND column_name = 'metadata'`);
-        const hasEpisodes = cols.rows.some((r) => r.table_name === 'episodes');
-        const hasBrainNodes = cols.rows.some((r) => r.table_name === 'brain_nodes');
+        // Quick schema health check for the most failure-prone endpoints.
+        // NOTE: this is intentionally "schema existence only" (not data correctness).
+        const REQUIRED = {
+          teacher_learners: [
+            ['learners', 'id'],
+            ['learners', 'name'],
+            ['learners', 'email'],
+            ['learners', 'cefr_level'],
+            ['learners', 'mother_tongue'],
+            ['learners', 'teacher_reviewed_at'],
+            ['learners', 'org_id'], // used when teacher JWT has org_id
+            ['episodes', 'learner_id'],
+            ['episodes', 'title'],
+            ['episodes', 'created_at'],
+          ],
+          brain_stats: [
+            ['learners', 'id'],
+            ['learners', 'cefr_level'],
+            ['learners', 'org_id'],
+            ['learners', 'streak_freezes_remaining'],
+            ['learners', 'streak_freezes_used'],
+            ['episodes', 'learner_id'],
+            ['episodes', 'duration_s'],
+            ['episodes', 'created_at'],
+            ['episodes', 'org_id'],
+          ],
+          brain_sessions: [
+            ['episodes', 'id'],
+            ['episodes', 'learner_id'],
+            ['episodes', 'title'],
+            ['episodes', 'summary'],
+            ['episodes', 'duration_s'],
+            ['episodes', 'created_at'],
+            ['episodes', 'metadata'],
+            ['episodes', 'org_id'],
+            ['learners', 'org_id'], // used when learner JWT has org_id
+          ],
+          user_data: [
+            ['learners', 'id'],
+            ['learners', 'email'],
+            ['learners', 'mother_tongue'],
+            ['learners', 'cefr_level'],
+            ['learners', 'created_at'],
+            ['episodes', 'learner_id'],
+            ['episodes', 'metadata'],
+            ['brain_nodes', 'metadata'],
+          ],
+        };
+
+        const byTable = {};
+        Object.values(REQUIRED).flat().forEach(([table, column]) => {
+          if (!byTable[table]) byTable[table] = new Set();
+          byTable[table].add(column);
+        });
+
+        const present = {};
+        for (const table of Object.keys(byTable)) {
+          const cols = [...byTable[table]];
+          const r = await query(
+            `SELECT column_name
+             FROM information_schema.columns
+             WHERE table_schema = 'public'
+               AND table_name = $1
+               AND column_name = ANY($2::text[])`,
+            [table, cols]
+          );
+          present[table] = new Set((r.rows || []).map((x) => x.column_name));
+        }
+
+        function missingForFeature(featureKey) {
+          const req = REQUIRED[featureKey] || [];
+          const missing = [];
+          for (const [table, column] of req) {
+            if (!present[table] || !present[table].has(column)) {
+              missing.push({ table, column });
+            }
+          }
+          return missing;
+        }
+
+        const features = Object.keys(REQUIRED).map((k) => {
+          const missing = missingForFeature(k);
+          return { key: k, missing_columns: missing };
+        });
+
+        const ok = features.every((f) => f.missing_columns.length === 0);
+
+        // Small recommended fix pointers. (We keep these high-level since exact defaults are in SQL files.)
+        const recommendedFix = !ok
+          ? {
+              ensure_all_sql: '/src/data/ensure-all.sql',
+              streak_migration_sql: '/scripts/migrate-streak-cefr.js (if streak columns are missing)',
+              multi_tenancy_migration_sql: '/scripts/migrate-organisations.js (if org_id columns are missing)',
+            }
+          : null;
+
         return res.status(200).json({
-          episodes_has_metadata: hasEpisodes,
-          brain_nodes_has_metadata: hasBrainNodes,
-          fix: !hasEpisodes || !hasBrainNodes
-            ? 'Run in Neon SQL Editor: ALTER TABLE episodes ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT \'{}\'; ALTER TABLE brain_nodes ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT \'{}\';'
-            : null,
+          ok,
+          generated_at: new Date().toISOString(),
+          features: Object.fromEntries(features.map((f) => [f.key, { missing_columns: f.missing_columns }])),
+          recommended_fix: recommendedFix,
+          hint: ok ? null : 'Run the recommended SQL files in Neon, then redeploy/retest.',
         });
       } catch (err) {
         console.error('schema-check:', err);

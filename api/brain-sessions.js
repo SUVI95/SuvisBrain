@@ -1,5 +1,6 @@
 // GET /api/brain/sessions — past sessions for authenticated learner
 import { query } from './db.js';
+import { parseSchemaMissing } from '../src/lib/security.js';
 
 export default async function brainSessionsHandler(req, res) {
   if (req.method !== 'GET') {
@@ -43,6 +44,8 @@ export default async function brainSessionsHandler(req, res) {
   } catch (err) {
     console.error('brain/sessions error:', err);
     res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: err.message }));
+    const msg = err.message || 'Query failed';
+    const schemaInfo = parseSchemaMissing(msg);
+    res.end(JSON.stringify({ error: msg, code: schemaInfo?.code || 'INTERNAL_ERROR', details: schemaInfo?.details || {} }));
   }
 }

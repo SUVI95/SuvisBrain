@@ -1,5 +1,6 @@
 // GET /api/brain/stats — XP, streak, level for authenticated learner
 import { query } from './db.js';
+import { parseSchemaMissing } from '../src/lib/security.js';
 
 export default async function brainStatsHandler(req, res) {
   if (req.method !== 'GET') {
@@ -69,7 +70,15 @@ export default async function brainStatsHandler(req, res) {
     }));
   } catch (err) {
     console.error('brain/stats error:', err);
+    const msg = err.message || 'Query failed';
+    const schemaInfo = parseSchemaMissing(msg);
     res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: err.message }));
+    res.end(
+      JSON.stringify({
+        error: msg,
+        code: schemaInfo?.code || 'INTERNAL_ERROR',
+        details: schemaInfo?.details || {},
+      })
+    );
   }
 }

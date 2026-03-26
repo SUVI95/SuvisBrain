@@ -51,10 +51,44 @@ export function getClientIp(req) {
 }
 
 /**
+ * Try to extract structured schema-missing information from Postgres errors.
+ * Returns null if we can't recognize a schema problem.
+ */
+export function parseSchemaMissing(message) {
+  const msg = String(message || '');
+  // Postgres: column "foo" of relation "bar" does not exist
+  const m1 = msg.match(/column\s+"([^"]+)"\s+of\s+relation\s+"([^"]+)"/i);
+  if (m1) {
+    return {
+      code: 'SCHEMA_MISSING',
+      details: {
+        missing_column: m1[1],
+        table: m1[2],
+      },
+    };
+  }
+  // Postgres: relation "bar" does not exist
+  const m2 = msg.match(/relation\s+"([^"]+)"/i);
+  if (m2 && /does not exist/i.test(msg)) {
+    return {
+      code: 'SCHEMA_MISSING',
+      details: {
+        missing_table: m2[1],
+      },
+    };
+  }
+  return null;
+}
+
+/**
  * Safe error response — never expose stack traces.
  */
-export function sendError(res, status = 500, message = 'Something went wrong') {
-  const body = JSON.stringify({ error: message });
+export function sendError(res, status = 500, message = 'Something went wrong', code = 'INTERNAL_ERROR', details = {}) {
+  const body = JSON.stringify({
+    error: message,
+    code,
+    details: details || {},
+  });
   if (typeof res.writeHead === 'function') {
     res.writeHead(status, { 'Content-Type': 'application/json' });
     res.end(body);

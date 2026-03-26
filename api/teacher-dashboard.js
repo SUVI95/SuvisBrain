@@ -1,5 +1,6 @@
 // api/teacher-dashboard.js — GET /api/teacher/learners, POST /api/teacher/nudge/:learnerId
 import { query } from './db.js';
+import { parseSchemaMissing } from '../src/lib/security.js';
 
 const RESEND_URL = 'https://api.resend.com/emails';
 
@@ -141,10 +142,16 @@ export async function getLearnersHandler(req, res) {
     console.error('GET /api/teacher/learners:', err);
     const msg = err.message || 'Query failed';
     const hint =
-      /org_id|teacher_reviewed|column .* does not exist/i.test(msg)
-        ? ' Hint: apply src/data/ensure-all.sql (or node scripts/migrate-organisations.js) on Neon.'
+      /org_id|teacher_reviewed|streak_freezes|column .* does not exist/i.test(msg)
+        ? ' Hint: run src/data/ensure-all.sql and related migration scripts in Neon, then redeploy.'
         : '';
-    sendJson(res, 500, { error: msg + hint });
+
+    const schemaInfo = parseSchemaMissing(msg);
+    sendJson(res, 500, {
+      error: msg + hint,
+      code: schemaInfo?.code || 'INTERNAL_ERROR',
+      details: schemaInfo?.details || {},
+    });
   }
 }
 
