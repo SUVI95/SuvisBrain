@@ -85,12 +85,15 @@ export async function getLearnersHandler(req, res) {
     const learnerIds = (result.rows || []).map((r) => r.id);
     let dateRows = [];
     if (learnerIds.length) {
+      // Use IN ($1,$2,…) instead of ANY($1::uuid[]) — some Neon/serverless paths
+      // mishandle uuid[] binding; expanded placeholders are equivalent and reliable.
+      const placeholders = learnerIds.map((_, i) => `$${i + 1}`).join(', ');
       const dr = await query(
         `SELECT learner_id, (created_at AT TIME ZONE 'UTC')::date::text AS d
          FROM episodes
-         WHERE learner_id = ANY($1::uuid[])
+         WHERE learner_id IN (${placeholders})
          GROUP BY learner_id, (created_at AT TIME ZONE 'UTC')::date`,
-        [learnerIds]
+        learnerIds
       );
       dateRows = dr.rows || [];
     }
@@ -136,7 +139,12 @@ export async function getLearnersHandler(req, res) {
     });
   } catch (err) {
     console.error('GET /api/teacher/learners:', err);
-    sendJson(res, 500, { error: err.message });
+    const msg = err.message || 'Query failed';
+    const hint =
+      /org_id|teacher_reviewed|column .* does not exist/i.test(msg)
+        ? ' Hint: apply src/data/ensure-all.sql (or node scripts/migrate-organisations.js) on Neon.'
+        : '';
+    sendJson(res, 500, { error: msg + hint });
   }
 }
 
