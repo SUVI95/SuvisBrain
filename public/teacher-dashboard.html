@@ -320,7 +320,7 @@
     </nav>
 
     <header>
-      <div class="greeting">Good morning, <span id="teacher-name">—</span></div>
+      <div class="greeting">Teacher cockpit — <span id="teacher-name">—</span></div>
       <div class="date-today" id="date-today"></div>
       <div class="stat-pills" id="summary-pills">
         <span class="stat-pill" id="pill-learners">👥 <strong id="total-learners">0</strong> learners</span>
@@ -335,7 +335,7 @@
       <section class="brief-panel">
         <div class="section-kicker">Phase 1 · teacher brief</div>
         <div class="section-title">Teacher command center</div>
-        <div class="section-subtitle">AI prepares a daily brief, ranked interventions, and draft next moves. The teacher reviews and decides.</div>
+        <div class="section-subtitle">AI prepares a daily brief, ranked interventions, and draft next steps. The teacher reviews, edits, and decides.</div>
         <div class="headline-box">
           <strong id="brief-headline">Loading today’s brief…</strong>
           <div id="brief-subline" class="section-subtitle">Priority learners, subtle progress, and ready-to-approve actions will appear here.</div>
@@ -374,15 +374,15 @@
 
     <section class="decision-panel">
       <div class="section-kicker">Decision queue</div>
-      <div class="section-title" style="font-size:20px">Prepared interventions awaiting teacher judgment</div>
-      <div class="section-subtitle">Each suggestion includes reasoning, a draft, and an expected next step. Nothing is sent automatically.</div>
+      <div class="section-title" style="font-size:20px">Prepared interventions awaiting teacher review</div>
+      <div class="section-subtitle">Each suggestion includes reasoning, a draft, and an expected next step. Nothing is sent automatically — every action stays human-approved.</div>
       <div class="decision-list" id="decision-list"></div>
     </section>
 
     <div class="layout">
       <div class="main">
         <h2 style="font-size:14px;font-weight:700;color:#6B7280;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.08em">Ranked learner priorities</h2>
-        <p style="font-size:13px;color:#6B7280;margin-bottom:16px;max-width:760px">This list is sorted by likely teacher impact: attention risks first, then confidence dips, then hidden progress and learners ready for a challenge.</p>
+        <p style="font-size:13px;color:#6B7280;margin-bottom:16px;max-width:760px">This list is sorted by likely teacher impact: attention risks first, then confidence dips, then hidden progress, then learners ready for a challenge.</p>
         <div class="learner-toolbar">
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
             <input type="checkbox" id="select-all-learners" style="width:18px;height:18px">
@@ -405,6 +405,20 @@
         <div id="panel-bars"></div>
         <div class="suggestion-block" id="panel-suggestion" style="display:none"></div>
         <div class="teacher-memory" id="panel-memory" style="display:none"></div>
+        <div style="margin-top:14px;padding:14px;border-radius:14px;background:#F8FAFC;border:1px solid #E2E8F0">
+          <div style="font-size:13px;font-weight:800;color:#334155;margin-bottom:8px">Add a teacher note</div>
+          <textarea id="teacher-note-input" placeholder="What should future-you remember about this learner?" style="width:100%;min-height:86px;padding:10px 12px;border-radius:10px;border:1px solid #CBD5E1;font:inherit;resize:vertical"></textarea>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+            <select id="teacher-note-category" style="padding:8px 10px;border-radius:8px;border:1px solid #CBD5E1;font:inherit">
+              <option value="general">General</option>
+              <option value="motivation">Motivation</option>
+              <option value="risk">Risk</option>
+              <option value="strength">Strength</option>
+              <option value="goal">Goal</option>
+            </select>
+            <button class="btn-nudge" id="btn-save-note" style="padding:8px 16px">Save note</button>
+          </div>
+        </div>
         <div class="panel-sessions" id="panel-sessions"></div>
         <div class="panel-bar" style="margin-top:16px">
           <div class="label"><span>CEFR level override</span></div>
@@ -416,8 +430,8 @@
             <button class="btn-nudge" id="btn-cefr-save" style="padding:8px 16px">Save</button>
           </div>
         </div>
-        <button class="btn-session" id="btn-start-session">Start session with learner</button>
-        <button class="btn-reviewed" id="btn-reviewed" style="display:none">Mark as Reviewed by Teacher</button>
+        <button class="btn-session" id="btn-start-session">Start guided session</button>
+        <button class="btn-reviewed" id="btn-reviewed" style="display:none">Mark AI suggestions reviewed</button>
       </div>
     </div>
   </div>
@@ -528,7 +542,7 @@
             <div class="insight-copy">${escapeHtml(s.draft || '')}</div>
             <div class="decision-actions">
               <button class="action-btn primary" data-open="${learner.id}">Review learner</button>
-              <button class="action-btn good btn-nudge-single" data-id="${learner.id}" data-email="${learner.email ? '1' : '0'}" ${!learner.email ? 'disabled' : ''}>Send nudge</button>
+              <button class="action-btn good btn-nudge-single" data-id="${learner.id}" data-email="${learner.email ? '1' : '0'}" ${!learner.email ? 'disabled' : ''}>Send reviewed nudge</button>
               <button class="action-btn" data-copy="${learner.id}">Copy draft</button>
             </div>
           </div>
@@ -549,6 +563,33 @@
             setTimeout(() => btn.textContent = 'Copy draft', 1200);
           } catch {
             alert('Could not copy draft.');
+          }
+        });
+      });
+      container.querySelectorAll('[data-approve]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const learner = learnersData.find((l) => l.id === btn.dataset.approve);
+          if (!learner?.ai_insights?.suggestion) return;
+          try {
+            const s = learner.ai_insights.suggestion;
+            const r = await fetch(`/api/learners/${learner.id}/teacher-actions`, {
+              method: 'POST',
+              headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action_type: (s.title || 'teacher_follow_up').toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+                status: 'approved',
+                ai_title: s.title,
+                ai_reason: s.rationale,
+                ai_draft: s.draft,
+                teacher_decision: s.teacher_action,
+              }),
+            });
+            const resp = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(resp.error || 'Failed to approve plan');
+            btn.textContent = 'Plan approved';
+            btn.disabled = true;
+          } catch (err) {
+            alert(err.message || 'Could not approve plan.');
           }
         });
       });
@@ -589,7 +630,7 @@
         const r = await fetch(`/api/teacher/nudge/${id}`, { method: 'POST', headers: authHeaders() });
         if (!r.ok) throw new Error('Failed');
         btn.textContent = 'Nudge sent ✓';
-        setTimeout(() => { btn.textContent = 'Send nudge'; btn.disabled = false; }, 3000);
+        setTimeout(() => { btn.textContent = 'Send reviewed nudge'; btn.disabled = false; }, 3000);
       } catch {
         alert('Could not send nudge.');
         btn.disabled = false;
@@ -657,8 +698,8 @@
                 </div>
               ` : ''}
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-                <button class="btn-nudge btn-nudge-single" data-id="${l.id}" data-email="${l.email ? '1' : '0'}" ${!l.email ? 'disabled title="No email"' : ''}>Send nudge</button>
-                <button class="action-btn" data-open="${l.id}">Open learner</button>
+                <button class="btn-nudge btn-nudge-single" data-id="${l.id}" data-email="${l.email ? '1' : '0'}" ${!l.email ? 'disabled title="No email"' : ''}>Send reviewed nudge</button>
+                <button class="action-btn" data-open="${l.id}">Open learner profile</button>
               </div>
             </div>`;
         }).join('');
@@ -757,7 +798,7 @@
       const panelMemory = document.getElementById('panel-memory');
       if ((ai.teacher_memory || []).length) {
         panelMemory.style.display = 'grid';
-        panelMemory.innerHTML = `<strong>Teacher memory notes</strong>${ai.teacher_memory.map((m) => `<div>• ${escapeHtml(m)}</div>`).join('')}`;
+        panelMemory.innerHTML = `<strong>Teacher notes & memory</strong>${ai.teacher_memory.map((m) => `<div>• ${escapeHtml(m)}</div>`).join('')}`;
       } else {
         panelMemory.style.display = 'none';
       }
@@ -790,7 +831,7 @@
       const btnReviewed = document.getElementById('btn-reviewed');
       btnReviewed.style.display = 'block';
       btnReviewed.classList.remove('reviewed');
-      btnReviewed.textContent = 'Mark as Reviewed by Teacher';
+      btnReviewed.textContent = 'Mark AI suggestions reviewed';
       btnReviewed.disabled = false;
       if (learner?.teacher_reviewed_at) {
         btnReviewed.classList.add('reviewed');
@@ -819,6 +860,8 @@
         const data = await res.json();
         const nodes = data.nodes || [];
         const episodes = data.episodes || [];
+        const persistedNotes = data.teacher_notes || [];
+        const persistedActions = data.teacher_actions || [];
 
         document.getElementById('panel-bars').innerHTML = nodes.slice(0, 6).map((n) => {
           const c = n.confidence ?? 0.5;
@@ -832,17 +875,50 @@
         }).join('');
 
         const recent = episodes.slice(0, 5);
-        document.getElementById('panel-sessions').innerHTML = recent.length > 0
+        const notesHtml = persistedNotes.length
+          ? `<div style="margin-top:14px"><strong style="font-size:13px;color:#334155">Saved teacher notes</strong>${persistedNotes.slice(0,5).map((n) => `<div class="panel-session"><div class="panel-session-date">${relativeTime(n.created_at)} · ${escapeHtml(n.category || 'general')}</div><div>${escapeHtml(n.note || '')}</div></div>`).join('')}</div>`
+          : '';
+        const actionsHtml = persistedActions.length
+          ? `<div style="margin-top:14px"><strong style="font-size:13px;color:#334155">Teacher decisions</strong>${persistedActions.slice(0,5).map((a) => `<div class="panel-session"><div class="panel-session-date">${relativeTime(a.created_at)} · ${escapeHtml(a.status || 'suggested')}</div><div><strong>${escapeHtml(a.ai_title || a.action_type || 'Action')}</strong></div><div>${escapeHtml(a.teacher_decision || a.ai_reason || '')}</div></div>`).join('')}</div>`
+          : '';
+        document.getElementById('panel-sessions').innerHTML = (recent.length > 0
           ? recent.map((e) => `
               <div class="panel-session">
                 <div class="panel-session-date">${relativeTime(e.created_at)}</div>
                 <div>${escapeHtml(e.summary || e.title || '—')}</div>
               </div>`).join('')
-          : '<div style="color:#6B7280">No sessions yet.</div>';
+          : '<div style="color:#6B7280">No sessions yet.</div>') + notesHtml + actionsHtml;
+
+        const saveNoteBtn = document.getElementById('btn-save-note');
+        saveNoteBtn.onclick = async () => {
+          const note = (document.getElementById('teacher-note-input').value || '').trim();
+          const category = document.getElementById('teacher-note-category').value || 'general';
+          if (!note) { alert('Write a note first.'); return; }
+          try {
+            saveNoteBtn.disabled = true;
+            const r = await fetch(`/api/learners/${learnerId}/teacher-notes`, {
+              method: 'POST',
+              headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+              body: JSON.stringify({ note, category }),
+            });
+            const resp = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(resp.error || 'Failed to save note');
+            document.getElementById('teacher-note-input').value = '';
+            showLearnerPanel(learnerId);
+          } catch (err) {
+            alert(err.message || 'Could not save note.');
+          }
+          saveNoteBtn.disabled = false;
+        };
       } catch {
         document.getElementById('panel-sessions').innerHTML = '<div style="color:#FF4B4B">Could not load learner detail.</div>';
       }
     }
+
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-open]');
+      if (!btn) return;
+    });
 
     loadLearners();
   </script>

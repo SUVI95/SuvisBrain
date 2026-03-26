@@ -38,7 +38,7 @@ import { query } from './api/db.js';
 import { getSystemPrompt, langToIso } from './api/knuut-prompt.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 const MIME = {
   '.html': 'text/html',
@@ -378,7 +378,7 @@ async function handleApi(pathname, req, res, body) {
     }
     if (route === 'learners') {
       const pathSegs = path.split('/').filter(Boolean);
-      if (pathSegs[2] === 'reviewed') {
+      if (['reviewed', 'teacher-notes', 'teacher-actions'].includes(pathSegs[2])) {
         await teacherOverrideHandler(wrappedReq, res, pathname);
         return true;
       }

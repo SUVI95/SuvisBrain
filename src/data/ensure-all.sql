@@ -80,3 +80,31 @@ CREATE TABLE IF NOT EXISTS cefr_history (
   created_at timestamptz DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_cefr_history_learner ON cefr_history(learner_id);
+
+
+-- 11. Teacher notes + action decisions (human-in-the-loop teacher memory)
+CREATE TABLE IF NOT EXISTS teacher_notes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  learner_id uuid REFERENCES learners(id) ON DELETE CASCADE,
+  teacher_id uuid REFERENCES teachers(id) ON DELETE SET NULL,
+  note text NOT NULL,
+  category text DEFAULT 'general',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_teacher_notes_learner ON teacher_notes(learner_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS teacher_actions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  learner_id uuid REFERENCES learners(id) ON DELETE CASCADE,
+  teacher_id uuid REFERENCES teachers(id) ON DELETE SET NULL,
+  action_type text NOT NULL,
+  status text DEFAULT 'suggested',
+  ai_title text,
+  ai_reason text,
+  ai_draft text,
+  teacher_decision text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_teacher_actions_learner ON teacher_actions(learner_id, created_at DESC);
