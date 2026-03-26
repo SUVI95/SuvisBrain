@@ -1,4 +1,4 @@
-// api/teacher-dashboard.js — GET /api/teacher/learners, POST /api/teacher/nudge/:learnerId
+// api/teacher-dashboard.js — teacher command center data + nudge flows
 import { query } from './db.js';
 import { parseSchemaMissing } from '../src/lib/security.js';
 
@@ -29,6 +29,205 @@ function streakFromDates(sessionDates, todayStr) {
     else break;
   }
   return streak;
+}
+
+function avgMinutes(episodes) {
+  if (!episodes.length) return 0;
+  const total = episodes.reduce((sum, e) => sum + ((e.duration_s || 0) / 60), 0);
+  return Math.round((total / episodes.length) * 10) / 10;
+}
+
+function recentWindowDays(dateStr) {
+  if (!dateStr) return null;
+  return Math.floor((Date.now() - new Date(dateStr).getTime()) / (24 * 60 * 60 * 1000));
+}
+
+function buildLearnerInsights(learner, episodes, topicRows) {
+  const sessionsTotal = learner.sessions_total || 0;
+  const sessionsWeek = learner.sessions_this_week || 0;
+  const streak = learner.streak || 0;
+  const lastAt = learner.last_session_at;
+  const daysSinceLast = recentWindowDays(lastAt);
+  const recentEpisodes = (episodes || []).slice(0, 3);
+  const allEpisodes = episodes || [];
+  const recentAvg = avgMinutes(recentEpisodes);
+  const overallAvg = avgMinutes(allEpisodes);
+  const shorterRecently = recentEpisodes.length >= 2 && overallAvg > 0 && recentAvg < overallAvg * 0.7;
+  const repeatedTopics = (topicRows || []).filter((t) => (t.count || 0) >= 2).slice(0, 3);
+  const weakestTopics = repeatedTopics.map((t) => t.topic).filter(Boolean);
+  const needsAttention = learner.at_risk || sessionsWeek === 0 || (daysSinceLast != null && daysSinceLast >= 5);
+  const confidenceRisk = shorterRecently && sessionsWeek > 0;
+  const hiddenProgress = !learner.at_risk && streak >= 2 && sessionsWeek >= 1 && recentAvg >= Math.max(8, overallAvg * 0.85);
+  const readyForChallenge = ['A1', 'A2'].includes((learner.cefr_level || 'A1').toUpperCase()) && sessionsTotal >= 6 && !learner.at_risk;
+
+  const reasons = [];
+  if (learner.at_risk) reasons.push(`No practice for ${Math.max(daysSinceLast || 7, 7)} days`);
+  if (sessionsWeek === 0 && !learner.at_risk) reasons.push('No sessions yet this week');
+  if (confidenceRisk) reasons.push('Recent sessions are shorter than usual');
+  if (streak >= 3) reasons.push(`Strong routine with a ${streak}-day streak`);
+  if (readyForChallenge) reasons.push('Steady activity suggests readiness for the next challenge');
+  if (weakestTopics.length) reasons.push(`Repeated friction around ${weakestTopics.join(', ')}`);
+  if (hiddenProgress) reasons.push('Consistency is improving even without dramatic volume spikes');
+
+  let priorityScore = 0;
+  priorityScore += learner.at_risk ? 100 : 0;
+  priorityScore += confidenceRisk ? 30 : 0;
+  priorityScore += sessionsWeek === 0 ? 20 : 0;
+  priorityScore += daysSinceLast != null ? Math.min(daysSinceLast * 2, 30) : 10;
+  priorityScore -= hiddenProgress ? 15 : 0;
+  priorityScore -= readyForChallenge ? 10 : 0;
+  priorityScore -= streak >= 5 ? 10 : 0;
+
+  const suggestionType = learner.at_risk
+    ? 'nudge'
+    : confidenceRisk
+      ? 'confidence_support'
+      : readyForChallenge
+        ? 'challenge'
+        : hiddenProgress
+          ? 'celebrate'
+          : 'review';
+
+  const suggestions = {
+    nudge: {
+      title: 'Gentle re-engagement',
+      teacher_action: 'Review and send a short encouragement nudge',
+      draft: `Hi ${learner.name || 'there'} — you have already built good momentum in Finnish. A short 10-minute practice this week would help you keep it going.`,
+      rationale: 'Best for learners who have gone quiet and may benefit from low-pressure re-entry.',
+      effort: 'low',
+      confidence: 0.87,
+    },
+    confidence_support: {
+      title: 'Confidence rebuild',
+      teacher_action: 'Offer one easy win topic before harder material',
+      draft: `I noticed you have still been showing up. Let’s keep it simple this week and focus on one practical topic you can succeed with quickly.`,
+      rationale: 'Shorter recent sessions can mean overwhelm rather than low motivation.',
+      effort: 'medium',
+      confidence: 0.74,
+    },
+    challenge: {
+      title: 'Ready for next challenge',
+      teacher_action: 'Approve a slightly harder topic or speaking task',
+      draft: `You are doing well. This could be a good time to try a slightly more demanding practice task so you can move toward the next level.`,
+      rationale: 'Sustained session volume at A1/A2 often means the learner is ready to stretch.',
+      effort: 'medium',
+      confidence: 0.78,
+    },
+    celebrate: {
+      title: 'Celebrate hidden progress',
+      teacher_action: 'Send brief praise that reinforces consistency',
+      draft: `You may not always notice it yourself, but your consistency is improving. That matters a lot, and it is helping your Finnish grow.`,
+      rationale: 'Recognition helps teachers reinforce momentum that raw volume metrics can miss.',
+      effort: 'low',
+      confidence: 0.71,
+    },
+    review: {
+      title: 'Targeted review',
+      teacher_action: 'Prepare 1–2 focused review words/topics for the next session',
+      draft: `For the next practice, I would keep the focus narrow and repeat one or two practical topics until they feel easier.`,
+      rationale: 'A narrow teacher-led review can reduce cognitive load and improve retention.',
+      effort: 'medium',
+      confidence: 0.68,
+    },
+  };
+
+  const teacherMemory = [];
+  if (weakestTopics.length) teacherMemory.push(`Needs support around: ${weakestTopics.join(', ')}`);
+  if (hiddenProgress) teacherMemory.push('Responds to consistency and routine-building');
+  if (confidenceRisk) teacherMemory.push('May need confidence-building rather than harder material');
+  if (readyForChallenge) teacherMemory.push('Could be ready for more demanding speaking or workplace tasks');
+
+  return {
+    priority_score: priorityScore,
+    needs_attention: needsAttention,
+    confidence_risk: confidenceRisk,
+    hidden_progress: hiddenProgress,
+    ready_for_challenge: readyForChallenge,
+    weakest_topics: weakestTopics,
+    repeated_topic_count: repeatedTopics.length,
+    reasons,
+    suggestion: suggestions[suggestionType],
+    teacher_memory: teacherMemory,
+    quick_actions: [
+      suggestions[suggestionType].teacher_action,
+      weakestTopics.length ? `Review ${weakestTopics[0]}` : 'Review one practical topic',
+      learner.at_risk ? 'Send nudge now' : 'Discuss next session goal',
+    ],
+    trend: {
+      recent_avg_minutes: recentAvg,
+      overall_avg_minutes: overallAvg,
+      days_since_last: daysSinceLast,
+    },
+  };
+}
+
+function buildTeacherBrief(learners) {
+  const urgent = learners.filter((l) => l.ai_insights?.needs_attention).sort((a, b) => (b.ai_insights?.priority_score || 0) - (a.ai_insights?.priority_score || 0)).slice(0, 3);
+  const hiddenProgress = learners.filter((l) => l.ai_insights?.hidden_progress).slice(0, 3);
+  const ready = learners.filter((l) => l.ai_insights?.ready_for_challenge).slice(0, 3);
+  const confidenceRisk = learners.filter((l) => l.ai_insights?.confidence_risk).slice(0, 3);
+
+  const sections = [];
+  if (urgent.length) {
+    sections.push({
+      key: 'urgent',
+      title: 'Needs your attention today',
+      tone: 'risk',
+      items: urgent.map((l) => ({
+        learner_id: l.id,
+        learner_name: l.name,
+        summary: l.ai_insights?.reasons?.[0] || 'Needs review',
+        action: l.ai_insights?.suggestion?.teacher_action || 'Review learner',
+      })),
+    });
+  }
+  if (confidenceRisk.length) {
+    sections.push({
+      key: 'confidence',
+      title: 'Possible confidence dips',
+      tone: 'warn',
+      items: confidenceRisk.map((l) => ({
+        learner_id: l.id,
+        learner_name: l.name,
+        summary: 'Recent sessions are shorter than usual',
+        action: 'Offer an easier win before increasing difficulty',
+      })),
+    });
+  }
+  if (hiddenProgress.length) {
+    sections.push({
+      key: 'progress',
+      title: 'Hidden progress worth reinforcing',
+      tone: 'good',
+      items: hiddenProgress.map((l) => ({
+        learner_id: l.id,
+        learner_name: l.name,
+        summary: 'Consistency is improving even if the gains are subtle',
+        action: 'Consider brief praise or a light challenge',
+      })),
+    });
+  }
+  if (ready.length) {
+    sections.push({
+      key: 'ready',
+      title: 'Ready for the next challenge',
+      tone: 'good',
+      items: ready.map((l) => ({
+        learner_id: l.id,
+        learner_name: l.name,
+        summary: 'Steady activity suggests they can stretch further',
+        action: 'Approve a harder topic or speaking task',
+      })),
+    });
+  }
+
+  const headline = urgent.length
+    ? `${urgent.length} learner${urgent.length === 1 ? '' : 's'} likely need teacher attention today`
+    : hiddenProgress.length
+      ? `Momentum looks healthier today — ${hiddenProgress.length} learner${hiddenProgress.length === 1 ? '' : 's'} show subtle progress`
+      : 'No urgent intervention signals right now';
+
+  return { headline, sections };
 }
 
 // GET /api/teacher/learners — { summary, learners: [...] }
@@ -85,41 +284,79 @@ export async function getLearnersHandler(req, res) {
 
     const learnerIds = (result.rows || []).map((r) => r.id);
     let dateRows = [];
+    let episodeRows = [];
+    let topicRows = [];
     if (learnerIds.length) {
-      // Use IN ($1,$2,…) instead of ANY($1::uuid[]) — some Neon/serverless paths
-      // mishandle uuid[] binding; expanded placeholders are equivalent and reliable.
       const placeholders = learnerIds.map((_, i) => `$${i + 1}`).join(', ');
-      const dr = await query(
-        `SELECT learner_id, (created_at AT TIME ZONE 'UTC')::date::text AS d
-         FROM episodes
-         WHERE learner_id IN (${placeholders})
-         GROUP BY learner_id, (created_at AT TIME ZONE 'UTC')::date`,
-        learnerIds
-      );
+      const [dr, er, tr] = await Promise.all([
+        query(
+          `SELECT learner_id, (created_at AT TIME ZONE 'UTC')::date::text AS d
+           FROM episodes
+           WHERE learner_id IN (${placeholders})
+           GROUP BY learner_id, (created_at AT TIME ZONE 'UTC')::date`,
+          learnerIds
+        ),
+        query(
+          `SELECT learner_id, title, summary, duration_s, created_at
+           FROM episodes
+           WHERE learner_id IN (${placeholders})
+           ORDER BY created_at DESC`,
+          learnerIds
+        ),
+        query(
+          `SELECT learner_id,
+                  COALESCE(NULLIF(TRIM(title), ''), 'General practice') AS topic,
+                  COUNT(*)::int AS count
+           FROM episodes
+           WHERE learner_id IN (${placeholders})
+           GROUP BY learner_id, COALESCE(NULLIF(TRIM(title), ''), 'General practice')
+           ORDER BY count DESC`,
+          learnerIds
+        ),
+      ]);
       dateRows = dr.rows || [];
+      episodeRows = er.rows || [];
+      topicRows = tr.rows || [];
     }
+
     const datesByLearner = new Map();
     for (const row of dateRows) {
       if (!datesByLearner.has(row.learner_id)) datesByLearner.set(row.learner_id, []);
       datesByLearner.get(row.learner_id).push(row.d);
     }
 
+    const episodesByLearner = new Map();
+    for (const row of episodeRows) {
+      if (!episodesByLearner.has(row.learner_id)) episodesByLearner.set(row.learner_id, []);
+      episodesByLearner.get(row.learner_id).push(row);
+    }
+
+    const topicsByLearner = new Map();
+    for (const row of topicRows) {
+      if (!topicsByLearner.has(row.learner_id)) topicsByLearner.set(row.learner_id, []);
+      topicsByLearner.get(row.learner_id).push(row);
+    }
+
     const todayStr = new Date().toISOString().slice(0, 10);
     const learners = (result.rows || []).map((r) => {
       const sessionsTotal = r.sessions_total ?? 0;
-      const sessionsWeek = r.sessions_this_week ?? 0;
       const lastAt = r.last_session_at;
-      const atRisk =
-        !lastAt || new Date(lastAt) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const atRisk = !lastAt || new Date(lastAt) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const streak = streakFromDates(datesByLearner.get(r.id) || [], todayStr);
-      return {
+      const learner = {
         ...r,
         last_session_at: lastAt,
         streak,
         xp: sessionsTotal * 50,
         at_risk: atRisk,
       };
-    });
+      learner.ai_insights = buildLearnerInsights(
+        learner,
+        episodesByLearner.get(r.id) || [],
+        topicsByLearner.get(r.id) || []
+      );
+      return learner;
+    }).sort((a, b) => (b.ai_insights?.priority_score || 0) - (a.ai_insights?.priority_score || 0));
 
     const totalLearners = learners.length;
     const activeThisWeek = learners.filter((l) => (l.sessions_this_week || 0) > 0).length;
@@ -127,6 +364,9 @@ export async function getLearnersHandler(req, res) {
     const totalSessionsThisWeek = learners.reduce((s, l) => s + (l.sessions_this_week || 0), 0);
     const avgSessionsPerActiveLearner =
       activeThisWeek > 0 ? Math.round((totalSessionsThisWeek / activeThisWeek) * 10) / 10 : 0;
+    const aiPreparedActions = learners.filter((l) => l.ai_insights?.suggestion).length;
+    const hiddenProgressCount = learners.filter((l) => l.ai_insights?.hidden_progress).length;
+    const readyForChallengeCount = learners.filter((l) => l.ai_insights?.ready_for_challenge).length;
 
     sendJson(res, 200, {
       summary: {
@@ -135,7 +375,11 @@ export async function getLearnersHandler(req, res) {
         at_risk_count: atRiskCount,
         total_sessions_this_week: totalSessionsThisWeek,
         avg_sessions_per_active_learner: avgSessionsPerActiveLearner,
+        ai_prepared_actions: aiPreparedActions,
+        hidden_progress_count: hiddenProgressCount,
+        ready_for_challenge_count: readyForChallengeCount,
       },
+      teacher_brief: buildTeacherBrief(learners),
       learners,
     });
   } catch (err) {
