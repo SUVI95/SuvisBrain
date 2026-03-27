@@ -78,6 +78,110 @@
     }
     .insight-block .btn-remind-all:hover { opacity: 0.92; }
     .insight-block .btn-remind-all:disabled { opacity: 0.6; cursor: default; }
+    .decision-queue {
+      margin: 24px 0 28px;
+      padding: 20px;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .decision-queue h3 {
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+    .decision-queue p {
+      font-size: 13px;
+      color: #6B7280;
+      margin-bottom: 16px;
+    }
+    .decision-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .decision-card {
+      border: 1px solid #E5E7EB;
+      border-left: 4px solid #E5E7EB;
+      border-radius: 14px;
+      padding: 16px;
+      background: #FCFCFD;
+    }
+    .decision-card.priority-high { border-left-color: #ef4444; }
+    .decision-card.priority-medium { border-left-color: #f59e0b; }
+    .decision-card.priority-low { border-left-color: #22c55e; }
+    .decision-summary {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .decision-summary-main {
+      flex: 1;
+      min-width: 220px;
+    }
+    .decision-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1A1A2E;
+      margin-bottom: 6px;
+    }
+    .decision-meta {
+      font-size: 12px;
+      color: #6B7280;
+      line-height: 1.45;
+    }
+    .decision-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .decision-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #EEF2FF;
+      color: #4338CA;
+    }
+    .decision-badge.priority-high { background: #fee2e2; color: #b91c1c; }
+    .decision-badge.priority-medium { background: #FEF3C7; color: #B45309; }
+    .decision-badge.priority-low { background: #DCFCE7; color: #15803D; }
+    .decision-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .decision-details {
+      display: none;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #E5E7EB;
+    }
+    .decision-card.expanded .decision-details { display: block; }
+    .decision-detail-block {
+      margin-bottom: 12px;
+    }
+    .decision-detail-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #9CA3AF;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+    .decision-detail-text {
+      font-size: 13px;
+      color: #374151;
+      line-height: 1.5;
+    }
+    .decision-empty {
+      font-size: 13px;
+      color: #6B7280;
+      padding: 10px 0 2px;
+    }
     .learner-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -270,6 +374,11 @@
           </label>
           <button type="button" id="btn-nudge-selected" class="btn-nudge" style="display:none">Nudge selected (<span id="nudge-count">0</span>)</button>
         </div>
+        <section class="decision-queue" id="decision-queue">
+          <h3>Decision queue</h3>
+          <p>Quick teacher decisions that are worth reviewing. Keep the overview light, then expand any item for context and action.</p>
+          <div class="decision-list" id="decision-list"></div>
+        </section>
         <div id="loading-state" style="display:none;padding:24px;text-align:center;color:#6B7280">Loading learners...</div>
         <div class="learner-grid" id="learner-grid"></div>
         <div class="ai-insights" id="ai-insights" style="display:none">
@@ -366,6 +475,122 @@
       const d = document.createElement('div');
       d.textContent = s;
       return d.innerHTML;
+    }
+
+    function buildDecisionQueue() {
+      const decisionList = document.getElementById('decision-list');
+      if (!decisionList) return;
+
+      const decisions = [];
+      learnersData.forEach((l) => {
+        const level = (l.cefr_level || 'A1').toUpperCase();
+        const sessionsWeek = l.sessions_this_week || 0;
+        const sessionsTotal = l.sessions_total || 0;
+        const lastSeen = relativeTime(l.last_session);
+
+        if (l.at_risk) {
+          decisions.push({
+            id: `risk-${l.id}`,
+            learnerId: l.id,
+            learnerName: l.name || '—',
+            priority: 'high',
+            type: 'Re-engagement',
+            summary: `${l.name || 'This learner'} has not practiced recently and may need a teacher nudge.`,
+            reason: `Last session was ${lastSeen}. The learner has ${sessionsWeek} sessions this week.`,
+            recommendation: 'Review quickly and send a reminder if you want to re-engage them now.',
+            actionLabel: 'Open learner',
+            timestamp: lastSeen,
+          });
+        }
+
+        if ((level === 'A1' || level === 'A2') && sessionsTotal > 5) {
+          decisions.push({
+            id: `progress-${l.id}`,
+            learnerId: l.id,
+            learnerName: l.name || '—',
+            priority: 'medium',
+            type: 'Level progression',
+            summary: `${l.name || 'This learner'} may be ready for a closer look at moving forward.`,
+            reason: `${sessionsTotal} total sessions completed and currently tagged ${level}.`,
+            recommendation: 'Open the learner and review CEFR progress before adjusting level or goals.',
+            actionLabel: 'Review learner',
+            timestamp: `${sessionsWeek} sessions this week`,
+          });
+        }
+
+        if (!l.teacher_reviewed_at && sessionsTotal > 0) {
+          decisions.push({
+            id: `review-${l.id}`,
+            learnerId: l.id,
+            learnerName: l.name || '—',
+            priority: 'low',
+            type: 'Teacher review',
+            summary: `${l.name || 'This learner'} has activity but has not been marked reviewed by the teacher yet.`,
+            reason: `${sessionsTotal} total sessions completed. No teacher review timestamp found.`,
+            recommendation: 'Expand for context, then open the learner panel and mark as reviewed if everything looks good.',
+            actionLabel: 'Check learner',
+            timestamp: lastSeen,
+          });
+        }
+      });
+
+      decisions.sort((a, b) => {
+        const priorityOrder = { high: 0, medium: 1, low: 2 };
+        return (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9);
+      });
+
+      if (!decisions.length) {
+        decisionList.innerHTML = '<div class="decision-empty">No teacher decisions need attention right now.</div>';
+        return;
+      }
+
+      decisionList.innerHTML = decisions.map((d) => `
+        <div class="decision-card priority-${d.priority}" data-learner-id="${d.learnerId}">
+          <div class="decision-summary">
+            <div class="decision-summary-main">
+              <div class="decision-title">${escapeHtml(d.summary)}</div>
+              <div class="decision-meta">${escapeHtml(d.learnerName)} · ${escapeHtml(d.type)} · ${escapeHtml(d.timestamp)}</div>
+              <div class="decision-badges">
+                <span class="decision-badge priority-${d.priority}">${escapeHtml(d.priority.toUpperCase())}</span>
+                <span class="decision-badge">${escapeHtml(d.type)}</span>
+              </div>
+            </div>
+            <div class="decision-actions">
+              <button type="button" class="btn-expand btn-expand-decision" aria-expanded="false">Show details</button>
+              <button type="button" class="btn-nudge btn-open-decision">${escapeHtml(d.actionLabel)}</button>
+            </div>
+          </div>
+          <div class="decision-details">
+            <div class="decision-detail-block">
+              <div class="decision-detail-label">Why this is in the queue</div>
+              <div class="decision-detail-text">${escapeHtml(d.reason)}</div>
+            </div>
+            <div class="decision-detail-block">
+              <div class="decision-detail-label">Recommended next step</div>
+              <div class="decision-detail-text">${escapeHtml(d.recommendation)}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      decisionList.querySelectorAll('.btn-expand-decision').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const card = btn.closest('.decision-card');
+          const expanded = card.classList.toggle('expanded');
+          btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+          btn.textContent = expanded ? 'Hide details' : 'Show details';
+        });
+      });
+
+      decisionList.querySelectorAll('.btn-open-decision').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const card = btn.closest('.decision-card');
+          const learnerId = card?.dataset.learnerId;
+          if (learnerId) showLearnerPanel(learnerId);
+        });
+      });
     }
 
     function renderAiInsights() {
@@ -492,6 +717,7 @@
             </div>`;
         }).join('');
 
+        buildDecisionQueue();
         renderAiInsights();
 
         grid.querySelectorAll('.learner-card').forEach((card) => {
