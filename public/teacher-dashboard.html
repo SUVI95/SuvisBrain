@@ -13,7 +13,7 @@
       min-height: 100vh;
       padding: 24px;
     }
-    .container { max-width: 1260px; margin: 0 auto; }
+    .container { max-width: 1100px; margin: 0 auto; }
     nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; }
     .trust-banner {
       display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: #059669;
@@ -33,7 +33,9 @@
       font-weight: 500;
     }
     .nav-link:hover { background: rgba(108,99,255,0.08); border-color: #6C63FF; color: #6C63FF; }
-    header { margin-bottom: 28px; }
+    header {
+      margin-bottom: 28px;
+    }
     .greeting { font-size: 24px; font-weight: 700; color: #1A1A2E; }
     .date-today { font-size: 14px; color: #6B7280; margin-top: 4px; }
     .stat-pills {
@@ -55,128 +57,27 @@
     .stat-pill.pill-active-good { border-left-color: #22c55e; }
     .stat-pill.pill-active-warn { border-left-color: #f59e0b; }
     .stat-pill.pill-risk { border-left-color: #ef4444; }
-    .phase-shell {
-      display: grid;
-      grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr);
-      gap: 24px;
-      margin-bottom: 24px;
-      align-items: start;
+    .card-badge-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+    .mini-badge {
+      font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px;
     }
-    @media (max-width: 1020px) {
-      .phase-shell { grid-template-columns: 1fr; }
+    .mini-badge.risk { background: #fee2e2; color: #b91c1c; }
+    .mini-badge.ready { background: #d1fae5; color: #047857; }
+    .last-title { font-size: 12px; color: #9ca3af; margin-top: 6px; }
+    .streak-line { font-size: 13px; color: #6B7280; margin-top: 4px; }
+    .xp-line { font-size: 13px; font-weight: 700; color: #6C63FF; margin-top: 2px; }
+    .ai-insights { margin-top: 28px; padding: 20px; border-radius: 16px; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .ai-insights h3 { font-size: 15px; margin-bottom: 12px; }
+    .insight-block { border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+    .insight-block.risk-box { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; }
+    .insight-block.good-box { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+    .insight-block ul { margin: 10px 0 0 18px; font-size: 14px; }
+    .insight-block .btn-remind-all {
+      margin-top: 12px; padding: 10px 18px; background: #dc2626; color: #fff; border: none;
+      border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit;
     }
-    .brief-panel, .insights-panel, .decision-panel, .side-panel {
-      background: #fff;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-      border-radius: 18px;
-      padding: 22px;
-    }
-    .section-kicker {
-      font-size: 12px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: #8B5CF6;
-      font-weight: 800;
-      margin-bottom: 8px;
-    }
-    .section-title {
-      font-size: 22px;
-      font-weight: 800;
-      color: #1A1A2E;
-      margin-bottom: 8px;
-    }
-    .section-subtitle {
-      font-size: 14px;
-      color: #6B7280;
-      line-height: 1.5;
-    }
-    .headline-box {
-      margin-top: 18px;
-      background: linear-gradient(135deg, rgba(108,99,255,0.08), rgba(29,158,117,0.08));
-      border: 1px solid rgba(108,99,255,0.16);
-      border-radius: 16px;
-      padding: 18px;
-    }
-    .headline-box strong { display: block; font-size: 18px; margin-bottom: 8px; }
-    .brief-sections {
-      display: grid;
-      gap: 14px;
-      margin-top: 18px;
-    }
-    .brief-card {
-      border-radius: 14px;
-      border: 1px solid #E5E7EB;
-      padding: 16px;
-    }
-    .brief-card.risk { background: #FEF2F2; border-color: #FECACA; }
-    .brief-card.warn { background: #FFF7ED; border-color: #FED7AA; }
-    .brief-card.good { background: #ECFDF5; border-color: #A7F3D0; }
-    .brief-card h4 { font-size: 15px; margin-bottom: 10px; }
-    .brief-card ul { margin-left: 18px; color: #334155; font-size: 14px; display: grid; gap: 6px; }
-    .insight-stat-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 18px;
-    }
-    .insight-stat {
-      background: #F8FAFC;
-      border-radius: 14px;
-      padding: 16px;
-      border: 1px solid #E2E8F0;
-    }
-    .insight-stat .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748B; }
-    .insight-stat .value { font-size: 26px; font-weight: 800; color: #1E293B; margin-top: 6px; }
-    .insight-stat .hint { font-size: 13px; color: #64748B; margin-top: 6px; }
-    .decision-panel { margin-bottom: 22px; }
-    .decision-list { display: grid; gap: 12px; margin-top: 16px; }
-    .decision-item {
-      border: 1px solid #E5E7EB;
-      border-radius: 14px;
-      padding: 16px;
-      background: #FCFCFD;
-    }
-    .decision-top {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
-    }
-    .decision-badge {
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: #EEF2FF;
-      color: #4F46E5;
-    }
-    .decision-badge.low { background: #ECFDF5; color: #047857; }
-    .decision-badge.medium { background: #FFF7ED; color: #C2410C; }
-    .decision-badge.high { background: #FEF2F2; color: #B91C1C; }
-    .decision-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 12px;
-    }
-    .action-btn {
-      border-radius: 10px;
-      border: 1px solid #D1D5DB;
-      padding: 8px 12px;
-      background: #fff;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      color: #374151;
-    }
-    .action-btn.primary { background: #6C63FF; border-color: #6C63FF; color: #fff; }
-    .action-btn.good { background: #1d9e75; border-color: #1d9e75; color: #fff; }
-    .layout { display: flex; gap: 24px; align-items: flex-start; }
-    .main { flex: 1; min-width: 0; }
-    .learner-toolbar { display:flex; gap:12px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+    .insight-block .btn-remind-all:hover { opacity: 0.92; }
+    .insight-block .btn-remind-all:disabled { opacity: 0.6; cursor: default; }
     .learner-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -200,73 +101,53 @@
     }
     .learner-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
     .learner-card.selected { box-shadow: 0 0 0 2px #6C63FF; }
-    .learner-card.priority-high { border-left-color: #EF4444; }
-    .learner-card.priority-medium { border-left-color: #F59E0B; }
-    .learner-card.priority-low { border-left-color: #22C55E; }
-    .learner-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
-    .learner-avatar { width: 44px; height: 44px; border-radius: 50%; background: #6C63FF; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
-    .learner-name { font-weight: 700; font-size: 16px; }
-    .learner-cefr { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; background: rgba(108,99,255,0.15); color: #6C63FF; margin-left: auto; }
-    .mini-line { font-size: 12px; color: #6B7280; margin-top: 4px; }
-    .xp-line { font-size: 13px; font-weight: 700; color: #6C63FF; margin-top: 4px; }
-    .card-badge-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
-    .mini-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px; }
-    .mini-badge.risk { background: #FEE2E2; color: #B91C1C; }
-    .mini-badge.good { background: #D1FAE5; color: #047857; }
-    .mini-badge.warn { background: #FEF3C7; color: #B45309; }
-    .insight-copy {
-      margin-top: 12px;
-      border-radius: 12px;
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
-      padding: 12px;
-      font-size: 13px;
-      color: #334155;
-      line-height: 1.45;
-    }
-    .suggestion-block {
-      margin-top: 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(108,99,255,0.15);
-      background: rgba(108,99,255,0.05);
-      padding: 14px;
-    }
-    .suggestion-block h4 { font-size: 14px; margin-bottom: 8px; }
-    .suggestion-meta { font-size: 12px; color: #6B7280; display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
-    .teacher-memory {
-      margin-top: 12px;
-      border-top: 1px dashed #D1D5DB;
-      padding-top: 10px;
-      font-size: 13px;
-      color: #475569;
-      display: grid;
-      gap: 6px;
-    }
-    .btn-nudge {
-      padding: 8px 16px;
-      background: #1d9e75;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 13px;
-      cursor: pointer;
-      font-family: inherit;
-    }
+    .learner-card.active { border-left-color: #58CC02; }
+    .learner-card.idle { border-left-color: #FFC800; }
+    .learner-card.inactive { border-left-color: #FF4B4B; }
+    .learner-card.stale { border-left-color: #ef4444; }
+    .cefr-badge { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; }
+    .cefr-badge.a1 { background: #9ca3af; color: #fff; }
+    .cefr-badge.a2 { background: #3b82f6; color: #fff; }
+    .cefr-badge.b1 { background: #1d9e75; color: #fff; }
+    .cefr-badge.b2 { background: #0d9488; color: #fff; }
+    .cefr-badge.c1, .cefr-badge.c2 { background: #0f766e; color: #fff; }
+    .btn-nudge { padding: 8px 16px; background: #1d9e75; color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit; }
     .btn-nudge:hover:not(:disabled) { opacity: 0.9; }
     .btn-nudge:disabled { opacity: 0.7; cursor: default; }
+    .learner-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .learner-avatar { width: 44px; height: 44px; border-radius: 50%; background: #6C63FF; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
+    .learner-name { font-weight: 600; font-size: 16px; }
+    .learner-cefr { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; background: rgba(108,99,255,0.15); color: #6C63FF; margin-left: auto; }
+    .skill-dots { display: flex; gap: 4px; margin-bottom: 12px; }
+    .skill-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .learner-meta { font-size: 12px; color: #6B7280; }
+    .learner-weakest { display: inline-block; padding: 4px 10px; background: #E5E7EB; border-radius: 8px; font-size: 11px; margin-top: 8px; }
+    .risk-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; margin-left: 6px; }
+    .risk-badge.high { background: #FEE2E2; color: #DC2626; }
+    .risk-badge.medium { background: #FEF3C7; color: #D97706; }
+    .risk-badge.low { background: #D1FAE5; color: #059669; }
+    .layout { display: flex; gap: 24px; }
+    .main { flex: 1; }
     .side-panel {
-      width: 380px;
-      max-height: 80vh;
+      width: 360px;
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border-radius: 16px;
+      padding: 24px;
+      max-height: 600px;
       overflow-y: auto;
       display: none;
-      position: sticky;
-      top: 20px;
     }
-    .side-panel.visible { display: block; animation: slidePanel 0.3s cubic-bezier(0.34,1.56,0.64,1); }
-    @keyframes slidePanel { from { transform: translateX(100%); } to { transform: translateX(0); } }
-    .panel-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
-    .panel-meta { font-size: 13px; color: #6B7280; margin-bottom: 16px; }
+    .side-panel.visible {
+      display: block;
+      animation: slidePanel 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes slidePanel {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+    .panel-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .panel-meta { font-size: 13px; color: #6B7280; margin-bottom: 20px; }
     .panel-bar { margin-bottom: 12px; }
     .panel-bar .label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
     .panel-bar .track { height: 8px; background: #E5E7EB; border-radius: 4px; overflow: hidden; }
@@ -296,13 +177,15 @@
       font-family: inherit;
       box-shadow: 0 4px 0 #4B44CC;
     }
+    .btn-session:hover { opacity: 0.95; }
     .btn-reviewed {
       margin-top: 12px; width: 100%; padding: 10px 14px; background: #fff; color: #6C63FF;
       border: 2px solid #6C63FF; border-radius: 10px; font-weight: 600; font-size: 13px;
       cursor: pointer; font-family: inherit;
     }
+    .btn-reviewed:hover { background: rgba(108,99,255,0.08); }
     .btn-reviewed.reviewed { background: #D1FAE5; border-color: #059669; color: #059669; cursor: default; }
-    .empty-state, #loading-state, #error-state { margin-top: 16px; }
+    .btn-reviewed.reviewed:hover { background: #D1FAE5; }
   </style>
 </head>
 <body>
@@ -320,70 +203,21 @@
     </nav>
 
     <header>
-      <div class="greeting">Teacher cockpit — <span id="teacher-name">—</span></div>
+      <div class="greeting">Good morning, <span id="teacher-name">—</span></div>
       <div class="date-today" id="date-today"></div>
       <div class="stat-pills" id="summary-pills">
-        <span class="stat-pill" id="pill-learners">👥 <strong id="total-learners">0</strong> learners</span>
-        <span class="stat-pill" id="pill-active"><strong id="active-this-week">0</strong> active this week</span>
-        <span class="stat-pill" id="pill-at-risk"><strong id="at-risk-count-pill">0</strong> need re-engagement</span>
-        <span class="stat-pill" id="pill-sessions-week">📚 <strong id="total-sessions-week">0</strong> sessions this week</span>
-        <span class="stat-pill"><strong id="ai-prepared-actions">0</strong> AI-prepared actions</span>
+        <span class="stat-pill" id="pill-learners">👥 <strong id="total-learners">0</strong> opiskelijaa</span>
+        <span class="stat-pill" id="pill-active"><strong id="active-this-week">0</strong> aktiivista tällä viikolla</span>
+        <span class="stat-pill" id="pill-at-risk"><strong id="at-risk-count-pill">0</strong> ei harjoitellut 7 päivään</span>
+        <span class="stat-pill" id="pill-sessions-week">📚 <strong id="total-sessions-week">0</strong> harjoittelusessiota tällä viikolla</span>
       </div>
     </header>
 
-    <div class="phase-shell">
-      <section class="brief-panel">
-        <div class="section-kicker">Phase 1 · teacher brief</div>
-        <div class="section-title">Teacher command center</div>
-        <div class="section-subtitle">AI prepares a daily brief, ranked interventions, and draft next steps. The teacher reviews, edits, and decides.</div>
-        <div class="headline-box">
-          <strong id="brief-headline">Loading today’s brief…</strong>
-          <div id="brief-subline" class="section-subtitle">Priority learners, subtle progress, and ready-to-approve actions will appear here.</div>
-        </div>
-        <div class="brief-sections" id="brief-sections"></div>
-      </section>
-
-      <aside class="insights-panel">
-        <div class="section-kicker">Phase 2 · insight layer</div>
-        <div class="section-title" style="font-size:20px">Why the AI is suggesting this</div>
-        <div class="section-subtitle">Signals are visible, lightly explainable, and designed for human review — not autopilot.</div>
-        <div class="insight-stat-grid">
-          <div class="insight-stat">
-            <div class="label">Prepared actions</div>
-            <div class="value" id="prepared-actions-stat">0</div>
-            <div class="hint">Teacher-review-ready suggestions</div>
-          </div>
-          <div class="insight-stat">
-            <div class="label">Hidden progress</div>
-            <div class="value" id="hidden-progress-stat">0</div>
-            <div class="hint">Subtle gains worth reinforcing</div>
-          </div>
-          <div class="insight-stat">
-            <div class="label">Ready to stretch</div>
-            <div class="value" id="ready-challenge-stat">0</div>
-            <div class="hint">Learners who may be ready for more</div>
-          </div>
-          <div class="insight-stat">
-            <div class="label">Time saved</div>
-            <div class="value" id="time-saved-stat">0m</div>
-            <div class="hint">Rough estimate from AI-prepared decisions</div>
-          </div>
-        </div>
-      </aside>
-    </div>
-
-    <section class="decision-panel">
-      <div class="section-kicker">Decision queue</div>
-      <div class="section-title" style="font-size:20px">Prepared interventions awaiting teacher review</div>
-      <div class="section-subtitle">Each suggestion includes reasoning, a draft, and an expected next step. Nothing is sent automatically — every action stays human-approved.</div>
-      <div class="decision-list" id="decision-list"></div>
-    </section>
-
     <div class="layout">
       <div class="main">
-        <h2 style="font-size:14px;font-weight:700;color:#6B7280;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.08em">Ranked learner priorities</h2>
-        <p style="font-size:13px;color:#6B7280;margin-bottom:16px;max-width:760px">This list is sorted by likely teacher impact: attention risks first, then confidence dips, then hidden progress, then learners ready for a challenge.</p>
-        <div class="learner-toolbar">
+        <h2 style="font-size:14px;font-weight:600;color:#6B7280;margin-bottom:16px;">Your learners</h2>
+        <p style="font-size:13px;color:#6B7280;margin-bottom:16px;">Sorted by last session. Send a nudge to re-engage inactive learners.</p>
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
             <input type="checkbox" id="select-all-learners" style="width:18px;height:18px">
             <span>Select all</span>
@@ -392,6 +226,18 @@
         </div>
         <div id="loading-state" style="display:none;padding:24px;text-align:center;color:#6B7280">Loading learners...</div>
         <div class="learner-grid" id="learner-grid"></div>
+        <div class="ai-insights" id="ai-insights" style="display:none">
+          <h3>AI-näkemykset</h3>
+          <div class="insight-block risk-box" id="insights-at-risk-block" style="display:none">
+            <div id="insights-at-risk-title"></div>
+            <ul id="insights-at-risk-list"></ul>
+            <button type="button" class="btn-remind-all" id="btn-remind-all-at-risk">Lähetä muistutus</button>
+          </div>
+          <div class="insight-block good-box" id="insights-b1-block" style="display:none">
+            <div id="insights-b1-title"></div>
+            <ul id="insights-b1-list"></ul>
+          </div>
+        </div>
         <div id="error-state" style="display:none;padding:24px;background:#fef2f2;border-radius:12px;color:#b91c1c;margin-top:16px">
           <p>Could not load learners.</p>
           <button type="button" id="retry-btn" style="margin-top:12px;padding:10px 20px;background:#1d9e75;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">Retry</button>
@@ -401,24 +247,7 @@
       <div class="side-panel" id="side-panel">
         <div class="panel-title" id="panel-learner-name">—</div>
         <div class="panel-meta" id="panel-meta"></div>
-        <div id="panel-ai-summary" class="insight-copy" style="margin-bottom:16px;display:none"></div>
         <div id="panel-bars"></div>
-        <div class="suggestion-block" id="panel-suggestion" style="display:none"></div>
-        <div class="teacher-memory" id="panel-memory" style="display:none"></div>
-        <div style="margin-top:14px;padding:14px;border-radius:14px;background:#F8FAFC;border:1px solid #E2E8F0">
-          <div style="font-size:13px;font-weight:800;color:#334155;margin-bottom:8px">Add a teacher note</div>
-          <textarea id="teacher-note-input" placeholder="What should future-you remember about this learner?" style="width:100%;min-height:86px;padding:10px 12px;border-radius:10px;border:1px solid #CBD5E1;font:inherit;resize:vertical"></textarea>
-          <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
-            <select id="teacher-note-category" style="padding:8px 10px;border-radius:8px;border:1px solid #CBD5E1;font:inherit">
-              <option value="general">General</option>
-              <option value="motivation">Motivation</option>
-              <option value="risk">Risk</option>
-              <option value="strength">Strength</option>
-              <option value="goal">Goal</option>
-            </select>
-            <button class="btn-nudge" id="btn-save-note" style="padding:8px 16px">Save note</button>
-          </div>
-        </div>
         <div class="panel-sessions" id="panel-sessions"></div>
         <div class="panel-bar" style="margin-top:16px">
           <div class="label"><span>CEFR level override</span></div>
@@ -427,11 +256,11 @@
               <option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option>
               <option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option>
             </select>
-            <button class="btn-nudge" id="btn-cefr-save" style="padding:8px 16px">Save</button>
+            <button class="btn-cefr-save" id="btn-cefr-save" style="padding:8px 16px;background:#1d9e75;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer">Save</button>
           </div>
         </div>
-        <button class="btn-session" id="btn-start-session">Start guided session</button>
-        <button class="btn-reviewed" id="btn-reviewed" style="display:none">Mark AI suggestions reviewed</button>
+        <button class="btn-session" id="btn-start-session">Start session with learner</button>
+        <button class="btn-reviewed" id="btn-reviewed" style="display:none">Mark as Reviewed by Teacher</button>
       </div>
     </div>
   </div>
@@ -463,17 +292,27 @@
 
     let learnersData = [];
     let summaryData = {};
-    let briefData = {};
 
     function relativeTime(dateStr) {
       if (!dateStr) return 'never';
       const d = new Date(dateStr);
-      const days = Math.floor((Date.now() - d.getTime()) / (24 * 60 * 60 * 1000));
+      const days = Math.floor((now - d) / (24 * 60 * 60 * 1000));
       if (days < 1) return 'today';
       if (days === 1) return 'yesterday';
       if (days < 7) return days + ' days ago';
       if (days < 30) return Math.floor(days / 7) + ' weeks ago';
       return d.toLocaleDateString('fi-FI');
+    }
+
+    function cefrClass(level) {
+      const l = (level || 'A1').toUpperCase();
+      return 'cefr-badge ' + (['A1','A2','B1','B2','C1','C2'].includes(l) ? l.toLowerCase() : 'a1');
+    }
+
+    function isStale(lastSession) {
+      if (!lastSession) return true;
+      const days = (now - new Date(lastSession)) / (24 * 60 * 60 * 1000);
+      return days > 3;
     }
 
     function escapeHtml(s) {
@@ -483,241 +322,150 @@
       return d.innerHTML;
     }
 
-    function priorityClass(score) {
-      if (score >= 90) return 'priority-high';
-      if (score >= 45) return 'priority-medium';
-      return 'priority-low';
-    }
-
-    function decisionBadgeClass(level) {
-      if (level >= 0.82) return 'high';
-      if (level >= 0.72) return 'medium';
-      return 'low';
-    }
-
-    function renderTeacherBrief() {
-      document.getElementById('brief-headline').textContent = briefData.headline || 'No teacher brief yet';
-      document.getElementById('brief-subline').textContent = learnersData.length
-        ? `AI reviewed ${learnersData.length} learners and prepared ranked suggestions for teacher review.`
-        : 'No learners found yet.';
-
-      const sections = Array.isArray(briefData.sections) ? briefData.sections : [];
-      const container = document.getElementById('brief-sections');
-      if (!sections.length) {
-        container.innerHTML = '<div class="brief-card good"><h4>Quiet day</h4><p style="font-size:14px;color:#475569">No urgent intervention signals right now.</p></div>';
+    function renderAiInsights() {
+      const box = document.getElementById('ai-insights');
+      const atRisk = learnersData.filter((l) => l.at_risk);
+      const b1Track = learnersData.filter((l) => {
+        const c = (l.cefr_level || '').toUpperCase();
+        return (c === 'A1' || c === 'A2') && (l.sessions_total || 0) > 5;
+      });
+      const riskBlock = document.getElementById('insights-at-risk-block');
+      const goodBlock = document.getElementById('insights-b1-block');
+      if (!atRisk.length && !b1Track.length) {
+        box.style.display = 'none';
         return;
       }
-      container.innerHTML = sections.map((section) => `
-        <div class="brief-card ${section.tone || 'good'}">
-          <h4>${escapeHtml(section.title || 'Teacher brief')}</h4>
-          <ul>
-            ${(section.items || []).map((item) => `<li><strong>${escapeHtml(item.learner_name || 'Learner')}</strong>: ${escapeHtml(item.summary || '')} — <em>${escapeHtml(item.action || '')}</em></li>`).join('')}
-          </ul>
-        </div>
-      `).join('');
-    }
-
-    function renderDecisionQueue() {
-      const container = document.getElementById('decision-list');
-      const top = learnersData.slice(0, 6).filter((l) => l.ai_insights?.suggestion);
-      if (!top.length) {
-        container.innerHTML = '<div class="decision-item">No prepared interventions yet.</div>';
-        return;
+      box.style.display = 'block';
+      if (atRisk.length) {
+        riskBlock.style.display = 'block';
+        document.getElementById('insights-at-risk-title').textContent =
+          '⚠️ ' + atRisk.length + ' opiskelijaa ei ole harjoitellut tällä viikolla';
+        document.getElementById('insights-at-risk-list').innerHTML = atRisk.map((l) => '<li>' + (l.name || '—') + '</li>').join('');
+      } else {
+        riskBlock.style.display = 'none';
       }
-      container.innerHTML = top.map((learner) => {
-        const s = learner.ai_insights.suggestion;
-        const confidence = Math.round((s.confidence || 0.5) * 100);
-        return `
-          <div class="decision-item">
-            <div class="decision-top">
-              <span class="decision-badge ${decisionBadgeClass(s.confidence || 0.5)}">${confidence}% confidence</span>
-              <strong>${escapeHtml(learner.name || 'Learner')}</strong>
-            </div>
-            <div style="font-size:14px;color:#111827;font-weight:700">${escapeHtml(s.title || 'Prepared suggestion')}</div>
-            <div style="font-size:13px;color:#4B5563;margin-top:6px">${escapeHtml(s.rationale || '')}</div>
-            <div class="suggestion-meta">
-              <span>Effort: ${escapeHtml(s.effort || 'medium')}</span>
-              <span>Reason: ${(learner.ai_insights.reasons || []).slice(0, 2).map(escapeHtml).join(' · ')}</span>
-            </div>
-            <div class="insight-copy">${escapeHtml(s.draft || '')}</div>
-            <div class="decision-actions">
-              <button class="action-btn primary" data-open="${learner.id}">Review learner</button>
-              <button class="action-btn good btn-nudge-single" data-id="${learner.id}" data-email="${learner.email ? '1' : '0'}" ${!learner.email ? 'disabled' : ''}>Send reviewed nudge</button>
-              <button class="action-btn" data-copy="${learner.id}">Copy draft</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      container.querySelectorAll('[data-open]').forEach((btn) => {
-        btn.addEventListener('click', () => showLearnerPanel(btn.dataset.open));
-      });
-      container.querySelectorAll('[data-copy]').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          const learner = learnersData.find((l) => l.id === btn.dataset.copy);
-          const draft = learner?.ai_insights?.suggestion?.draft || '';
-          if (!draft) return;
-          try {
-            await navigator.clipboard.writeText(draft);
-            btn.textContent = 'Copied';
-            setTimeout(() => btn.textContent = 'Copy draft', 1200);
-          } catch {
-            alert('Could not copy draft.');
-          }
-        });
-      });
-      container.querySelectorAll('[data-approve]').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          const learner = learnersData.find((l) => l.id === btn.dataset.approve);
-          if (!learner?.ai_insights?.suggestion) return;
-          try {
-            const s = learner.ai_insights.suggestion;
-            const r = await fetch(`/api/learners/${learner.id}/teacher-actions`, {
-              method: 'POST',
-              headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action_type: (s.title || 'teacher_follow_up').toLowerCase().replace(/[^a-z0-9]+/g, '_'),
-                status: 'approved',
-                ai_title: s.title,
-                ai_reason: s.rationale,
-                ai_draft: s.draft,
-                teacher_decision: s.teacher_action,
-              }),
-            });
-            const resp = await r.json().catch(() => ({}));
-            if (!r.ok) throw new Error(resp.error || 'Failed to approve plan');
-            btn.textContent = 'Plan approved';
-            btn.disabled = true;
-          } catch (err) {
-            alert(err.message || 'Could not approve plan.');
-          }
-        });
-      });
-    }
-
-    function renderSummaryStats() {
-      const total = summaryData.total_learners ?? learnersData.length;
-      const activeW = summaryData.active_this_week ?? 0;
-      const atRiskN = summaryData.at_risk_count ?? learnersData.filter((l) => l.at_risk).length;
-      const sessWeek = summaryData.total_sessions_this_week ?? learnersData.reduce((s, l) => s + (l.sessions_this_week || 0), 0);
-      const prepared = summaryData.ai_prepared_actions ?? learnersData.filter((l) => l.ai_insights?.suggestion).length;
-      const hidden = summaryData.hidden_progress_count ?? learnersData.filter((l) => l.ai_insights?.hidden_progress).length;
-      const ready = summaryData.ready_for_challenge_count ?? learnersData.filter((l) => l.ai_insights?.ready_for_challenge).length;
-      const timeSaved = prepared * 6;
-
-      document.getElementById('total-learners').textContent = total;
-      document.getElementById('active-this-week').textContent = activeW;
-      document.getElementById('at-risk-count-pill').textContent = atRiskN;
-      document.getElementById('total-sessions-week').textContent = sessWeek;
-      document.getElementById('ai-prepared-actions').textContent = prepared;
-      document.getElementById('prepared-actions-stat').textContent = prepared;
-      document.getElementById('hidden-progress-stat').textContent = hidden;
-      document.getElementById('ready-challenge-stat').textContent = ready;
-      document.getElementById('time-saved-stat').textContent = timeSaved + 'm';
-
-      const pillActive = document.getElementById('pill-active');
-      pillActive.classList.remove('pill-active-good', 'pill-active-warn');
-      pillActive.classList.add(activeW > total / 2 ? 'pill-active-good' : 'pill-active-warn');
-      document.getElementById('pill-at-risk').classList.toggle('pill-risk', atRiskN > 0);
-    }
-
-    async function sendSingleNudge(btn) {
-      const id = btn.dataset.id;
-      if (!id || btn.disabled) return;
-      if (btn.dataset.email === '0') { alert('Learner has no email'); return; }
-      try {
+      if (b1Track.length) {
+        goodBlock.style.display = 'block';
+        document.getElementById('insights-b1-title').textContent =
+          '🎯 ' + b1Track.length + ' opiskelijaa etenee hyvin kohti B1-tasoa';
+        document.getElementById('insights-b1-list').innerHTML = b1Track.map((l) => '<li>' + (l.name || '—') + '</li>').join('');
+      } else {
+        goodBlock.style.display = 'none';
+      }
+      document.getElementById('btn-remind-all-at-risk').onclick = async () => {
+        const btn = document.getElementById('btn-remind-all-at-risk');
+        const ids = atRisk.map((l) => l.id).filter(Boolean);
+        if (!ids.length) return;
         btn.disabled = true;
-        const r = await fetch(`/api/teacher/nudge/${id}`, { method: 'POST', headers: authHeaders() });
-        if (!r.ok) throw new Error('Failed');
-        btn.textContent = 'Nudge sent ✓';
-        setTimeout(() => { btn.textContent = 'Send reviewed nudge'; btn.disabled = false; }, 3000);
-      } catch {
-        alert('Could not send nudge.');
+        try {
+          const r = await fetch('/api/teacher/nudge/bulk', {
+            method: 'POST',
+            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ learner_ids: ids }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(data.error || 'Failed');
+          alert('Muistutukset lähetetty: ' + (data.sent || 0));
+        } catch (e) {
+          alert(e.message || 'Muistutusten lähetys epäonnistui.');
+        }
         btn.disabled = false;
-      }
+      };
     }
 
     async function loadLearners() {
       document.getElementById('loading-state').style.display = 'block';
       document.getElementById('learner-grid').innerHTML = '';
       document.getElementById('error-state').style.display = 'none';
+      document.getElementById('ai-insights').style.display = 'none';
       try {
         const res = await fetch('/api/teacher/learners', { headers: authHeaders() });
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(payload.error || 'Failed to load');
+        if (!res.ok) throw new Error('Failed to load');
         document.getElementById('loading-state').style.display = 'none';
-        learnersData = Array.isArray(payload.learners) ? payload.learners : [];
+        const payload = await res.json();
+        learnersData = Array.isArray(payload.learners) ? payload.learners : (Array.isArray(payload) ? payload : []);
         summaryData = payload.summary || {};
-        briefData = payload.teacher_brief || {};
 
-        renderSummaryStats();
-        renderTeacherBrief();
-        renderDecisionQueue();
+        const total = summaryData.total_learners ?? learnersData.length;
+        const activeW = summaryData.active_this_week ?? 0;
+        const atRiskN = summaryData.at_risk_count ?? learnersData.filter((l) => l.at_risk).length;
+        const sessWeek = summaryData.total_sessions_this_week ?? learnersData.reduce((s, l) => s + (l.sessions_this_week || 0), 0);
+
+        document.getElementById('total-learners').textContent = total;
+        document.getElementById('active-this-week').textContent = activeW;
+        document.getElementById('at-risk-count-pill').textContent = atRiskN;
+        document.getElementById('total-sessions-week').textContent = sessWeek;
+
+        const pillActive = document.getElementById('pill-active');
+        pillActive.classList.remove('pill-active-good', 'pill-active-warn');
+        pillActive.classList.add(activeW > total / 2 ? 'pill-active-good' : 'pill-active-warn');
+
+        const pillRisk = document.getElementById('pill-at-risk');
+        pillRisk.classList.toggle('pill-risk', atRiskN > 0);
 
         const grid = document.getElementById('learner-grid');
-        if (!learnersData.length) {
-          grid.innerHTML = '<div class="empty-state">No learners yet.</div>';
-          return;
-        }
         grid.innerHTML = learnersData.map((l, idx) => {
+          const stale = isStale(l.last_session);
           const initials = (l.name || '—').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
           const level = (l.cefr_level || 'A1').toUpperCase();
-          const ai = l.ai_insights || {};
-          const badges = [];
-          if (l.at_risk) badges.push('<span class="mini-badge risk">Needs re-engagement</span>');
-          if (ai.hidden_progress) badges.push('<span class="mini-badge good">Hidden progress</span>');
-          if (ai.ready_for_challenge) badges.push('<span class="mini-badge good">Ready for challenge</span>');
-          if (ai.confidence_risk) badges.push('<span class="mini-badge warn">Confidence dip</span>');
+          const lastTitle = l.last_session_title ? ('Viimeksi: ' + escapeHtml(l.last_session_title)) : 'Ei viimeistä sessiota';
+          const streak = l.streak ?? 0;
+          const streakStr = streak > 0 ? `🔥 ${streak} pv` : '— 0 pv';
+          const xp = l.xp != null ? l.xp : (l.sessions_total || 0) * 50;
+          const readyB1 = (level === 'A1' || level === 'A2') && (l.sessions_total || 0) > 5;
           return `
-            <div class="learner-card ${priorityClass(ai.priority_score || 0)}" data-id="${l.id}" style="animation-delay:${idx * 0.04}s">
-              <div class="learner-head">
+            <div class="learner-card ${stale ? 'stale' : ''}" data-id="${l.id}" style="animation-delay:${idx * 0.05}s">
+              <div class="learner-head" style="align-items:flex-start">
                 <label style="flex-shrink:0;cursor:pointer;margin-top:4px" onclick="event.stopPropagation()">
                   <input type="checkbox" class="learner-check" data-id="${l.id}" data-email="${l.email ? '1' : '0'}" ${!l.email ? 'disabled title="No email"' : ''} style="width:18px;height:18px">
                 </label>
-                <div class="learner-avatar">${initials}</div>
                 <div style="flex:1;min-width:0">
-                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                    <span class="learner-name">${escapeHtml(l.name || '—')}</span>
-                    <span class="learner-cefr">${level}</span>
+                  <div class="learner-head" style="margin-bottom:4px">
+                    <div class="learner-avatar">${initials}</div>
+                    <span class="learner-name">${l.name || '—'}</span>
+                    <span class="${cefrClass(level)}">${level}</span>
                   </div>
-                  <div class="mini-line">Last session: ${relativeTime(l.last_session || l.last_session_at)}</div>
-                  <div class="mini-line">${l.sessions_this_week || 0} this week · 🔥 ${l.streak || 0} day streak</div>
-                  <div class="xp-line">${l.xp || 0} XP · priority ${Math.round(ai.priority_score || 0)}</div>
-                </div>
-              </div>
-              <div class="card-badge-row">${badges.join('')}</div>
-              <div class="insight-copy">${escapeHtml((ai.reasons || []).slice(0, 2).join(' · ') || 'No insight yet')}</div>
-              ${ai.suggestion ? `
-                <div class="suggestion-block">
-                  <h4>${escapeHtml(ai.suggestion.title || 'Prepared suggestion')}</h4>
-                  <div class="suggestion-meta">
-                    <span>${Math.round((ai.suggestion.confidence || 0.5) * 100)}% confidence</span>
-                    <span>Effort: ${escapeHtml(ai.suggestion.effort || 'medium')}</span>
+                  <div class="last-title">${lastTitle}</div>
+                  <div class="streak-line">${streakStr} · ${l.sessions_this_week || 0} tällä viikolla</div>
+                  <div class="xp-line">${xp} XP</div>
+                  <div class="learner-meta" style="margin-top:8px">Last session: ${relativeTime(l.last_session)}</div>
+                  <div class="card-badge-row">
+                    ${l.at_risk ? '<span class="mini-badge risk">Ei aktiivinen</span>' : ''}
+                    ${readyB1 ? '<span class="mini-badge ready">Valmis etenemään →</span>' : ''}
                   </div>
-                  <div style="font-size:13px;color:#334155">${escapeHtml(ai.suggestion.teacher_action || '')}</div>
+                  <button class="btn-nudge btn-nudge-single" style="margin-top:10px" data-id="${l.id}" data-email="${l.email ? '1' : '0'}" ${!l.email ? 'disabled title="No email"' : ''}>Muistuta</button>
                 </div>
-              ` : ''}
-              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-                <button class="btn-nudge btn-nudge-single" data-id="${l.id}" data-email="${l.email ? '1' : '0'}" ${!l.email ? 'disabled title="No email"' : ''}>Send reviewed nudge</button>
-                <button class="action-btn" data-open="${l.id}">Open learner profile</button>
               </div>
             </div>`;
         }).join('');
 
+        renderAiInsights();
+
         grid.querySelectorAll('.learner-card').forEach((card) => {
           card.addEventListener('click', (e) => {
-            if (e.target.closest('.btn-nudge') || e.target.classList.contains('learner-check') || e.target.closest('label') || e.target.closest('[data-open]')) return;
+            if (e.target.closest('.btn-nudge') || e.target.classList.contains('learner-check') || e.target.closest('label')) return;
             showLearnerPanel(card.dataset.id);
           });
         });
-        grid.querySelectorAll('[data-open]').forEach((btn) => btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          showLearnerPanel(btn.dataset.open);
-        }));
-        grid.querySelectorAll('.btn-nudge-single').forEach((btn) => btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          sendSingleNudge(btn);
-        }));
+
+        grid.querySelectorAll('.btn-nudge-single').forEach((btn) => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const id = btn.dataset.id;
+            if (!id || btn.disabled) return;
+            if (btn.dataset.email === '0') { alert('Opiskelijalla ei ole sähköpostia'); return; }
+            try {
+              btn.disabled = true;
+              const r = await fetch(`/api/teacher/nudge/${id}`, { method: 'POST', headers: authHeaders() });
+              if (!r.ok) throw new Error('Failed');
+              btn.textContent = 'Muistutus lähetetty! ✓';
+              setTimeout(() => { btn.textContent = 'Muistuta'; btn.disabled = false; }, 3000);
+            } catch (err) {
+              alert('Muistutusta ei voitu lähettää. Yritä uudelleen.');
+              btn.disabled = false;
+            }
+          });
+        });
 
         document.getElementById('select-all-learners').onchange = function() {
           grid.querySelectorAll('.learner-check:not(:disabled)').forEach((cb) => { cb.checked = this.checked; });
@@ -730,7 +478,8 @@
         function updateNudgeSelectedVisibility() {
           const checked = [...grid.querySelectorAll('.learner-check:checked:not(:disabled)')];
           const btn = document.getElementById('btn-nudge-selected');
-          document.getElementById('nudge-count').textContent = checked.length;
+          const countEl = document.getElementById('nudge-count');
+          countEl.textContent = checked.length;
           btn.style.display = checked.length > 0 ? 'inline-block' : 'none';
         }
         document.getElementById('btn-nudge-selected').onclick = async () => {
@@ -745,12 +494,12 @@
             });
             const data = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(data.error || 'Failed');
-            alert(`Sent: ${data.sent || 0}, no email: ${data.no_email || 0}${(data.failed || 0) > 0 ? ', failed: ' + data.failed : ''}`);
+            alert(`Lähetetty: ${data.sent || 0}, ilman sähköpostia: ${data.no_email || 0}${(data.failed || 0) > 0 ? ', epäonnistui: ' + data.failed : ''}`);
             grid.querySelectorAll('.learner-check:checked').forEach((cb) => { cb.checked = false; });
             document.getElementById('select-all-learners').checked = false;
             updateNudgeSelectedVisibility();
           } catch (err) {
-            alert(err.message || 'Could not send nudges.');
+            alert(err.message || 'Muistutuksia ei voitu lähettää.');
           }
           document.getElementById('btn-nudge-selected').disabled = false;
         };
@@ -758,7 +507,6 @@
         console.error(err);
         document.getElementById('loading-state').style.display = 'none';
         document.getElementById('error-state').style.display = 'block';
-        document.getElementById('error-state').querySelector('p').textContent = err.message || 'Could not load learners.';
       }
     }
     document.getElementById('retry-btn')?.addEventListener('click', loadLearners);
@@ -768,40 +516,10 @@
       document.querySelector(`.learner-card[data-id="${learnerId}"]`)?.classList.add('selected');
 
       const learner = learnersData.find((l) => l.id === learnerId);
-      if (!learner) return;
       document.getElementById('panel-learner-name').textContent = learner?.name || '—';
       document.getElementById('panel-meta').textContent = `${learner?.cefr_level || '—'} · ${learner?.mother_tongue || '—'}`;
       document.getElementById('btn-start-session').textContent = 'Start session with ' + (learner?.name || 'learner');
       document.getElementById('btn-start-session').onclick = () => { window.location.href = '/knuut.html?learner_id=' + learnerId; };
-
-      const ai = learner.ai_insights || {};
-      const panelSummary = document.getElementById('panel-ai-summary');
-      panelSummary.style.display = 'block';
-      panelSummary.innerHTML = `<strong>Why this learner is surfacing now:</strong><br>${escapeHtml((ai.reasons || []).join(' · ') || 'No explanation available yet')}`;
-
-      const panelSuggestion = document.getElementById('panel-suggestion');
-      if (ai.suggestion) {
-        panelSuggestion.style.display = 'block';
-        panelSuggestion.innerHTML = `
-          <h4>${escapeHtml(ai.suggestion.title || 'Prepared suggestion')}</h4>
-          <div class="suggestion-meta">
-            <span>${Math.round((ai.suggestion.confidence || 0.5) * 100)}% confidence</span>
-            <span>Effort: ${escapeHtml(ai.suggestion.effort || 'medium')}</span>
-          </div>
-          <div style="font-size:13px;color:#334155;margin-bottom:8px">${escapeHtml(ai.suggestion.teacher_action || '')}</div>
-          <div class="insight-copy">${escapeHtml(ai.suggestion.draft || '')}</div>
-        `;
-      } else {
-        panelSuggestion.style.display = 'none';
-      }
-
-      const panelMemory = document.getElementById('panel-memory');
-      if ((ai.teacher_memory || []).length) {
-        panelMemory.style.display = 'grid';
-        panelMemory.innerHTML = `<strong>Teacher notes & memory</strong>${ai.teacher_memory.map((m) => `<div>• ${escapeHtml(m)}</div>`).join('')}`;
-      } else {
-        panelMemory.style.display = 'none';
-      }
 
       const cefrSelect = document.getElementById('cefr-select');
       const btnCefrSave = document.getElementById('btn-cefr-save');
@@ -818,9 +536,9 @@
           const ld = learnersData.find((l) => l.id === learnerId);
           if (ld) ld.cefr_level = newLevel;
           document.getElementById('panel-meta').textContent = `${newLevel} · ${learner?.mother_tongue || '—'}`;
-          const badge = document.querySelector(`.learner-card[data-id="${learnerId}"] .learner-cefr`);
-          if (badge) badge.textContent = newLevel;
-        } catch {
+          const badge = document.querySelector(`.learner-card[data-id="${learnerId}"] .cefr-badge`);
+          if (badge) { badge.textContent = newLevel; badge.className = cefrClass(newLevel); }
+        } catch (e) {
           alert('Could not update CEFR level. Try again.');
         }
       };
@@ -831,7 +549,7 @@
       const btnReviewed = document.getElementById('btn-reviewed');
       btnReviewed.style.display = 'block';
       btnReviewed.classList.remove('reviewed');
-      btnReviewed.textContent = 'Mark AI suggestions reviewed';
+      btnReviewed.textContent = 'Mark as Reviewed by Teacher';
       btnReviewed.disabled = false;
       if (learner?.teacher_reviewed_at) {
         btnReviewed.classList.add('reviewed');
@@ -847,12 +565,12 @@
           btnReviewed.classList.add('reviewed');
           btnReviewed.textContent = '✓ Reviewed ' + new Date().toLocaleDateString('fi-FI');
           btnReviewed.disabled = true;
-        } catch {
+        } catch (e) {
           alert('Could not mark as reviewed. Try again.');
         }
       };
 
-      document.getElementById('panel-sessions').innerHTML = '<div style="color:#6B7280">Loading…</div>';
+      document.getElementById('panel-sessions').innerHTML = '<div style="color:#6B7280">Loading...</div>';
       document.getElementById('panel-bars').innerHTML = '';
 
       try {
@@ -860,8 +578,6 @@
         const data = await res.json();
         const nodes = data.nodes || [];
         const episodes = data.episodes || [];
-        const persistedNotes = data.teacher_notes || [];
-        const persistedActions = data.teacher_actions || [];
 
         document.getElementById('panel-bars').innerHTML = nodes.slice(0, 6).map((n) => {
           const c = n.confidence ?? 0.5;
@@ -869,56 +585,23 @@
           const cls = c > 0.8 ? 'high' : c >= 0.4 ? 'medium' : 'low';
           return `
             <div class="panel-bar">
-              <div class="label"><span>${escapeHtml(n.label || 'Topic')}</span><span>${pct}%</span></div>
+              <div class="label"><span>${n.label}</span><span>${pct}%</span></div>
               <div class="track"><div class="fill ${cls}" style="width:${pct}%"></div></div>
             </div>`;
         }).join('');
 
         const recent = episodes.slice(0, 5);
-        const notesHtml = persistedNotes.length
-          ? `<div style="margin-top:14px"><strong style="font-size:13px;color:#334155">Saved teacher notes</strong>${persistedNotes.slice(0,5).map((n) => `<div class="panel-session"><div class="panel-session-date">${relativeTime(n.created_at)} · ${escapeHtml(n.category || 'general')}</div><div>${escapeHtml(n.note || '')}</div></div>`).join('')}</div>`
-          : '';
-        const actionsHtml = persistedActions.length
-          ? `<div style="margin-top:14px"><strong style="font-size:13px;color:#334155">Teacher decisions</strong>${persistedActions.slice(0,5).map((a) => `<div class="panel-session"><div class="panel-session-date">${relativeTime(a.created_at)} · ${escapeHtml(a.status || 'suggested')}</div><div><strong>${escapeHtml(a.ai_title || a.action_type || 'Action')}</strong></div><div>${escapeHtml(a.teacher_decision || a.ai_reason || '')}</div></div>`).join('')}</div>`
-          : '';
-        document.getElementById('panel-sessions').innerHTML = (recent.length > 0
+        document.getElementById('panel-sessions').innerHTML = recent.length > 0
           ? recent.map((e) => `
               <div class="panel-session">
                 <div class="panel-session-date">${relativeTime(e.created_at)}</div>
-                <div>${escapeHtml(e.summary || e.title || '—')}</div>
+                <div>${e.summary || '—'}</div>
               </div>`).join('')
-          : '<div style="color:#6B7280">No sessions yet.</div>') + notesHtml + actionsHtml;
-
-        const saveNoteBtn = document.getElementById('btn-save-note');
-        saveNoteBtn.onclick = async () => {
-          const note = (document.getElementById('teacher-note-input').value || '').trim();
-          const category = document.getElementById('teacher-note-category').value || 'general';
-          if (!note) { alert('Write a note first.'); return; }
-          try {
-            saveNoteBtn.disabled = true;
-            const r = await fetch(`/api/learners/${learnerId}/teacher-notes`, {
-              method: 'POST',
-              headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-              body: JSON.stringify({ note, category }),
-            });
-            const resp = await r.json().catch(() => ({}));
-            if (!r.ok) throw new Error(resp.error || 'Failed to save note');
-            document.getElementById('teacher-note-input').value = '';
-            showLearnerPanel(learnerId);
-          } catch (err) {
-            alert(err.message || 'Could not save note.');
-          }
-          saveNoteBtn.disabled = false;
-        };
-      } catch {
-        document.getElementById('panel-sessions').innerHTML = '<div style="color:#FF4B4B">Could not load learner detail.</div>';
+          : '<div style="color:#6B7280">No sessions yet.</div>';
+      } catch (err) {
+        document.getElementById('panel-sessions').innerHTML = '<div style="color:#FF4B4B">Could not load.</div>';
       }
     }
-
-    document.addEventListener('click', async (e) => {
-      const btn = e.target.closest('[data-open]');
-      if (!btn) return;
-    });
 
     loadLearners();
   </script>

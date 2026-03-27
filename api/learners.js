@@ -63,7 +63,7 @@ export default async function learnersHandler(req, res, pathname) {
         : `id = $1`;
       const learnerParams = orgId ? [learnerId, orgId] : [learnerId];
 
-      const [learnerResult, nodesResult, episodesResult, notesResult, actionsResult] = await Promise.all([
+      const [learnerResult, nodesResult, episodesResult] = await Promise.all([
         query(`SELECT * FROM learners WHERE ${learnerWhere}`, learnerParams),
         query(
           `SELECT label, type, metadata,
@@ -83,22 +83,6 @@ export default async function learnersHandler(req, res, pathname) {
            LIMIT 20`,
           orgId ? [learnerId, orgId] : [learnerId]
         ),
-        query(
-          `SELECT id, note, category, created_at, updated_at
-           FROM teacher_notes
-           WHERE learner_id = $1
-           ORDER BY created_at DESC
-           LIMIT 20`,
-          [learnerId]
-        ).catch(() => ({ rows: [] })),
-        query(
-          `SELECT id, action_type, status, ai_title, ai_reason, ai_draft, teacher_decision, created_at, updated_at
-           FROM teacher_actions
-           WHERE learner_id = $1
-           ORDER BY created_at DESC
-           LIMIT 20`,
-          [learnerId]
-        ).catch(() => ({ rows: [] })),
       ]);
 
       if (learnerResult.rows.length === 0) {
@@ -134,8 +118,6 @@ export default async function learnersHandler(req, res, pathname) {
           nodes,
           episodes,
           yki_episodes: ykiEpisodes,
-          teacher_notes: notesResult.rows || [],
-          teacher_actions: actionsResult.rows || [],
         })
       );
     } catch (err) {
