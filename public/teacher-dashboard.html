@@ -606,6 +606,21 @@
       return (name || '—').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
     }
 
+    async function postTeacherAction(learnerId, payload) {
+      const res = await fetch(`/api/teacher-support/learners/${learnerId}/action`, {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload || {}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Teacher action failed');
+      if (data.learner) {
+        const idx = learnersData.findIndex((l) => l.id === learnerId);
+        if (idx >= 0) learnersData[idx] = { ...learnersData[idx], ...data.learner };
+      }
+      return data;
+    }
+
     function deriveLearnerInsights(learner, index) {
       const level = (learner.cefr_level || 'A1').toUpperCase();
       const sessionsWeek = learner.sessions_this_week || 0;
@@ -615,11 +630,11 @@
       const reviewed = !!learner.teacher_reviewed_at;
       const confidenceScore = clampIndex(((sessionsWeek * 18) + (streak * 8) + (reviewed ? 10 : 0) - (stale ? 18 : 0)), 100);
       const competenceScore = clampIndex(((sessionsTotal * 8) + ((level.charCodeAt(0) - 64) * 12) + ((level[1] || '1').charCodeAt(0) - 48) * 6), 100);
-      const confidenceSignal = confidenceScore + 15 < competenceScore
+      const confidenceSignal = learner.teacher_confidence_note || (confidenceScore + 15 < competenceScore
         ? 'Knows more than they currently dare to show'
         : competenceScore + 15 < confidenceScore
           ? 'Participates willingly but still needs structure'
-          : 'Confidence and current performance look fairly balanced';
+          : 'Confidence and current performance look fairly balanced');
 
       const focusAreas = [
         'spoken vs standard Finnish',
@@ -648,21 +663,21 @@
         'housing and neighbour communication',
       ];
 
-      const focusArea = learner.at_risk
+      const focusArea = learner.teacher_focus_area || (learner.at_risk
         ? 're-engagement and routine recovery'
-        : focusAreas[index % focusAreas.length];
-      const supportType = learner.at_risk
+        : focusAreas[index % focusAreas.length]);
+      const supportType = learner.teacher_support_type || (learner.at_risk
         ? 'warm encouragement + easy restart task'
-        : supportTypes[(index + sessionsWeek) % supportTypes.length];
-      const lifeContext = lifeContexts[(index + sessionsTotal) % lifeContexts.length];
+        : supportTypes[(index + sessionsWeek) % supportTypes.length]);
+      const lifeContext = learner.teacher_life_context || learner.learner_goal_domain || lifeContexts[(index + sessionsTotal) % lifeContexts.length];
 
-      let barrier = 'needs a little more guided repetition before freer output';
+      let barrier = learner.teacher_barrier || 'needs a little more guided repetition before freer output';
       if (learner.at_risk) barrier = 'motivation may dip after time away from practice';
       else if (confidenceScore + 15 < competenceScore) barrier = 'confidence seems lower than underlying knowledge';
       else if (competenceScore + 15 < confidenceScore) barrier = 'tries actively, but accuracy likely still needs scaffolding';
       else if (sessionsWeek === 0) barrier = 'no recent momentum to build on';
 
-      let nextActionTitle = 'Give a small speaking task with clear sentence support';
+      let nextActionTitle = learner.teacher_next_action || 'Give a small speaking task with clear sentence support';
       let nextActionReason = `Likely focus: ${focusArea}. Best support style: ${supportType}.`;
       let nextActionBenefit = 'Helps the learner move from passive understanding toward usable Finnish.';
 
@@ -1001,8 +1016,8 @@
                 </div>
                 <div class="quick-actions">
                   <button type="button" class="btn-chip btn-chip-open" data-id="${learner.id}">Open learner</button>
-                  <button type="button" class="btn-chip btn-chip-speaking" data-id="${learner.id}">Mark speaking support</button>
-                  <button type="button" class="btn-chip btn-chip-followup" data-id="${learner.id}">Flag follow-up</button>
+                  <button type="button" class="btn-chip btn-chip-speaking" data-id="${learner.id}">${learner.teacher_support_type ? 'Update speaking support' : 'Mark speaking support'}</button>
+                  <button type="button" class="btn-chip btn-chip-followup" data-id="${learner.id}">${learner.teacher_followup_flag ? 'Follow-up flagged' : 'Flag follow-up'}</button>
                 </div>
                 <div class="learner-actions" style="margin-top:12px;">
                   <button type="button" class="btn-expand" aria-expanded="false">Show more</button>
@@ -1070,18 +1085,60 @@
       });
 
       grid.querySelectorAll('.btn-chip-speaking').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', async (e) => {
           e.stopPropagation();
-          btn.textContent = 'Speaking support noted';
-          btn.disabled = true;
+          const learnerId = btn.dataset.id;
+          const learner = learnersData.find((l) => l.id === learnerId);
+          const idx = learnersData.findIndex((l) => l.id === learnerId);
+          const insights = deriveLearnerInsights(learner || {}, Math.max(idx, 0));
+          try {
+            btn.disabled = true;
+            await postTeacherAction(learnerId, {
+              actionType: 'mark_speaking_support',
+              teacherSupportType: learner?.teacher_support_type || insights.supportType,
+              teacherFocusArea: learner?.teacher_focus_area || insights.focusArea,
+              note: 'Speaking support marked from teacher dashboard',
+              metadata: { source: 'teacher_dashboard_quick_action' },
+            });
+            btn.textContent = 'Speaking support saved';
+            setTimeout(() => {
+              renderTeacherPriorities();
+              renderClassPulse();
+              renderGroupingSuggestions();
+              buildDecisionQueue();
+              renderLearners();
+            }, 500);
+          } catch (err) {
+            alert(err.message || 'Could not save speaking support.');
+            btn.disabled = false;
+          }
         });
       });
 
       grid.querySelectorAll('.btn-chip-followup').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', async (e) => {
           e.stopPropagation();
-          btn.textContent = 'Follow-up flagged';
-          btn.disabled = true;
+          const learnerId = btn.dataset.id;
+          const learner = learnersData.find((l) => l.id === learnerId);
+          const nextFlag = !learner?.teacher_followup_flag;
+          try {
+            btn.disabled = true;
+            await postTeacherAction(learnerId, {
+              actionType: nextFlag ? 'flag_followup' : 'clear_followup',
+              note: nextFlag ? 'Follow-up flagged from teacher dashboard' : 'Follow-up cleared from teacher dashboard',
+              metadata: { source: 'teacher_dashboard_quick_action' },
+            });
+            setTimeout(() => {
+              renderTeacherPriorities();
+              renderClassPulse();
+              renderGroupingSuggestions();
+              buildDecisionQueue();
+              renderLearners();
+            }, 500);
+          } catch (err) {
+            alert(err.message || 'Could not update follow-up flag.');
+            btn.disabled = false;
+          }
         });
       });
 

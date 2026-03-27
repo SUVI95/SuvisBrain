@@ -21,6 +21,7 @@ import weeklyEmailHandler from './cron-weekly.js';
 import ykiScoreHandler from './yki-score.js';
 import userDataHandler from './user-data.js';
 import teacherOverrideHandler, { teacherCefrOverrideHandler } from './teacher-override.js';
+import teacherSupportHandler from './teacher-support.js';
 import { getLearnersHandler, nudgeHandler, nudgeBulkHandler } from './teacher-dashboard.js';
 import { getLeadsHandler, patchLeadHandler } from './leads.js';
 import adminOrganisationsHandler from './admin-organisations.js';
@@ -293,6 +294,10 @@ export default async function handler(req, res) {
       }
       if (route === 'teacher-override' && req.method === 'POST') {
         return teacherCefrOverrideHandler(wrappedReq, nres);
+      }
+      if (route === 'teacher-support') {
+        const pathname = '/api/teacher-support' + (pathSegs.length > 1 ? '/' + pathSegs.slice(1).join('/') : '');
+        return teacherSupportHandler(wrappedReq, nres, pathname);
       }
       if (route === 'learners') {
         const pathname = '/api/learners' + (pathSegs.length > 1 ? '/' + pathSegs.slice(1).join('/') : '');

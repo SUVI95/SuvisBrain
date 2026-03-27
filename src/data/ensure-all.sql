@@ -80,3 +80,27 @@ CREATE TABLE IF NOT EXISTS cefr_history (
   created_at timestamptz DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_cefr_history_learner ON cefr_history(learner_id);
+
+-- 11. Teacher support metadata for S2 Finnish teaching
+ALTER TABLE learners ADD COLUMN IF NOT EXISTS teacher_focus_area text DEFAULT NULL;
+ALTER TABLE learners ADD COLUMN IF NOT EXISTS teacher_support_type text DEFAULT NULL;
+ALTER TABLE learners ADD COLUMN IF NOT EXISTS teacher_barrier text DEFAULT NULL;
+ALTER TABLE learners ADD COLUMN IF NOT EXISTS teacher_life_context text DEFAULT NULL;
+ALTER TABLE learners ADD COLUMN IF NOT EXISTS teacher_confidence_note text DEFAULT NULL;
+ALTER TABLE learners ADD COLUMN IF NOT EXISTS teacher_next_action text DEFAULT NULL;
+ALTER TABLE learners ADD COLUMN IF NOT EXISTS teacher_followup_flag boolean DEFAULT false;
+ALTER TABLE learners ADD COLUMN IF NOT EXISTS teacher_last_action_at timestamptz DEFAULT NULL;
+ALTER TABLE learners ADD COLUMN IF NOT EXISTS learner_goal_domain text DEFAULT NULL;
+
+-- 12. Teacher action log for auditable human-in-the-loop support
+CREATE TABLE IF NOT EXISTS teacher_actions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  learner_id uuid REFERENCES learners(id) ON DELETE CASCADE,
+  teacher_id uuid REFERENCES teachers(id) ON DELETE SET NULL,
+  action_type text NOT NULL,
+  note text,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_teacher_actions_learner ON teacher_actions(learner_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_teacher_actions_teacher ON teacher_actions(teacher_id, created_at DESC);
