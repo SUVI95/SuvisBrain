@@ -93,14 +93,60 @@
       background: #fff;
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
       border-radius: 16px;
-      padding: 20px;
-      cursor: pointer;
+      padding: 18px;
       transition: transform 0.2s, box-shadow 0.2s;
       border-left: 4px solid #E5E7EB;
       animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
     }
     .learner-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
     .learner-card.selected { box-shadow: 0 0 0 2px #6C63FF; }
+    .learner-summary {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .learner-main {
+      flex: 1;
+      min-width: 0;
+    }
+    .learner-summary-top {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .learner-compact-meta {
+      font-size: 13px;
+      color: #6B7280;
+      margin-top: 6px;
+      line-height: 1.45;
+    }
+    .learner-actions {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn-expand {
+      padding: 8px 14px;
+      background: #fff;
+      color: #6C63FF;
+      border: 1px solid rgba(108,99,255,0.25);
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-expand:hover { background: rgba(108,99,255,0.08); }
+    .learner-details {
+      display: none;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #E5E7EB;
+    }
+    .learner-card.expanded .learner-details { display: block; }
     .learner-card.active { border-left-color: #58CC02; }
     .learner-card.idle { border-left-color: #FFC800; }
     .learner-card.inactive { border-left-color: #FF4B4B; }
@@ -413,27 +459,34 @@
           const streakStr = streak > 0 ? `🔥 ${streak} pv` : '— 0 pv';
           const xp = l.xp != null ? l.xp : (l.sessions_total || 0) * 50;
           const readyB1 = (level === 'A1' || level === 'A2') && (l.sessions_total || 0) > 5;
+          const compactSummary = `${relativeTime(l.last_session)} · ${l.sessions_this_week || 0} tällä viikolla · ${xp} XP`;
           return `
             <div class="learner-card ${stale ? 'stale' : ''}" data-id="${l.id}" style="animation-delay:${idx * 0.05}s">
-              <div class="learner-head" style="align-items:flex-start">
+              <div class="learner-summary">
                 <label style="flex-shrink:0;cursor:pointer;margin-top:4px" onclick="event.stopPropagation()">
                   <input type="checkbox" class="learner-check" data-id="${l.id}" data-email="${l.email ? '1' : '0'}" ${!l.email ? 'disabled title="No email"' : ''} style="width:18px;height:18px">
                 </label>
-                <div style="flex:1;min-width:0">
-                  <div class="learner-head" style="margin-bottom:4px">
+                <div class="learner-main">
+                  <div class="learner-summary-top">
                     <div class="learner-avatar">${initials}</div>
                     <span class="learner-name">${l.name || '—'}</span>
                     <span class="${cefrClass(level)}">${level}</span>
                   </div>
-                  <div class="last-title">${lastTitle}</div>
-                  <div class="streak-line">${streakStr} · ${l.sessions_this_week || 0} tällä viikolla</div>
-                  <div class="xp-line">${xp} XP</div>
-                  <div class="learner-meta" style="margin-top:8px">Last session: ${relativeTime(l.last_session)}</div>
+                  <div class="learner-compact-meta">${compactSummary}</div>
                   <div class="card-badge-row">
                     ${l.at_risk ? '<span class="mini-badge risk">Ei aktiivinen</span>' : ''}
                     ${readyB1 ? '<span class="mini-badge ready">Valmis etenemään →</span>' : ''}
                   </div>
-                  <button class="btn-nudge btn-nudge-single" style="margin-top:10px" data-id="${l.id}" data-email="${l.email ? '1' : '0'}" ${!l.email ? 'disabled title="No email"' : ''}>Muistuta</button>
+                  <div class="learner-actions">
+                    <button type="button" class="btn-expand" data-id="${l.id}" aria-expanded="false">Näytä lisää</button>
+                    <button class="btn-nudge btn-nudge-single" data-id="${l.id}" data-email="${l.email ? '1' : '0'}" ${!l.email ? 'disabled title="No email"' : ''}>Muistuta</button>
+                  </div>
+                  <div class="learner-details">
+                    <div class="last-title">${lastTitle}</div>
+                    <div class="streak-line">${streakStr} · ${l.sessions_this_week || 0} tällä viikolla</div>
+                    <div class="xp-line">${xp} XP</div>
+                    <div class="learner-meta" style="margin-top:8px">Last session: ${relativeTime(l.last_session)}</div>
+                  </div>
                 </div>
               </div>
             </div>`;
@@ -443,8 +496,18 @@
 
         grid.querySelectorAll('.learner-card').forEach((card) => {
           card.addEventListener('click', (e) => {
-            if (e.target.closest('.btn-nudge') || e.target.classList.contains('learner-check') || e.target.closest('label')) return;
+            if (e.target.closest('.btn-nudge') || e.target.classList.contains('learner-check') || e.target.closest('label') || e.target.closest('.btn-expand')) return;
             showLearnerPanel(card.dataset.id);
+          });
+        });
+
+        grid.querySelectorAll('.btn-expand').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const card = btn.closest('.learner-card');
+            const isExpanded = card.classList.toggle('expanded');
+            btn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+            btn.textContent = isExpanded ? 'Piilota tiedot' : 'Näytä lisää';
           });
         });
 
