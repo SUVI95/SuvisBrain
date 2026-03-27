@@ -1,1537 +1,813 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Knuut — Teacher Dashboard</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #F9F7F4;
-      color: #1A1A2E;
-      min-height: 100vh;
-      padding: 24px;
-    }
-    .container { max-width: 1240px; margin: 0 auto; }
-    nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; }
-    .trust-banner {
-      display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: #059669;
-      padding: 8px 12px; background: rgba(5,150,105,0.08); border-radius: 8px; margin-left: auto;
-    }
-    .trust-banner a { color: #059669; text-decoration: none; }
-    .trust-banner a:hover { text-decoration: underline; }
-    .nav-link {
-      padding: 10px 16px;
-      border-radius: 12px;
-      border: 1px solid #E5E7EB;
-      background: #fff;
-      color: #6B7280;
-      font-size: 14px;
-      text-decoration: none;
-      transition: all 0.2s;
-      font-weight: 500;
-    }
-    .nav-link:hover { background: rgba(108,99,255,0.08); border-color: #6C63FF; color: #6C63FF; }
-    header { margin-bottom: 28px; }
-    .greeting { font-size: 28px; font-weight: 700; color: #1A1A2E; }
-    .date-today { font-size: 14px; color: #6B7280; margin-top: 4px; }
-    .hero-copy { font-size: 14px; color: #6B7280; margin-top: 10px; max-width: 760px; line-height: 1.5; }
-    .stat-pills {
-      display: flex;
-      gap: 16px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-    }
-    .stat-pill {
-      padding: 12px 20px;
-      background: #fff;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-      border-radius: 12px;
-      font-size: 14px;
-      color: #6B7280;
-      border-left: 4px solid #E5E7EB;
-    }
-    .stat-pill strong { color: #1A1A2E; }
-    .stat-pill.pill-active-good { border-left-color: #22c55e; }
-    .stat-pill.pill-active-warn { border-left-color: #f59e0b; }
-    .stat-pill.pill-risk { border-left-color: #ef4444; }
-    .layout { display: flex; gap: 24px; align-items: flex-start; }
-    .main { flex: 1; min-width: 0; }
-    .side-panel {
-      width: 370px;
-      background: #fff;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-      border-radius: 16px;
-      padding: 24px;
-      max-height: calc(100vh - 80px);
-      overflow-y: auto;
-      display: none;
-      position: sticky;
-      top: 24px;
-    }
-    .side-panel.visible {
-      display: block;
-      animation: slidePanel 0.3s cubic-bezier(0.34,1.56,0.64,1);
-    }
-    @keyframes slidePanel {
-      from { transform: translateX(100%); }
-      to { transform: translateX(0); }
-    }
-    .section-card {
-      background: #fff;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-      border-radius: 18px;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    .section-card h2,
-    .section-card h3 {
-      font-size: 17px;
-      margin-bottom: 8px;
-    }
-    .section-subcopy {
-      font-size: 13px;
-      color: #6B7280;
-      line-height: 1.5;
-      margin-bottom: 16px;
-    }
-    .priority-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-    }
-    .priority-card {
-      background: linear-gradient(180deg, #FFFFFF 0%, #F7F7FF 100%);
-      border: 1px solid #ECEBFF;
-      border-radius: 16px;
-      padding: 16px;
-    }
-    .priority-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #9CA3AF;
-      margin-bottom: 10px;
-      font-weight: 700;
-    }
-    .priority-title {
-      font-size: 15px;
-      font-weight: 700;
-      line-height: 1.35;
-      margin-bottom: 8px;
-    }
-    .priority-text {
-      font-size: 13px;
-      color: #4B5563;
-      line-height: 1.5;
-      margin-bottom: 12px;
-    }
-    .priority-link {
-      font-size: 13px;
-      color: #6C63FF;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-    }
-    .pulse-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 14px;
-    }
-    .pulse-box {
-      border: 1px solid #E5E7EB;
-      border-radius: 14px;
-      padding: 16px;
-      background: #FCFCFD;
-    }
-    .pulse-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: #9CA3AF;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-    .pulse-title {
-      font-size: 15px;
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-    .pulse-copy {
-      font-size: 13px;
-      color: #4B5563;
-      line-height: 1.5;
-    }
-    .grouping-list { display: flex; flex-direction: column; gap: 12px; }
-    .grouping-card {
-      border: 1px solid #E5E7EB;
-      border-radius: 14px;
-      padding: 16px;
-      background: #FCFCFD;
-    }
-    .grouping-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
-    .grouping-members { font-size: 13px; color: #4B5563; line-height: 1.5; margin-bottom: 8px; }
-    .grouping-reason { font-size: 13px; color: #6B7280; line-height: 1.5; }
-    .decision-queue { margin-bottom: 20px; }
-    .decision-toolbar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
-    }
-    .filter-pill {
-      border: 1px solid #E5E7EB;
-      background: #fff;
-      color: #4B5563;
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .filter-pill.active { background: #6C63FF; color: #fff; border-color: #6C63FF; }
-    .decision-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .decision-card {
-      border: 1px solid #E5E7EB;
-      border-left: 4px solid #E5E7EB;
-      border-radius: 14px;
-      padding: 16px;
-      background: #FCFCFD;
-    }
-    .decision-card.priority-high { border-left-color: #ef4444; }
-    .decision-card.priority-medium { border-left-color: #f59e0b; }
-    .decision-card.priority-low { border-left-color: #22c55e; }
-    .decision-summary {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: flex-start;
-      flex-wrap: wrap;
-    }
-    .decision-summary-main { flex: 1; min-width: 220px; }
-    .decision-title { font-size: 14px; font-weight: 700; color: #1A1A2E; margin-bottom: 6px; }
-    .decision-meta { font-size: 12px; color: #6B7280; line-height: 1.45; }
-    .decision-badges,
-    .card-badge-row,
-    .quick-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .decision-badges { margin-top: 10px; }
-    .decision-badge,
-    .mini-badge {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: #EEF2FF;
-      color: #4338CA;
-    }
-    .decision-badge.priority-high,
-    .mini-badge.risk { background: #fee2e2; color: #b91c1c; }
-    .decision-badge.priority-medium,
-    .mini-badge.warn { background: #FEF3C7; color: #B45309; }
-    .decision-badge.priority-low,
-    .mini-badge.ready { background: #DCFCE7; color: #15803D; }
-    .mini-badge.info { background: #E0F2FE; color: #0369A1; }
-    .mini-badge.soft { background: #F3F4F6; color: #4B5563; }
-    .decision-actions,
-    .learner-actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .decision-details,
-    .learner-details {
-      display: none;
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid #E5E7EB;
-    }
-    .decision-card.expanded .decision-details,
-    .learner-card.expanded .learner-details { display: block; }
-    .decision-detail-block,
-    .learner-detail-block { margin-bottom: 12px; }
-    .decision-detail-label,
-    .learner-detail-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: #9CA3AF;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 4px;
-    }
-    .decision-detail-text,
-    .learner-detail-text { font-size: 13px; color: #374151; line-height: 1.55; }
-    .decision-empty { font-size: 13px; color: #6B7280; padding: 10px 0 2px; }
-    .learner-toolbar {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-    }
-    .btn-primary,
-    .btn-secondary,
-    .btn-expand,
-    .btn-nudge,
-    .btn-chip {
-      border-radius: 10px;
-      font-weight: 600;
-      font-size: 13px;
-      cursor: pointer;
-      font-family: inherit;
-      padding: 9px 14px;
-      border: none;
-    }
-    .btn-primary,
-    .btn-nudge { background: #1d9e75; color: #fff; }
-    .btn-primary:hover:not(:disabled),
-    .btn-nudge:hover:not(:disabled) { opacity: 0.92; }
-    .btn-secondary,
-    .btn-expand,
-    .btn-chip {
-      background: #fff;
-      color: #6C63FF;
-      border: 1px solid rgba(108,99,255,0.22);
-    }
-    .btn-secondary:hover,
-    .btn-expand:hover,
-    .btn-chip:hover { background: rgba(108,99,255,0.08); }
-    .btn-nudge:disabled,
-    .btn-primary:disabled { opacity: 0.7; cursor: default; }
-    .learner-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-    }
-    @keyframes popIn {
-      0% { transform: scale(0.98); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-    .learner-card {
-      background: #fff;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-      border-radius: 16px;
-      padding: 18px;
-      transition: transform 0.2s, box-shadow 0.2s;
-      border-left: 4px solid #E5E7EB;
-      animation: popIn 0.3s ease both;
-    }
-    .learner-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-    .learner-card.selected { box-shadow: 0 0 0 2px #6C63FF; }
-    .learner-card.stale { border-left-color: #ef4444; }
-    .learner-card.steady { border-left-color: #22c55e; }
-    .learner-card.warming { border-left-color: #f59e0b; }
-    .learner-summary { display: flex; gap: 12px; align-items: flex-start; }
-    .learner-main { flex: 1; min-width: 0; }
-    .learner-summary-top {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 6px;
-    }
-    .learner-avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: #6C63FF;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 16px;
-      flex-shrink: 0;
-    }
-    .learner-name { font-weight: 700; font-size: 16px; }
-    .cefr-badge { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
-    .cefr-badge.a1 { background: #9ca3af; color: #fff; }
-    .cefr-badge.a2 { background: #3b82f6; color: #fff; }
-    .cefr-badge.b1 { background: #1d9e75; color: #fff; }
-    .cefr-badge.b2 { background: #0d9488; color: #fff; }
-    .cefr-badge.c1, .cefr-badge.c2 { background: #0f766e; color: #fff; }
-    .learner-compact-meta,
-    .learner-meta,
-    .last-title,
-    .streak-line { font-size: 13px; color: #6B7280; line-height: 1.45; }
-    .next-action-box {
-      margin-top: 12px;
-      border: 1px solid #E5E7EB;
-      border-radius: 12px;
-      padding: 12px;
-      background: #FBFAFF;
-    }
-    .next-action-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #9CA3AF; font-weight: 700; margin-bottom: 6px; }
-    .next-action-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-    .next-action-copy { font-size: 13px; color: #4B5563; line-height: 1.5; }
-    .quick-actions { margin-top: 12px; }
-    .btn-chip { font-size: 12px; padding: 7px 10px; color: #4B5563; border-color: #E5E7EB; }
-    .btn-chip:hover { background: #F9FAFB; }
-    .panel-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-    .panel-meta { font-size: 13px; color: #6B7280; margin-bottom: 16px; }
-    .panel-insight-box {
-      background: #F8FAFC;
-      border: 1px solid #E5E7EB;
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 16px;
-    }
-    .panel-bar { margin-bottom: 12px; }
-    .panel-bar .label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
-    .panel-bar .track { height: 8px; background: #E5E7EB; border-radius: 4px; overflow: hidden; }
-    .panel-bar .fill { height: 100%; border-radius: 4px; }
-    .panel-bar .fill.high { background: #58CC02; }
-    .panel-bar .fill.medium { background: #FFC800; }
-    .panel-bar .fill.low { background: #FF4B4B; }
-    .panel-sessions { margin-top: 16px; }
-    .panel-session {
-      padding: 12px;
-      margin-bottom: 10px;
-      background: #F9F7F4;
-      border-radius: 10px;
-      font-size: 13px;
-    }
-    .panel-session-date { font-size: 11px; color: #6B7280; margin-bottom: 4px; }
-    .btn-session {
-      margin-top: 16px;
-      width: 100%;
-      padding: 14px;
-      background: #6C63FF;
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      box-shadow: 0 4px 0 #4B44CC;
-    }
-    .btn-reviewed {
-      margin-top: 12px; width: 100%; padding: 10px 14px; background: #fff; color: #6C63FF;
-      border: 2px solid #6C63FF; border-radius: 10px; font-weight: 600; font-size: 13px;
-      cursor: pointer; font-family: inherit;
-    }
-    .btn-reviewed:hover { background: rgba(108,99,255,0.08); }
-    .btn-reviewed.reviewed { background: #D1FAE5; border-color: #059669; color: #059669; cursor: default; }
-    .empty-inline,
-    #loading-state,
-    #error-state { font-size: 14px; }
-    #loading-state,
-    #error-state { padding: 24px; border-radius: 14px; }
-    #loading-state { text-align: center; color: #6B7280; background: rgba(255,255,255,0.7); }
-    #error-state { background: #fef2f2; color: #b91c1c; }
-    @media (max-width: 1080px) {
-      .layout { flex-direction: column; }
-      .side-panel { width: 100%; position: static; max-height: none; }
-    }
-    @media (max-width: 760px) {
-      .priority-grid,
-      .pulse-grid,
-      .learner-grid { grid-template-columns: 1fr; }
-      body { padding: 16px; }
-    }
-  </style>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Knuut — Teacher Dashboard</title>
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+ <style>
+ :root {
+ --bg: #F3EFE6;
+ --surface: #FFFFFF;
+ --surface2: #FAFAF7;
+ --primary: #1B4332;
+ --primary-mid: #2D6A4F;
+ --primary-light: #D8F3DC;
+ --accent: #C2410C;
+ --accent-light: #FFF1EC;
+ --risk: #991B1B;
+ --risk-bg: #FEF2F2;
+ --risk-border: #FECACA;
+ --warn: #92400E;
+ --warn-bg: #FFFBEB;
+ --warn-border: #FDE68A;
+ --thrive: #14532D;
+ --thrive-bg: #F0FDF4;
+ --thrive-border: #BBF7D0;
+ --text: #1C1917;
+ --text-muted: #78716C;
+ --text-light: #A8A29E;
+ --border: #E4DDD2;
+ --border-subtle: #EDE9E4;
+ --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+ --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+ --radius: 14px;
+ --radius-sm: 8px;
+ }
+ * { margin: 0; padding: 0; box-sizing: border-box; }
+ body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+ /* NAV */
+ .topnav { background: var(--primary); padding: 0 28px; display: flex; align-items: center; gap: 2px; height: 52px; }
+ .topnav-logo { font-family: 'Fraunces', Georgia, serif; font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.02em; margin-right: 20px; flex-shrink: 0; }
+ .topnav-logo span { color: #74C69D; }
+ .topnav-link { padding: 6px 11px; border-radius: 6px; color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500; text-decoration: none; transition: all 0.15s; }
+ .topnav-link:hover, .topnav-link.active { color: #fff; background: rgba(255,255,255,0.12); }
+ .topnav-spacer { flex: 1; }
+ .topnav-trust { display: flex; gap: 14px; font-size: 11px; color: rgba(255,255,255,0.45); margin-right: 16px; }
+ .topnav-trust span { display: flex; align-items: center; gap: 4px; }
+ .nt-dot { width: 5px; height: 5px; border-radius: 50%; background: #74C69D; }
+ .topnav-user { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.8); }
+ .topnav-avatar { width: 29px; height: 29px; border-radius: 50%; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; }
+ #logout-link { color: rgba(255,255,255,0.45); font-size: 12px; margin-left: 10px; text-decoration: none; transition: color 0.15s; }
+ #logout-link:hover { color: rgba(255,255,255,0.85); }
+
+ /* PAGE */
+ .page { max-width: 1380px; margin: 0 auto; padding: 28px 28px 60px; }
+
+ /* HERO */
+ .hero { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 22px; }
+ .hero-left { flex: 1; }
+ .hero-greeting { font-family: 'Fraunces', Georgia, serif; font-size: 34px; font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; }
+ .hero-greeting em { font-style: italic; color: var(--primary-mid); }
+ .hero-date { font-size: 13px; color: var(--text-muted); margin-top: 5px; font-weight: 500; }
+ .demo-banner { display: none; margin-top: 12px; padding: 8px 14px; background: #FFF7ED; border: 1px solid #FED7AA; border-radius: var(--radius-sm); font-size: 12px; color: #9A3412; font-weight: 500; }
+ .demo-banner.visible { display: block; }
+ .briefing-pill { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 16px; background: var(--primary); color: #fff; border-radius: 999px; font-size: 13px; font-weight: 500; line-height: 1.4; max-width: 580px; }
+ .bp-icon { font-size: 13px; flex-shrink: 0; }
+
+ /* MOMENTUM */
+ .momentum-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 24px; min-width: 190px; display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden; }
+ .momentum-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary), #52B788); }
+ .momentum-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 10px; }
+ .momentum-ring-wrap { position: relative; width: 96px; height: 96px; }
+ .momentum-ring-wrap svg { transform: rotate(-90deg); }
+ .mtrack { fill: none; stroke: var(--border); stroke-width: 8; }
+ .mfill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1); }
+ .momentum-number { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+ .momentum-val { font-family: 'Fraunces', Georgia, serif; font-size: 30px; font-weight: 700; line-height: 1; }
+ .momentum-pct { font-size: 10px; color: var(--text-muted); }
+ .momentum-trend { font-size: 11px; font-weight: 600; margin-top: 10px; }
+ .mtr-up { color: var(--primary-mid); }
+ .mtr-down { color: var(--risk); }
+ .mtr-flat { color: var(--text-muted); }
+
+ /* STATS */
+ .stat-row { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+ .stat-chip { flex: 1; min-width: 120px; background: var(--surface); border-radius: var(--radius-sm); padding: 14px 16px; box-shadow: var(--shadow); border-left: 3px solid var(--border); }
+ .stat-chip.c-active { border-left-color: var(--primary-mid); }
+ .stat-chip.c-warn { border-left-color: #F59E0B; }
+ .stat-chip.c-risk { border-left-color: var(--risk); }
+ .stat-chip.c-sess { border-left-color: #7C3AED; }
+ .stat-num { font-family: 'Fraunces', Georgia, serif; font-size: 28px; font-weight: 700; line-height: 1; }
+ .stat-lbl { font-size: 12px; color: var(--text-muted); margin-top: 3px; font-weight: 500; }
+
+ /* CONTROLS */
+ .learner-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+ .search-wrap { position: relative; flex: 1; min-width: 180px; max-width: 300px; }
+ .search-ico { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+ .search-input { width: 100%; padding: 9px 12px 9px 34px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; background: var(--surface); color: var(--text); outline: none; transition: border-color 0.15s; }
+ .search-input:focus { border-color: var(--primary-mid); }
+ .search-input::placeholder { color: var(--text-light); }
+ .cefr-filters { display: flex; gap: 5px; flex-wrap: wrap; }
+ .cefr-btn { padding: 7px 11px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+ .cefr-btn:hover { border-color: var(--primary-mid); color: var(--primary); }
+ .cefr-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+ .ctrl-spacer { flex: 1; }
+ .btn-bulk-risk { padding: 9px 16px; background: var(--risk-bg); color: var(--risk); border: 1px solid var(--risk-border); border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; transition: opacity 0.15s; }
+ .btn-bulk-risk:hover { opacity: 0.84; }
+ .btn-bulk-risk:disabled { opacity: 0.45; cursor: default; }
+
+ /* TRIAGE */
+ .triage-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+ .triage-col { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+ .col-hdr { padding: 13px 16px 11px; display: flex; align-items: center; gap: 9px; border-bottom: 1px solid var(--border-subtle); }
+ .col-hdr.hr { background: var(--risk-bg); }
+ .col-hdr.ha { background: var(--warn-bg); }
+ .col-hdr.ht { background: var(--thrive-bg); }
+ .cdot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+ .cdot.r { background: var(--risk); } .cdot.a { background: #D97706; } .cdot.t { background: var(--thrive); }
+ .col-title { font-size: 13px; font-weight: 700; flex: 1; }
+ .col-ct { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: rgba(0,0,0,0.07); color: var(--text-muted); }
+ .col-cards { padding: 10px; display: flex; flex-direction: column; gap: 9px; min-height: 100px; }
+ .col-empty { padding: 20px 12px; text-align: center; font-size: 13px; color: var(--text-light); font-style: italic; }
+
+ /* LEARNER CARD */
+ .lcard { background: var(--surface2); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 13px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; animation: cardIn 0.28s ease both; }
+ @keyframes cardIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+ .lcard:hover { border-color: var(--primary-mid); box-shadow: 0 2px 10px rgba(27,67,50,0.09); }
+ .lcard.selected { border-color: var(--primary); background: #F0FDF4; box-shadow: 0 0 0 2px var(--primary); }
+ .lcard-top { display: flex; align-items: flex-start; gap: 9px; }
+ .lavatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fff; flex-shrink: 0; }
+ .linfo { flex: 1; min-width: 0; }
+ .lname-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
+ .lname { font-size: 14px; font-weight: 700; }
+ .cbadge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 999px; letter-spacing: 0.04em; }
+ .cbadge.a1 { background: #F3F4F6; color: #6B7280; }
+ .cbadge.a2 { background: #DBEAFE; color: #1D4ED8; }
+ .cbadge.b1 { background: var(--primary-light); color: var(--primary); }
+ .cbadge.b2 { background: #CCFBF1; color: #0F766E; }
+ .cbadge.c1, .cbadge.c2 { background: #F3E8FF; color: #7E22CE; }
+ .fflag { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+ .lmeta { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+
+ /* Activity dots — 14 cols × 2 rows = 28 days */
+ .adots { display: grid; grid-template-columns: repeat(14, 1fr); gap: 2px; margin: 9px 0 8px; }
+ .adot { aspect-ratio: 1; border-radius: 2px; background: var(--border); }
+ .adot.on { background: var(--primary-mid); opacity: 0.7; }
+ .adot.on.recent { background: #52B788; opacity: 1; }
+
+ /* Smart action */
+ .laction { width: 100%; padding: 7px 10px; border-radius: 6px; border: none; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; text-align: left; transition: opacity 0.15s; }
+ .laction:hover { opacity: 0.82; }
+ .laction.ar { background: var(--risk-bg); color: var(--risk); }
+ .laction.an { background: #FEF3C7; color: #B45309; }
+ .laction.ac { background: var(--thrive-bg); color: var(--thrive); }
+ .laction.av { background: #EDE9FE; color: #6D28D9; }
+ .laction.as { background: var(--primary-light); color: var(--primary); }
+ .laction.sending { opacity: 0.5; cursor: default; }
+
+ /* INSIGHTS */
+ .section-h2 { font-family: 'Fraunces', Georgia, serif; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 14px; }
+ .insights-section { margin-bottom: 26px; }
+ .insights-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+ .insight-card { background: var(--surface); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+ .ilbl { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-light); margin-bottom: 7px; }
+ .ititle { font-size: 14px; font-weight: 700; margin-bottom: 5px; line-height: 1.3; }
+ .icopy { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+
+ /* GROUPINGS */
+ .groupings-section { margin-bottom: 28px; }
+ .grouping-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+ .grouping-card { background: var(--surface); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); border-top: 3px solid var(--primary-mid); }
+ .gtitle { font-size: 14px; font-weight: 700; margin-bottom: 5px; }
+ .gmembers { font-size: 12px; color: var(--primary-mid); font-weight: 600; margin-bottom: 5px; }
+ .greason { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+
+ /* SIDE PANEL */
+ .panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.22); z-index: 99; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+ .panel-overlay.visible { opacity: 1; pointer-events: auto; }
+ .side-panel { position: fixed; top: 0; right: 0; bottom: 0; width: 416px; background: var(--surface); box-shadow: var(--shadow-lg); z-index: 100; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.34,1.3,0.64,1); }
+ .side-panel.visible { transform: translateX(0); }
+ .panel-hdr { padding: 18px 18px 0; border-bottom: 1px solid var(--border-subtle); }
+ .panel-hdr-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+ .panel-name { font-family: 'Fraunces', Georgia, serif; font-size: 21px; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+ .panel-close { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.15s; flex-shrink: 0; }
+ .panel-close:hover { background: var(--bg); }
+ .panel-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 12px; }
+ .pbadge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--bg); color: var(--text-muted); }
+ .ptabs { display: flex; }
+ .ptab { flex: 1; padding: 9px 6px; font-family: inherit; font-size: 12px; font-weight: 600; color: var(--text-muted); background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; text-align: center; }
+ .ptab:hover { color: var(--primary); }
+ .ptab.active { color: var(--primary); border-bottom-color: var(--primary); }
+ .panel-body { flex: 1; overflow-y: auto; padding: 18px; }
+ .tab-pane { display: none; }
+ .tab-pane.active { display: block; }
+
+ /* Panel overview */
+ .pinsight { background: var(--bg); border-radius: var(--radius-sm); padding: 13px; margin-bottom: 14px; }
+ .plbl { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-light); margin-bottom: 4px; }
+ .ptext { font-size: 13px; color: var(--text); line-height: 1.6; }
+ .pdivider { height: 1px; background: var(--border-subtle); margin: 14px 0; }
+ .cefr-override { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+ .pselect { flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; background: var(--surface); color: var(--text); outline: none; cursor: pointer; }
+ .pselect:focus { border-color: var(--primary-mid); }
+ .btn-save-cefr { padding: 8px 13px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
+ .btn-save-cefr:hover { opacity: 0.87; }
+ .btn-save-cefr.saved { background: var(--primary-mid); }
+ .panel-actions { display: flex; flex-direction: column; gap: 7px; }
+ .pbtn { width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; transition: opacity 0.15s; border: none; }
+ .pbtn:hover { opacity: 0.87; }
+ .pbtn.p-session { background: var(--primary); color: #fff; }
+ .pbtn.p-nudge { background: var(--surface); color: var(--primary); border: 1px solid var(--border); }
+ .pbtn.p-reviewed { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); font-size: 12px; }
+ .pbtn.p-reviewed.done { color: var(--primary-mid); border-color: var(--primary-light); background: var(--primary-light); }
+
+ /* Skills tab */
+ .sbar-wrap { margin-bottom: 11px; }
+ .sbar-top { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; font-weight: 500; }
+ .sbar-track { height: 6px; background: var(--border-subtle); border-radius: 999px; overflow: hidden; }
+ .sbar-fill { height: 100%; border-radius: 999px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+ .sbar-fill.hi { background: #22C55E; } .sbar-fill.md { background: #F59E0B; } .sbar-fill.lo { background: #EF4444; }
+
+ /* Sessions tab */
+ .sess-item { padding: 11px; background: var(--bg); border-radius: var(--radius-sm); margin-bottom: 9px; }
+ .sess-date { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; font-weight: 500; }
+ .sess-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+ .sess-sum { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+ /* Notes tab */
+ .notes-area { width: 100%; min-height: 130px; padding: 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; color: var(--text); resize: vertical; outline: none; background: var(--surface2); line-height: 1.6; transition: border-color 0.15s; margin-bottom: 10px; }
+ .notes-area:focus { border-color: var(--primary-mid); background: var(--surface); }
+ .notes-area::placeholder { color: var(--text-light); }
+ .notes-saved { font-size: 11px; color: var(--primary-mid); font-weight: 600; height: 15px; margin-bottom: 12px; }
+ .btn-gen { width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--primary), #2D6A4F); color: #fff; border: none; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: opacity 0.2s; margin-bottom: 10px; }
+ .btn-gen:hover { opacity: 0.9; }
+ .btn-gen:disabled { opacity: 0.55; cursor: default; }
+ .bspin { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+ .btn-gen.loading .bspin { display: block; }
+ .btn-gen.loading .bico { display: none; }
+ @keyframes spin { to { transform: rotate(360deg); } }
+ .brief-out { background: var(--bg); border-radius: var(--radius-sm); padding: 13px; font-size: 13px; color: var(--text); line-height: 1.65; display: none; animation: fadeUp 0.3s ease; }
+ .brief-out.visible { display: block; }
+ @keyframes fadeUp { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+ .bh { font-weight: 700; color: var(--primary); margin-bottom: 5px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+ .bp { margin-bottom: 9px; font-size: 13px; }
+ .bp:last-child { margin-bottom: 0; }
+
+ /* RESPONSIVE */
+ @media (max-width: 1100px) { .insights-grid { grid-template-columns: repeat(2, 1fr); } .grouping-grid { grid-template-columns: repeat(2, 1fr); } }
+ @media (max-width: 900px) { .triage-board { grid-template-columns: 1fr; } .hero { flex-direction: column; } .side-panel { width: 100%; } }
+ @media (max-width: 680px) { .page { padding: 14px; } .insights-grid, .grouping-grid { grid-template-columns: 1fr; } .topnav-trust { display: none; } }
+ </style>
 </head>
 <body>
-  <div class="container">
-    <nav>
-      <a href="index.html" class="nav-link">Brain Graph</a>
-      <a href="dashboard.html" class="nav-link">Agents</a>
-      <a href="teacher-dashboard.html" class="nav-link">Teacher</a>
-      <a href="student-dashboard.html" class="nav-link">Student view</a>
-      <a href="privacy-ai.html" class="nav-link">Privacy &amp; AI</a>
-      <div class="trust-banner">
-        ✔ GDPR Compliant · ✔ Human-in-the-loop AI · ✔ Data stored in EU
-      </div>
-      <a href="#" class="nav-link" id="logout-link">Log out</a>
-    </nav>
-
-    <header>
-      <div class="greeting">Good morning, <span id="teacher-name">—</span></div>
-      <div class="date-today" id="date-today"></div>
-      <div class="hero-copy">A teacher-friendly overview for S2 Finnish teaching: who needs support now, what kind of support will help most, and how to move learners forward without drowning in detail.</div>
-      <div class="stat-pills" id="summary-pills">
-        <span class="stat-pill" id="pill-learners">👥 <strong id="total-learners">0</strong> learners</span>
-        <span class="stat-pill" id="pill-active"><strong id="active-this-week">0</strong> active this week</span>
-        <span class="stat-pill" id="pill-at-risk"><strong id="at-risk-count-pill">0</strong> away 7+ days</span>
-        <span class="stat-pill" id="pill-sessions-week">📚 <strong id="total-sessions-week">0</strong> sessions this week</span>
-      </div>
-    </header>
-
-    <div class="layout">
-      <div class="main">
-        <section class="section-card" id="teacher-priorities-section">
-          <h2>Teacher priorities today</h2>
-          <div class="section-subcopy">Start here. These are the most valuable teacher moves right now based on engagement, likely readiness, and review gaps.</div>
-          <div class="priority-grid" id="teacher-priorities"></div>
-        </section>
-
-        <section class="section-card" id="class-pulse-section">
-          <h2>Class pulse</h2>
-          <div class="section-subcopy">Fast signals about this group: common struggles, confidence patterns, likely teaching focus, and who may need a different kind of support.</div>
-          <div class="pulse-grid" id="class-pulse-grid"></div>
-        </section>
-
-        <section class="section-card" id="grouping-section">
-          <h2>Suggested small-group support</h2>
-          <div class="section-subcopy">Group learners by likely need so you can target speaking, grammar, confidence, or real-life Finnish more efficiently.</div>
-          <div class="grouping-list" id="grouping-list"></div>
-        </section>
-
-        <section class="section-card decision-queue" id="decision-queue">
-          <h2>Decision queue</h2>
-          <div class="section-subcopy">Compact teacher decisions with pedagogical reasons. Scan the overview first, then expand only the items you want to inspect.</div>
-          <div class="decision-toolbar" id="decision-toolbar">
-            <button type="button" class="filter-pill active" data-filter="all">All</button>
-            <button type="button" class="filter-pill" data-filter="high">High</button>
-            <button type="button" class="filter-pill" data-filter="medium">Medium</button>
-            <button type="button" class="filter-pill" data-filter="low">Low</button>
-          </div>
-          <div class="decision-list" id="decision-list"></div>
-        </section>
-
-        <section class="section-card" id="learners-section">
-          <h2>Your learners</h2>
-          <div class="section-subcopy">Each learner card shows the most useful teaching signal first: likely next best action, teaching focus, barrier, confidence pattern, and quick support actions.</div>
-          <div class="learner-toolbar">
-            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
-              <input type="checkbox" id="select-all-learners" style="width:18px;height:18px">
-              <span>Select all</span>
-            </label>
-            <button type="button" id="btn-nudge-selected" class="btn-nudge" style="display:none">Nudge selected (<span id="nudge-count">0</span>)</button>
-          </div>
-          <div id="loading-state" style="display:none;">Loading teacher dashboard…</div>
-          <div class="learner-grid" id="learner-grid"></div>
-        </section>
-
-        <div id="error-state" style="display:none; margin-top:16px;">
-          <p>Could not load learners.</p>
-          <button type="button" id="retry-btn" class="btn-primary" style="margin-top:12px;">Retry</button>
-        </div>
-      </div>
-
-      <div class="side-panel" id="side-panel">
-        <div class="panel-title" id="panel-learner-name">—</div>
-        <div class="panel-meta" id="panel-meta"></div>
-        <div class="panel-insight-box" id="panel-insight-box"></div>
-        <div id="panel-bars"></div>
-        <div class="panel-sessions" id="panel-sessions"></div>
-        <div class="panel-bar" style="margin-top:16px">
-          <div class="label"><span>CEFR level override</span></div>
-          <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
-            <select id="cefr-select" style="padding:8px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:14px">
-              <option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option>
-              <option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option>
-            </select>
-            <button class="btn-primary" id="btn-cefr-save">Save</button>
-          </div>
-        </div>
-        <button class="btn-session" id="btn-start-session">Start session with learner</button>
-        <button class="btn-reviewed" id="btn-reviewed" style="display:none">Mark as Reviewed by Teacher</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const token = localStorage.getItem('sb_token') || localStorage.getItem('knuut_token');
-    const user = (() => {
-      try {
-        return JSON.parse(localStorage.getItem('sb_user') || localStorage.getItem('knuut_user') || '{}');
-      } catch {
-        return {};
-      }
-    })();
-
-    if (!token || user?.role !== 'teacher') {
-      location.replace('/login.html?next=' + encodeURIComponent('/teacher-dashboard.html'));
-    }
-
-    function authHeaders() {
-      return { 'Authorization': 'Bearer ' + (localStorage.getItem('sb_token') || localStorage.getItem('knuut_token') || '') };
-    }
-
-    document.getElementById('logout-link')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      ['knuut_token', 'knuut_user', 'sb_token', 'sb_user'].forEach((k) => localStorage.removeItem(k));
-      location.replace('/login.html');
-    });
-
-    document.getElementById('teacher-name').textContent = user?.name || 'Teacher';
-    const now = new Date();
-    document.getElementById('date-today').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-    let learnersData = [];
-    let summaryData = {};
-    let decisionQueueData = [];
-    let activeDecisionFilter = 'all';
-    let usingDemoData = false;
-
-    function relativeTime(dateStr) {
-      if (!dateStr) return 'never';
-      const d = new Date(dateStr);
-      const days = Math.floor((now - d) / (24 * 60 * 60 * 1000));
-      if (days < 1) return 'today';
-      if (days === 1) return 'yesterday';
-      if (days < 7) return days + ' days ago';
-      if (days < 30) return Math.floor(days / 7) + ' weeks ago';
-      return d.toLocaleDateString('fi-FI');
-    }
-
-    function cefrClass(level) {
-      const l = (level || 'A1').toUpperCase();
-      return 'cefr-badge ' + (['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(l) ? l.toLowerCase() : 'a1');
-    }
-
-    function isStale(lastSession) {
-      if (!lastSession) return true;
-      const days = (now - new Date(lastSession)) / (24 * 60 * 60 * 1000);
-      return days > 6;
-    }
-
-    function escapeHtml(s) {
-      if (s == null) return '';
-      const d = document.createElement('div');
-      d.textContent = String(s);
-      return d.innerHTML;
-    }
-
-    function clampIndex(idx, max) {
-      return Math.max(0, Math.min(max, idx));
-    }
-
-    function initials(name) {
-      return (name || '—').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-    }
-
-    async function postTeacherAction(learnerId, payload) {
-      const res = await fetch(`/api/teacher-support/learners/${learnerId}/action`, {
-        method: 'POST',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload || {}),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Teacher action failed');
-      if (data.learner) {
-        const idx = learnersData.findIndex((l) => l.id === learnerId);
-        if (idx >= 0) learnersData[idx] = { ...learnersData[idx], ...data.learner };
-      }
-      return data;
-    }
-
-    function buildMockLearners() {
-      const today = new Date();
-      const daysAgo = (days) => {
-        const d = new Date(today);
-        d.setDate(d.getDate() - days);
-        return d.toISOString();
-      };
-      return [
-        {
-          id: 'demo-1',
-          name: 'Amina Hassan',
-          email: 'amina@example.com',
-          cefr_level: 'A1',
-          mother_tongue: 'Arabic',
-          teacher_reviewed_at: null,
-          sessions_this_week: 0,
-          sessions_total: 6,
-          total_sessions: 6,
-          last_session_at: daysAgo(11),
-          last_session: daysAgo(11),
-          last_session_title: 'Everyday errands: shop and pharmacy',
-          streak: 0,
-          xp: 300,
-          at_risk: true,
-        },
-        {
-          id: 'demo-2',
-          name: 'Mohamed Ali',
-          email: 'mohamed@example.com',
-          cefr_level: 'A2',
-          mother_tongue: 'Somali',
-          teacher_reviewed_at: null,
-          sessions_this_week: 3,
-          sessions_total: 14,
-          total_sessions: 14,
-          last_session_at: daysAgo(1),
-          last_session: daysAgo(1),
-          last_session_title: 'Workplace Finnish: asking for help',
-          streak: 4,
-          xp: 700,
-          at_risk: false,
-        },
-        {
-          id: 'demo-3',
-          name: 'Olena Petrenko',
-          email: 'olena@example.com',
-          cefr_level: 'B1',
-          mother_tongue: 'Ukrainian',
-          teacher_reviewed_at: daysAgo(2),
-          sessions_this_week: 2,
-          sessions_total: 18,
-          total_sessions: 18,
-          last_session_at: daysAgo(0),
-          last_session: daysAgo(0),
-          last_session_title: 'Doctor appointment roleplay',
-          streak: 7,
-          xp: 900,
-          at_risk: false,
-        },
-        {
-          id: 'demo-4',
-          name: 'Ahmed Noor',
-          email: 'ahmed@example.com',
-          cefr_level: 'A2',
-          mother_tongue: 'Arabic',
-          teacher_reviewed_at: null,
-          sessions_this_week: 1,
-          sessions_total: 9,
-          total_sessions: 9,
-          last_session_at: daysAgo(3),
-          last_session: daysAgo(3),
-          last_session_title: 'Past tense in family life',
-          streak: 1,
-          xp: 450,
-          at_risk: false,
-        },
-        {
-          id: 'demo-5',
-          name: 'Sara Ivanova',
-          email: 'sara@example.com',
-          cefr_level: 'A1',
-          mother_tongue: 'Russian',
-          teacher_reviewed_at: null,
-          sessions_this_week: 2,
-          sessions_total: 5,
-          total_sessions: 5,
-          last_session_at: daysAgo(2),
-          last_session: daysAgo(2),
-          last_session_title: 'School-home communication basics',
-          streak: 2,
-          xp: 250,
-          at_risk: false,
-        },
-        {
-          id: 'demo-6',
-          name: 'Bilal Khan',
-          email: 'bilal@example.com',
-          cefr_level: 'A2',
-          mother_tongue: 'Urdu',
-          teacher_reviewed_at: null,
-          sessions_this_week: 0,
-          sessions_total: 11,
-          total_sessions: 11,
-          last_session_at: daysAgo(8),
-          last_session: daysAgo(8),
-          last_session_title: 'Housing and neighbour communication',
-          streak: 0,
-          xp: 550,
-          at_risk: true,
-        }
-      ];
-    }
-
-    function buildMockSummary(learners) {
-      const total = learners.length;
-      const active = learners.filter((l) => (l.sessions_this_week || 0) > 0).length;
-      const atRisk = learners.filter((l) => l.at_risk).length;
-      const totalWeek = learners.reduce((sum, l) => sum + (l.sessions_this_week || 0), 0);
-      return {
-        total_learners: total,
-        active_this_week: active,
-        at_risk_count: atRisk,
-        total_sessions_this_week: totalWeek,
-      };
-    }
-
-    function deriveLearnerInsights(learner, index) {
-      const level = (learner.cefr_level || 'A1').toUpperCase();
-      const sessionsWeek = learner.sessions_this_week || 0;
-      const sessionsTotal = learner.sessions_total || 0;
-      const streak = learner.streak || 0;
-      const stale = isStale(learner.last_session);
-      const reviewed = !!learner.teacher_reviewed_at;
-      const confidenceScore = clampIndex(((sessionsWeek * 18) + (streak * 8) + (reviewed ? 10 : 0) - (stale ? 18 : 0)), 100);
-      const competenceScore = clampIndex(((sessionsTotal * 8) + ((level.charCodeAt(0) - 64) * 12) + ((level[1] || '1').charCodeAt(0) - 48) * 6), 100);
-      const confidenceSignal = learner.teacher_confidence_note || (confidenceScore + 15 < competenceScore
-        ? 'Knows more than they currently dare to show'
-        : competenceScore + 15 < confidenceScore
-          ? 'Participates willingly but still needs structure'
-          : 'Confidence and current performance look fairly balanced');
-
-      const focusAreas = [
-        'spoken vs standard Finnish',
-        'past tense in daily life',
-        'question forms',
-        'partitive and object forms',
-        'word order in full sentences',
-        'workplace Finnish routines',
-        'service and official-language Finnish',
-        'listening speed and key details',
-      ];
-      const supportTypes = [
-        'guided speaking with sentence frames',
-        'short oral repetition and substitution drills',
-        'real-life roleplay with teacher scaffolding',
-        'slow listening + key phrase capture',
-        'confidence-first pair speaking',
-        'revision with high-frequency chunks',
-      ];
-      const lifeContexts = [
-        'daily errands',
-        'healthcare and appointments',
-        'school-home communication',
-        'workplace interactions',
-        'official services and forms',
-        'housing and neighbour communication',
-      ];
-
-      const focusArea = learner.teacher_focus_area || (learner.at_risk
-        ? 're-engagement and routine recovery'
-        : focusAreas[index % focusAreas.length]);
-      const supportType = learner.teacher_support_type || (learner.at_risk
-        ? 'warm encouragement + easy restart task'
-        : supportTypes[(index + sessionsWeek) % supportTypes.length]);
-      const lifeContext = learner.teacher_life_context || learner.learner_goal_domain || lifeContexts[(index + sessionsTotal) % lifeContexts.length];
-
-      let barrier = learner.teacher_barrier || 'needs a little more guided repetition before freer output';
-      if (learner.at_risk) barrier = 'motivation may dip after time away from practice';
-      else if (confidenceScore + 15 < competenceScore) barrier = 'confidence seems lower than underlying knowledge';
-      else if (competenceScore + 15 < confidenceScore) barrier = 'tries actively, but accuracy likely still needs scaffolding';
-      else if (sessionsWeek === 0) barrier = 'no recent momentum to build on';
-
-      let nextActionTitle = learner.teacher_next_action || 'Give a small speaking task with clear sentence support';
-      let nextActionReason = `Likely focus: ${focusArea}. Best support style: ${supportType}.`;
-      let nextActionBenefit = 'Helps the learner move from passive understanding toward usable Finnish.';
-
-      if (learner.at_risk) {
-        nextActionTitle = 'Send a warm re-entry prompt and assign one easy win';
-        nextActionReason = `This learner has been away ${relativeTime(learner.last_session)}. A low-pressure restart is more useful than a hard push.`;
-        nextActionBenefit = 'Reduces dropout risk and makes it easier to come back.';
-      } else if ((level === 'A1' || level === 'A2') && sessionsTotal > 5) {
-        nextActionTitle = 'Test whether the learner is ready for more independent production';
-        nextActionReason = `The learner has ${sessionsTotal} total sessions and may be outgrowing tightly scaffolded A-level routines.`;
-        nextActionBenefit = 'Helps you spot who can move toward more flexible Finnish use.';
-      } else if (!reviewed && sessionsTotal > 0) {
-        nextActionTitle = 'Do a quick teacher review and confirm the current path';
-        nextActionReason = 'There is learner activity, but no teacher review signal yet.';
-        nextActionBenefit = 'Keeps human oversight visible and reduces drift.';
-      }
-
-      const teacherExplanation = {
-        observed: `${learner.name || 'This learner'} has ${sessionsWeek} sessions this week, ${sessionsTotal} sessions in total, and last practiced ${relativeTime(learner.last_session)}.`,
-        interpretation: `Main current need appears to be ${focusArea}; the likely barrier is that the learner ${barrier}.`,
-        nextStep: `${nextActionTitle}. Use ${supportType} in a ${lifeContext} context.`,
-      };
-
-      const riskLevel = learner.at_risk ? 'high' : sessionsWeek === 0 ? 'medium' : 'low';
-      const learnerTone = learner.at_risk ? 'stale' : sessionsWeek >= 2 ? 'steady' : 'warming';
-
-      return {
-        level,
-        sessionsWeek,
-        sessionsTotal,
-        streak,
-        stale,
-        confidenceScore,
-        competenceScore,
-        confidenceSignal,
-        focusArea,
-        supportType,
-        lifeContext,
-        barrier,
-        nextActionTitle,
-        nextActionReason,
-        nextActionBenefit,
-        teacherExplanation,
-        riskLevel,
-        learnerTone,
-      };
-    }
-
-    function openLearner(learnerId) {
-      if (!learnerId) return;
-      showLearnerPanel(learnerId);
-      const targetCard = document.querySelector(`.learner-card[data-id="${learnerId}"]`);
-      targetCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-
-    function renderTeacherPriorities() {
-      const el = document.getElementById('teacher-priorities');
-      if (!el) return;
-      const sorted = [...learnersData]
-        .map((learner, index) => ({ learner, insights: deriveLearnerInsights(learner, index) }))
-        .sort((a, b) => {
-          const aScore = (a.learner.at_risk ? 100 : 0) + (a.insights.sessionsWeek === 0 ? 20 : 0) + (a.learner.teacher_reviewed_at ? 0 : 10);
-          const bScore = (b.learner.at_risk ? 100 : 0) + (b.insights.sessionsWeek === 0 ? 20 : 0) + (b.learner.teacher_reviewed_at ? 0 : 10);
-          return bScore - aScore;
-        })
-        .slice(0, 3);
-
-      if (!sorted.length) {
-        el.innerHTML = '<div class="empty-inline">No priority learners to show yet.</div>';
-        return;
-      }
-
-      el.innerHTML = sorted.map(({ learner, insights }, idx) => `
-        <div class="priority-card">
-          <div class="priority-label">Priority ${idx + 1}</div>
-          <div class="priority-title">${escapeHtml(learner.name || 'Learner')} — ${escapeHtml(insights.nextActionTitle)}</div>
-          <div class="priority-text">${escapeHtml(insights.nextActionReason)} ${escapeHtml(insights.nextActionBenefit)}</div>
-          <a class="priority-link" data-open-learner="${learner.id}">Open learner →</a>
-        </div>
-      `).join('');
-
-      el.querySelectorAll('[data-open-learner]').forEach((node) => {
-        node.addEventListener('click', () => openLearner(node.dataset.openLearner));
-      });
-    }
-
-    function renderClassPulse() {
-      const el = document.getElementById('class-pulse-grid');
-      if (!el) return;
-      if (!learnersData.length) {
-        el.innerHTML = '<div class="empty-inline">No class pulse yet.</div>';
-        return;
-      }
-
-      const derived = learnersData.map((learner, index) => ({ learner, insights: deriveLearnerInsights(learner, index) }));
-      const atRisk = derived.filter((x) => x.learner.at_risk).length;
-      const lowConfidence = derived.filter((x) => x.insights.confidenceScore + 15 < x.insights.competenceScore).length;
-      const readyToStretch = derived.filter((x) => (x.insights.level === 'A1' || x.insights.level === 'A2') && x.insights.sessionsTotal > 5).length;
-      const contextCounts = {};
-      derived.forEach((x) => {
-        contextCounts[x.insights.lifeContext] = (contextCounts[x.insights.lifeContext] || 0) + 1;
-      });
-      const topContext = Object.entries(contextCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'daily-life Finnish';
-      const focusCounts = {};
-      derived.forEach((x) => {
-        focusCounts[x.insights.focusArea] = (focusCounts[x.insights.focusArea] || 0) + 1;
-      });
-      const topFocus = Object.entries(focusCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'speaking confidence';
-
-      const cards = [
-        {
-          label: 'Common teaching focus',
-          title: topFocus,
-          copy: `This is the most common likely support need across the current learner list. Build at least one short whole-group or small-group intervention around it.`
-        },
-        {
-          label: 'Confidence vs competence',
-          title: `${lowConfidence} learner${lowConfidence === 1 ? '' : 's'} may know more than they show`,
-          copy: 'These learners may benefit more from safe speaking routines and low-pressure production than from harder content.'
-        },
-        {
-          label: 'Life-context relevance',
-          title: topContext,
-          copy: `A strong theme for this cohort right now. Keep examples and tasks anchored in ${topContext}.`
-        },
-        {
-          label: 'Teacher attention',
-          title: `${atRisk} re-engagement risk · ${readyToStretch} ready to stretch`,
-          copy: 'The class seems split between learners who need encouragement back in and learners who may be ready for more independent Finnish.'
-        }
-      ];
-
-      el.innerHTML = cards.map((card) => `
-        <div class="pulse-box">
-          <div class="pulse-label">${escapeHtml(card.label)}</div>
-          <div class="pulse-title">${escapeHtml(card.title)}</div>
-          <div class="pulse-copy">${escapeHtml(card.copy)}</div>
-        </div>
-      `).join('');
-    }
-
-    function renderGroupingSuggestions() {
-      const el = document.getElementById('grouping-list');
-      if (!el) return;
-      if (!learnersData.length) {
-        el.innerHTML = '<div class="empty-inline">No grouping suggestions yet.</div>';
-        return;
-      }
-
-      const buckets = [
-        {
-          title: 'Speaking confidence support',
-          filter: (entry) => entry.insights.confidenceScore + 15 < entry.insights.competenceScore,
-          reason: 'These learners may understand more than they are willing to produce. Use sentence frames, pair repetition, and safe low-stakes speaking.'
-        },
-        {
-          title: 'Re-engagement and easy restart',
-          filter: (entry) => entry.learner.at_risk,
-          reason: 'These learners need a soft landing back into Finnish. Focus on small, achievable tasks and warm teacher presence.'
-        },
-        {
-          title: 'Ready for more stretch',
-          filter: (entry) => (entry.insights.level === 'A1' || entry.insights.level === 'A2') && entry.insights.sessionsTotal > 5,
-          reason: 'These learners may be ready to move from heavy scaffolding toward freer production and more realistic language tasks.'
-        }
-      ];
-
-      const derived = learnersData.map((learner, index) => ({ learner, insights: deriveLearnerInsights(learner, index) }));
-      const cards = buckets.map((bucket) => {
-        const members = derived.filter(bucket.filter).slice(0, 5);
-        return {
-          ...bucket,
-          members,
-        };
-      }).filter((bucket) => bucket.members.length);
-
-      if (!cards.length) {
-        el.innerHTML = '<div class="empty-inline">No strong grouping suggestion yet — the cohort looks fairly balanced right now.</div>';
-        return;
-      }
-
-      el.innerHTML = cards.map((bucket) => `
-        <div class="grouping-card">
-          <div class="grouping-title">${escapeHtml(bucket.title)}</div>
-          <div class="grouping-members">${escapeHtml(bucket.members.map((m) => m.learner.name || 'Learner').join(', '))}</div>
-          <div class="grouping-reason">${escapeHtml(bucket.reason)}</div>
-        </div>
-      `).join('');
-    }
-
-    function buildDecisionQueue() {
-      decisionQueueData = learnersData.map((learner, index) => {
-        const insights = deriveLearnerInsights(learner, index);
-        let priority = learner.at_risk ? 'high' : (!learner.teacher_reviewed_at && insights.sessionsTotal > 0 ? 'medium' : 'low');
-        let type = learner.at_risk ? 'Re-engagement' : 'Teacher review';
-        let summary = `${learner.name || 'This learner'} should stay on the current support path.`;
-        let reason = insights.teacherExplanation.observed;
-        let recommendation = insights.teacherExplanation.nextStep;
-
-        if (learner.at_risk) {
-          summary = `${learner.name || 'This learner'} may be slipping away from practice and needs a warm restart.`;
-          reason = `${insights.teacherExplanation.observed} Likely barrier: ${insights.barrier}.`;
-          recommendation = `Start with ${insights.supportType} in ${insights.lifeContext}. Keep the first re-entry task easy.`;
-        } else if ((insights.level === 'A1' || insights.level === 'A2') && insights.sessionsTotal > 5) {
-          priority = 'medium';
-          type = 'Progression check';
-          summary = `${learner.name || 'This learner'} may be ready for more independent Finnish use.`;
-          reason = `${insights.teacherExplanation.observed} Productive work may now deserve more space than repetition.`;
-          recommendation = `Try a teacher-led check in ${insights.lifeContext} and see whether the learner can manage freer output.`;
-        } else if (insights.confidenceScore + 15 < insights.competenceScore) {
-          priority = 'medium';
-          type = 'Confidence support';
-          summary = `${learner.name || 'This learner'} may know more than they currently dare to say.`;
-          reason = `${insights.teacherExplanation.observed} Confidence appears to lag behind likely competence.`;
-          recommendation = `Use ${insights.supportType} and keep correction light so the learner keeps speaking.`;
-        } else if (!learner.teacher_reviewed_at && insights.sessionsTotal > 0) {
-          priority = 'medium';
-          type = 'Teacher review';
-          summary = `${learner.name || 'This learner'} has activity but still needs a visible teacher review.`;
-          reason = `${insights.teacherExplanation.observed} Human validation is still missing.`;
-          recommendation = 'Open the learner, check the recent pattern, and mark as reviewed if the path looks right.';
-        }
-
-        return {
-          id: `decision-${learner.id}`,
-          learnerId: learner.id,
-          learnerName: learner.name || '—',
-          priority,
-          type,
-          summary,
-          reason,
-          recommendation,
-          timestamp: relativeTime(learner.last_session),
-          focusArea: insights.focusArea,
-          supportType: insights.supportType,
-          lifeContext: insights.lifeContext,
-        };
-      }).sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.priority] - { high: 0, medium: 1, low: 2 }[b.priority]));
-
-      renderDecisionQueue();
-    }
-
-    function renderDecisionQueue() {
-      const decisionList = document.getElementById('decision-list');
-      if (!decisionList) return;
-
-      const visible = decisionQueueData.filter((item) => activeDecisionFilter === 'all' || item.priority === activeDecisionFilter);
-      if (!visible.length) {
-        decisionList.innerHTML = '<div class="decision-empty">No decisions in this filter right now.</div>';
-        return;
-      }
-
-      decisionList.innerHTML = visible.map((d) => `
-        <div class="decision-card priority-${d.priority}" data-learner-id="${d.learnerId}">
-          <div class="decision-summary">
-            <div class="decision-summary-main">
-              <div class="decision-title">${escapeHtml(d.summary)}</div>
-              <div class="decision-meta">${escapeHtml(d.learnerName)} · ${escapeHtml(d.type)} · ${escapeHtml(d.timestamp)}</div>
-              <div class="decision-badges">
-                <span class="decision-badge priority-${d.priority}">${escapeHtml(d.priority.toUpperCase())}</span>
-                <span class="decision-badge">${escapeHtml(d.focusArea)}</span>
-                <span class="decision-badge">${escapeHtml(d.lifeContext)}</span>
-              </div>
-            </div>
-            <div class="decision-actions">
-              <button type="button" class="btn-expand btn-expand-decision" aria-expanded="false">Show details</button>
-              <button type="button" class="btn-nudge btn-open-decision">Open learner</button>
-            </div>
-          </div>
-          <div class="decision-details">
-            <div class="decision-detail-block">
-              <div class="decision-detail-label">Observed</div>
-              <div class="decision-detail-text">${escapeHtml(d.reason)}</div>
-            </div>
-            <div class="decision-detail-block">
-              <div class="decision-detail-label">Recommended teacher action</div>
-              <div class="decision-detail-text">${escapeHtml(d.recommendation)}</div>
-            </div>
-            <div class="decision-detail-block">
-              <div class="decision-detail-label">Support type</div>
-              <div class="decision-detail-text">${escapeHtml(d.supportType)}</div>
-            </div>
-          </div>
-        </div>
-      `).join('');
-
-      decisionList.querySelectorAll('.btn-expand-decision').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const card = btn.closest('.decision-card');
-          const expanded = card.classList.toggle('expanded');
-          btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-          btn.textContent = expanded ? 'Hide details' : 'Show details';
-        });
-      });
-
-      decisionList.querySelectorAll('.btn-open-decision').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const card = btn.closest('.decision-card');
-          openLearner(card?.dataset.learnerId);
-        });
-      });
-    }
-
-    function renderLearners() {
-      const grid = document.getElementById('learner-grid');
-      if (!grid) return;
-      grid.innerHTML = learnersData.map((learner, idx) => {
-        const insights = deriveLearnerInsights(learner, idx);
-        const compactSummary = `${relativeTime(learner.last_session)} · ${insights.sessionsWeek} this week · ${learner.xp != null ? learner.xp : insights.sessionsTotal * 50} XP`;
-        const lastTitle = learner.last_session_title ? ('Last session: ' + learner.last_session_title) : 'No recent session title';
-        return `
-          <div class="learner-card ${insights.learnerTone}" data-id="${learner.id}">
-            <div class="learner-summary">
-              <label style="flex-shrink:0;cursor:pointer;margin-top:4px" onclick="event.stopPropagation()">
-                <input type="checkbox" class="learner-check" data-id="${learner.id}" data-email="${learner.email ? '1' : '0'}" ${!learner.email ? 'disabled title="No email"' : ''} style="width:18px;height:18px">
-              </label>
-              <div class="learner-main">
-                <div class="learner-summary-top">
-                  <div class="learner-avatar">${escapeHtml(initials(learner.name))}</div>
-                  <span class="learner-name">${escapeHtml(learner.name || '—')}</span>
-                  <span class="${cefrClass(insights.level)}">${escapeHtml(insights.level)}</span>
-                </div>
-                <div class="learner-compact-meta">${escapeHtml(compactSummary)}</div>
-                <div class="card-badge-row" style="margin-top:10px;">
-                  <span class="mini-badge ${insights.riskLevel === 'high' ? 'risk' : insights.riskLevel === 'medium' ? 'warn' : 'ready'}">${escapeHtml(insights.riskLevel.toUpperCase())}</span>
-                  <span class="mini-badge info">${escapeHtml(insights.focusArea)}</span>
-                  <span class="mini-badge soft">${escapeHtml(insights.lifeContext)}</span>
-                  ${learner.at_risk ? '<span class="mini-badge risk">Needs re-engagement</span>' : ''}
-                </div>
-                <div class="next-action-box">
-                  <div class="next-action-label">Next best teacher action</div>
-                  <div class="next-action-title">${escapeHtml(insights.nextActionTitle)}</div>
-                  <div class="next-action-copy">${escapeHtml(insights.nextActionReason)}</div>
-                </div>
-                <div class="quick-actions">
-                  <button type="button" class="btn-chip btn-chip-open" data-id="${learner.id}">Open learner</button>
-                  <button type="button" class="btn-chip btn-chip-speaking" data-id="${learner.id}">${learner.teacher_support_type ? 'Update speaking support' : 'Mark speaking support'}</button>
-                  <button type="button" class="btn-chip btn-chip-followup" data-id="${learner.id}">${learner.teacher_followup_flag ? 'Follow-up flagged' : 'Flag follow-up'}</button>
-                </div>
-                <div class="learner-actions" style="margin-top:12px;">
-                  <button type="button" class="btn-expand" aria-expanded="false">Show more</button>
-                  <button class="btn-nudge btn-nudge-single" data-id="${learner.id}" data-email="${learner.email ? '1' : '0'}" ${!learner.email ? 'disabled title="No email"' : ''}>Nudge learner</button>
-                </div>
-                <div class="learner-details">
-                  <div class="learner-detail-block">
-                    <div class="learner-detail-label">Observed</div>
-                    <div class="learner-detail-text">${escapeHtml(insights.teacherExplanation.observed)}</div>
-                  </div>
-                  <div class="learner-detail-block">
-                    <div class="learner-detail-label">Interpretation</div>
-                    <div class="learner-detail-text">${escapeHtml(insights.teacherExplanation.interpretation)}</div>
-                  </div>
-                  <div class="learner-detail-block">
-                    <div class="learner-detail-label">Suggested next step</div>
-                    <div class="learner-detail-text">${escapeHtml(insights.teacherExplanation.nextStep)}</div>
-                  </div>
-                  <div class="learner-detail-block">
-                    <div class="learner-detail-label">Confidence vs competence</div>
-                    <div class="learner-detail-text">${escapeHtml(insights.confidenceSignal)} (confidence ${insights.confidenceScore}/100, competence ${insights.competenceScore}/100)</div>
-                  </div>
-                  <div class="learner-detail-block">
-                    <div class="learner-detail-label">Current support profile</div>
-                    <div class="learner-detail-text">Focus area: ${escapeHtml(insights.focusArea)} · Barrier: ${escapeHtml(insights.barrier)} · Best support: ${escapeHtml(insights.supportType)} · Useful context: ${escapeHtml(insights.lifeContext)}</div>
-                  </div>
-                  <div class="learner-detail-block">
-                    <div class="learner-detail-label">Recent activity</div>
-                    <div class="learner-detail-text">${escapeHtml(lastTitle)} · Streak ${insights.streak} day(s) · ${insights.sessionsWeek} sessions this week</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      wireLearnerInteractions();
-    }
-
-    function wireLearnerInteractions() {
-      const grid = document.getElementById('learner-grid');
-      grid.querySelectorAll('.learner-card').forEach((card) => {
-        card.addEventListener('click', (e) => {
-          if (e.target.closest('.btn-nudge') || e.target.closest('.btn-expand') || e.target.closest('label') || e.target.classList.contains('learner-check') || e.target.closest('.btn-chip')) return;
-          showLearnerPanel(card.dataset.id);
-        });
-      });
-
-      grid.querySelectorAll('.btn-expand').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const card = btn.closest('.learner-card');
-          const expanded = card.classList.toggle('expanded');
-          btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-          btn.textContent = expanded ? 'Show less' : 'Show more';
-        });
-      });
-
-      grid.querySelectorAll('.btn-chip-open').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          openLearner(btn.dataset.id);
-        });
-      });
-
-      grid.querySelectorAll('.btn-chip-speaking').forEach((btn) => {
-        btn.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          const learnerId = btn.dataset.id;
-          const learner = learnersData.find((l) => l.id === learnerId);
-          const idx = learnersData.findIndex((l) => l.id === learnerId);
-          const insights = deriveLearnerInsights(learner || {}, Math.max(idx, 0));
-          try {
-            btn.disabled = true;
-            await postTeacherAction(learnerId, {
-              actionType: 'mark_speaking_support',
-              teacherSupportType: learner?.teacher_support_type || insights.supportType,
-              teacherFocusArea: learner?.teacher_focus_area || insights.focusArea,
-              note: 'Speaking support marked from teacher dashboard',
-              metadata: { source: 'teacher_dashboard_quick_action' },
-            });
-            btn.textContent = 'Speaking support saved';
-            setTimeout(() => {
-              renderTeacherPriorities();
-              renderClassPulse();
-              renderGroupingSuggestions();
-              buildDecisionQueue();
-              renderLearners();
-            }, 500);
-          } catch (err) {
-            alert(err.message || 'Could not save speaking support.');
-            btn.disabled = false;
-          }
-        });
-      });
-
-      grid.querySelectorAll('.btn-chip-followup').forEach((btn) => {
-        btn.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          const learnerId = btn.dataset.id;
-          const learner = learnersData.find((l) => l.id === learnerId);
-          const nextFlag = !learner?.teacher_followup_flag;
-          try {
-            btn.disabled = true;
-            await postTeacherAction(learnerId, {
-              actionType: nextFlag ? 'flag_followup' : 'clear_followup',
-              note: nextFlag ? 'Follow-up flagged from teacher dashboard' : 'Follow-up cleared from teacher dashboard',
-              metadata: { source: 'teacher_dashboard_quick_action' },
-            });
-            setTimeout(() => {
-              renderTeacherPriorities();
-              renderClassPulse();
-              renderGroupingSuggestions();
-              buildDecisionQueue();
-              renderLearners();
-            }, 500);
-          } catch (err) {
-            alert(err.message || 'Could not update follow-up flag.');
-            btn.disabled = false;
-          }
-        });
-      });
-
-      grid.querySelectorAll('.btn-nudge-single').forEach((btn) => {
-        btn.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          const id = btn.dataset.id;
-          if (!id || btn.disabled) return;
-          if (btn.dataset.email === '0') {
-            alert('This learner has no email.');
-            return;
-          }
-          try {
-            btn.disabled = true;
-            const r = await fetch(`/api/teacher/nudge/${id}`, { method: 'POST', headers: authHeaders() });
-            if (!r.ok) throw new Error('Failed');
-            btn.textContent = 'Nudge sent ✓';
-            setTimeout(() => {
-              btn.textContent = 'Nudge learner';
-              btn.disabled = false;
-            }, 2500);
-          } catch {
-            alert('Could not send nudge. Try again.');
-            btn.disabled = false;
-          }
-        });
-      });
-
-      document.getElementById('select-all-learners').onchange = function() {
-        grid.querySelectorAll('.learner-check:not(:disabled)').forEach((cb) => { cb.checked = this.checked; });
-        updateNudgeSelectedVisibility();
-      };
-
-      grid.querySelectorAll('.learner-check').forEach((cb) => {
-        cb.addEventListener('change', updateNudgeSelectedVisibility);
-        cb.addEventListener('click', (e) => e.stopPropagation());
-      });
-
-      function updateNudgeSelectedVisibility() {
-        const checked = [...grid.querySelectorAll('.learner-check:checked:not(:disabled)')];
-        const btn = document.getElementById('btn-nudge-selected');
-        const countEl = document.getElementById('nudge-count');
-        countEl.textContent = checked.length;
-        btn.style.display = checked.length > 0 ? 'inline-block' : 'none';
-      }
-
-      document.getElementById('btn-nudge-selected').onclick = async () => {
-        const ids = [...grid.querySelectorAll('.learner-check:checked:not(:disabled)')].map((cb) => cb.dataset.id);
-        if (!ids.length) return;
-        try {
-          const btn = document.getElementById('btn-nudge-selected');
-          btn.disabled = true;
-          const r = await fetch('/api/teacher/nudge/bulk', {
-            method: 'POST',
-            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({ learner_ids: ids }),
-          });
-          const data = await r.json().catch(() => ({}));
-          if (!r.ok) throw new Error(data.error || 'Failed');
-          alert(`Sent: ${data.sent || 0}, no email: ${data.no_email || 0}${(data.failed || 0) > 0 ? ', failed: ' + data.failed : ''}`);
-          grid.querySelectorAll('.learner-check:checked').forEach((cb) => { cb.checked = false; });
-          document.getElementById('select-all-learners').checked = false;
-          updateNudgeSelectedVisibility();
-          btn.disabled = false;
-        } catch (err) {
-          alert(err.message || 'Could not send nudges.');
-          document.getElementById('btn-nudge-selected').disabled = false;
-        }
-      };
-    }
-
-    function wireDecisionFilters() {
-      document.querySelectorAll('.filter-pill').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          activeDecisionFilter = btn.dataset.filter || 'all';
-          document.querySelectorAll('.filter-pill').forEach((b) => b.classList.toggle('active', b === btn));
-          renderDecisionQueue();
-        });
-      });
-    }
-
-    function renderDashboardWithCurrentData() {
-      const total = summaryData.total_learners ?? learnersData.length;
-      const activeW = summaryData.active_this_week ?? 0;
-      const atRiskN = summaryData.at_risk_count ?? learnersData.filter((l) => l.at_risk).length;
-      const sessWeek = summaryData.total_sessions_this_week ?? learnersData.reduce((s, l) => s + (l.sessions_this_week || 0), 0);
-
-      document.getElementById('total-learners').textContent = total;
-      document.getElementById('active-this-week').textContent = activeW;
-      document.getElementById('at-risk-count-pill').textContent = atRiskN;
-      document.getElementById('total-sessions-week').textContent = sessWeek;
-
-      const pillActive = document.getElementById('pill-active');
-      pillActive.classList.remove('pill-active-good', 'pill-active-warn');
-      pillActive.classList.add(activeW > total / 2 ? 'pill-active-good' : 'pill-active-warn');
-      document.getElementById('pill-at-risk').classList.toggle('pill-risk', atRiskN > 0);
-
-      const hero = document.querySelector('.hero-copy');
-      if (hero) {
-        hero.textContent = usingDemoData
-          ? 'Demo mode is active. Showing realistic sample S2 Finnish learners so the buyer demo stays smooth even if the live API is unavailable.'
-          : 'A teacher-friendly overview for S2 Finnish teaching: who needs support now, what kind of support will help most, and how to move learners forward without drowning in detail.';
-      }
-
-      renderTeacherPriorities();
-      renderClassPulse();
-      renderGroupingSuggestions();
-      buildDecisionQueue();
-      renderLearners();
-      document.getElementById('loading-state').style.display = 'none';
-      document.getElementById('error-state').style.display = 'none';
-    }
-
-    async function loadLearners() {
-      document.getElementById('loading-state').style.display = 'block';
-      document.getElementById('learner-grid').innerHTML = '';
-      document.getElementById('error-state').style.display = 'none';
-      try {
-        const res = await fetch('/api/teacher/learners', { headers: authHeaders() });
-        if (!res.ok) throw new Error('Failed to load');
-        const payload = await res.json();
-        learnersData = Array.isArray(payload.learners) ? payload.learners : (Array.isArray(payload) ? payload : []);
-        summaryData = payload.summary || {};
-        if (!learnersData.length) throw new Error('No learners returned');
-        usingDemoData = false;
-        renderDashboardWithCurrentData();
-      } catch (err) {
-        console.error('teacher dashboard fallback to demo data:', err);
-        learnersData = buildMockLearners();
-        summaryData = buildMockSummary(learnersData);
-        usingDemoData = true;
-        renderDashboardWithCurrentData();
-      }
-    }
-
-    document.getElementById('retry-btn')?.addEventListener('click', loadLearners);
-
-    async function showLearnerPanel(learnerId) {
-      document.querySelectorAll('.learner-card').forEach((c) => c.classList.remove('selected'));
-      document.querySelector(`.learner-card[data-id="${learnerId}"]`)?.classList.add('selected');
-
-      const learnerIndex = learnersData.findIndex((l) => l.id === learnerId);
-      const learner = learnersData[learnerIndex];
-      const insights = deriveLearnerInsights(learner || {}, Math.max(learnerIndex, 0));
-      document.getElementById('panel-learner-name').textContent = learner?.name || '—';
-      document.getElementById('panel-meta').textContent = `${learner?.cefr_level || '—'} · ${learner?.mother_tongue || '—'} · ${insights.lifeContext}`;
-      document.getElementById('panel-insight-box').innerHTML = `
-        <div class="learner-detail-label">Teacher summary</div>
-        <div class="learner-detail-text">${escapeHtml(insights.teacherExplanation.interpretation)}</div>
-        <div class="learner-detail-label" style="margin-top:10px;">Best next move</div>
-        <div class="learner-detail-text">${escapeHtml(insights.teacherExplanation.nextStep)}</div>
-      `;
-      document.getElementById('btn-start-session').textContent = 'Start session with ' + (learner?.name || 'learner');
-      document.getElementById('btn-start-session').onclick = () => { window.location.href = '/knuut.html?learner_id=' + learnerId; };
-
-      const cefrSelect = document.getElementById('cefr-select');
-      const btnCefrSave = document.getElementById('btn-cefr-save');
-      cefrSelect.value = (learner?.cefr_level || 'A1').toUpperCase();
-      btnCefrSave.onclick = async () => {
-        const newLevel = cefrSelect.value;
-        try {
-          const r = await fetch('/api/teacher-override', {
-            method: 'POST',
-            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({ learnerId, newLevel }),
-          });
-          if (!r.ok) throw new Error('Failed');
-          const ld = learnersData.find((l) => l.id === learnerId);
-          if (ld) ld.cefr_level = newLevel;
-          document.getElementById('panel-meta').textContent = `${newLevel} · ${learner?.mother_tongue || '—'} · ${insights.lifeContext}`;
-          const badge = document.querySelector(`.learner-card[data-id="${learnerId}"] .cefr-badge`);
-          if (badge) {
-            badge.textContent = newLevel;
-            badge.className = cefrClass(newLevel);
-          }
-        } catch {
-          alert('Could not update CEFR level. Try again.');
-        }
-      };
-
-      const panel = document.getElementById('side-panel');
-      panel.classList.add('visible');
-
-      const btnReviewed = document.getElementById('btn-reviewed');
-      btnReviewed.style.display = 'block';
-      btnReviewed.classList.remove('reviewed');
-      btnReviewed.textContent = 'Mark as Reviewed by Teacher';
-      btnReviewed.disabled = false;
-      if (learner?.teacher_reviewed_at) {
-        btnReviewed.classList.add('reviewed');
-        btnReviewed.textContent = '✓ Reviewed ' + new Date(learner.teacher_reviewed_at).toLocaleDateString('fi-FI');
-        btnReviewed.disabled = true;
-      }
-      btnReviewed.onclick = async () => {
-        try {
-          const r = await fetch(`/api/learners/${learnerId}/reviewed`, { method: 'POST', headers: authHeaders() });
-          if (!r.ok) throw new Error('Failed');
-          const ld = learnersData.find((l) => l.id === learnerId);
-          if (ld) ld.teacher_reviewed_at = new Date().toISOString();
-          btnReviewed.classList.add('reviewed');
-          btnReviewed.textContent = '✓ Reviewed ' + new Date().toLocaleDateString('fi-FI');
-          btnReviewed.disabled = true;
-        } catch {
-          alert('Could not mark as reviewed. Try again.');
-        }
-      };
-
-      document.getElementById('panel-sessions').innerHTML = '<div style="color:#6B7280">Loading...</div>';
-      document.getElementById('panel-bars').innerHTML = '';
-
-      try {
-        if (usingDemoData) throw new Error('demo-mode');
-        const res = await fetch(`/api/learners/${learnerId}/progress`, { headers: authHeaders() });
-        const data = await res.json();
-        const nodes = data.nodes || [];
-        const episodes = data.episodes || [];
-
-        document.getElementById('panel-bars').innerHTML = nodes.slice(0, 6).map((n) => {
-          const c = n.confidence ?? 0.5;
-          const pct = Math.round(c * 100);
-          const cls = c > 0.8 ? 'high' : c >= 0.4 ? 'medium' : 'low';
-          return `
-            <div class="panel-bar">
-              <div class="label"><span>${escapeHtml(n.label)}</span><span>${pct}%</span></div>
-              <div class="track"><div class="fill ${cls}" style="width:${pct}%"></div></div>
-            </div>`;
-        }).join('');
-
-        const recent = episodes.slice(0, 5);
-        document.getElementById('panel-sessions').innerHTML = recent.length > 0
-          ? recent.map((e) => `
-              <div class="panel-session">
-                <div class="panel-session-date">${escapeHtml(relativeTime(e.created_at))}</div>
-                <div>${escapeHtml(e.summary || '—')}</div>
-              </div>`).join('')
-          : '<div style="color:#6B7280">No sessions yet.</div>';
-      } catch {
-        const mockNodes = [
-          { label: 'Speaking confidence', confidence: 0.42 },
-          { label: 'Daily-life vocabulary', confidence: 0.74 },
-          { label: 'Question forms', confidence: 0.58 },
-          { label: 'Listening support', confidence: 0.63 },
-        ];
-        const mockEpisodes = [
-          { created_at: learner?.last_session || new Date().toISOString(), summary: 'Practised practical Finnish in a real-life scenario with scaffolded support.' },
-          { created_at: learner?.last_session || new Date().toISOString(), summary: 'Worked on sentence building, key phrases, and confidence in speaking.' },
-        ];
-        document.getElementById('panel-bars').innerHTML = mockNodes.map((n) => {
-          const pct = Math.round((n.confidence ?? 0.5) * 100);
-          const cls = pct > 80 ? 'high' : pct >= 40 ? 'medium' : 'low';
-          return `
-            <div class="panel-bar">
-              <div class="label"><span>${escapeHtml(n.label)}</span><span>${pct}%</span></div>
-              <div class="track"><div class="fill ${cls}" style="width:${pct}%"></div></div>
-            </div>`;
-        }).join('');
-        document.getElementById('panel-sessions').innerHTML = mockEpisodes.map((e) => `
-          <div class="panel-session">
-            <div class="panel-session-date">${escapeHtml(relativeTime(e.created_at))}</div>
-            <div>${escapeHtml(e.summary)}</div>
-          </div>`).join('');
-      }
-    }
-
-    wireDecisionFilters();
-    loadLearners();
-  </script>
+
+<nav class="topnav">
+ <div class="topnav-logo">Knuut<span>.</span></div>
+ <a href="index.html" class="topnav-link">Brain Graph</a>
+ <a href="dashboard.html" class="topnav-link">Agents</a>
+ <a href="teacher-dashboard.html" class="topnav-link active">Teacher</a>
+ <a href="student-dashboard.html" class="topnav-link">Student</a>
+ <a href="privacy-ai.html" class="topnav-link">Privacy</a>
+ <div class="topnav-spacer"></div>
+ <div class="topnav-trust">
+ <span><span class="nt-dot"></span>GDPR</span>
+ <span><span class="nt-dot"></span>EU data</span>
+ <span><span class="nt-dot"></span>Human-in-loop</span>
+ </div>
+ <div class="topnav-user">
+ <div class="topnav-avatar" id="nav-initials">T</div>
+ <span id="nav-name">Teacher</span>
+ </div>
+ <a href="#" id="logout-link">Log out</a>
+</nav>
+
+<div class="page">
+
+ <div class="hero">
+ <div class="hero-left">
+ <div class="hero-greeting">Good <em id="time-greeting">morning</em>,<br><span id="teacher-name">—</span></div>
+ <div class="hero-date" id="date-today"></div>
+ <div class="demo-banner" id="demo-banner">⚡ Demo mode — showing realistic sample S2 Finnish learners. Live data loads when connected.</div>
+ <div class="briefing-pill">
+ <span class="bp-icon">✦</span>
+ <span id="briefing-text">Loading today's class summary…</span>
+ </div>
+ </div>
+ <div class="momentum-card">
+ <div class="momentum-label">Class Momentum</div>
+ <div class="momentum-ring-wrap">
+ <svg width="96" height="96" viewBox="0 0 96 96">
+ <circle class="mtrack" cx="48" cy="48" r="38"/>
+ <circle class="mfill" id="mfill" cx="48" cy="48" r="38" stroke-dasharray="238.76" stroke-dashoffset="238.76" stroke="#2D6A4F"/>
+ </svg>
+ <div class="momentum-number">
+ <div class="momentum-val" id="mval">—</div>
+ <div class="momentum-pct">/100</div>
+ </div>
+ </div>
+ <div class="momentum-trend" id="mtrend"></div>
+ </div>
+ </div>
+
+ <div class="stat-row">
+ <div class="stat-chip c-active"><div class="stat-num" id="s-total">0</div><div class="stat-lbl">Total learners</div></div>
+ <div class="stat-chip c-warn"><div class="stat-num" id="s-active">0</div><div class="stat-lbl">Active this week</div></div>
+ <div class="stat-chip c-risk"><div class="stat-num" id="s-risk">0</div><div class="stat-lbl">Away 7+ days</div></div>
+ <div class="stat-chip c-sess"><div class="stat-num" id="s-sess">0</div><div class="stat-lbl">Sessions this week</div></div>
+ </div>
+
+ <div class="learner-controls">
+ <div class="search-wrap">
+ <svg class="search-ico" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+ <input class="search-input" type="search" id="learner-search" placeholder="Search by name or language…" autocomplete="off">
+ </div>
+ <div class="cefr-filters" id="cefr-filters">
+ <button class="cefr-btn active" data-cefr="all">All</button>
+ <button class="cefr-btn" data-cefr="A1">A1</button>
+ <button class="cefr-btn" data-cefr="A2">A2</button>
+ <button class="cefr-btn" data-cefr="B1">B1</button>
+ <button class="cefr-btn" data-cefr="B2">B2</button>
+ <button class="cefr-btn" data-cefr="C1">C1+</button>
+ </div>
+ <div class="ctrl-spacer"></div>
+ <button class="btn-bulk-risk" id="btn-bulk-risk" disabled>✉ Nudge at-risk (<span id="risk-ct">0</span>)</button>
+ </div>
+
+ <div class="triage-board">
+ <div class="triage-col">
+ <div class="col-hdr hr"><span class="cdot r"></span><span class="col-title">Needs Attention</span><span class="col-ct" id="ct-risk">0</span></div>
+ <div class="col-cards" id="col-risk"></div>
+ </div>
+ <div class="triage-col">
+ <div class="col-hdr ha"><span class="cdot a"></span><span class="col-title">Active</span><span class="col-ct" id="ct-active">0</span></div>
+ <div class="col-cards" id="col-active"></div>
+ </div>
+ <div class="triage-col">
+ <div class="col-hdr ht"><span class="cdot t"></span><span class="col-title">Thriving</span><span class="col-ct" id="ct-thrive">0</span></div>
+ <div class="col-cards" id="col-thrive"></div>
+ </div>
+ </div>
+
+ <section class="insights-section">
+ <h2 class="section-h2">Class insights</h2>
+ <div class="insights-grid" id="insights-grid"></div>
+ </section>
+
+ <section class="groupings-section">
+ <h2 class="section-h2">Suggested small-group support</h2>
+ <div class="grouping-grid" id="grouping-grid"></div>
+ </section>
+
+</div>
+
+<div class="panel-overlay" id="panel-overlay"></div>
+<div class="side-panel" id="side-panel">
+ <div class="panel-hdr">
+ <div class="panel-hdr-top">
+ <div class="panel-name" id="panel-name">—</div>
+ <button class="panel-close" id="panel-close">✕</button>
+ </div>
+ <div class="panel-badges" id="panel-badges"></div>
+ <div class="ptabs">
+ <button class="ptab active" data-tab="overview">Overview</button>
+ <button class="ptab" data-tab="skills">Skills</button>
+ <button class="ptab" data-tab="sessions">Sessions</button>
+ <button class="ptab" data-tab="notes">Notes</button>
+ </div>
+ </div>
+ <div class="panel-body">
+ <div class="tab-pane active" id="tab-overview">
+ <div class="pinsight" id="pinsight"></div>
+ <div class="pdivider"></div>
+ <div class="plbl" style="margin-bottom:7px">CEFR Override</div>
+ <div class="cefr-override">
+ <select class="pselect" id="cefr-select">
+ <option value="A1">A1 — Beginner</option>
+ <option value="A2">A2 — Elementary</option>
+ <option value="B1">B1 — Intermediate</option>
+ <option value="B2">B2 — Upper-Intermediate</option>
+ <option value="C1">C1 — Advanced</option>
+ <option value="C2">C2 — Proficient</option>
+ </select>
+ <button class="btn-save-cefr" id="btn-cefr-save">Save</button>
+ </div>
+ <div class="pdivider"></div>
+ <div class="panel-actions">
+ <button class="pbtn p-session" id="btn-start-session">Start session</button>
+ <button class="pbtn p-nudge" id="btn-panel-nudge">Send re-engagement email</button>
+ <button class="pbtn p-reviewed" id="btn-reviewed">Mark as reviewed</button>
+ </div>
+ </div>
+ <div class="tab-pane" id="tab-skills">
+ <div class="plbl" style="margin-bottom:11px">Skill confidence (estimated)</div>
+ <div id="skill-bars"></div>
+ </div>
+ <div class="tab-pane" id="tab-sessions">
+ <div class="plbl" style="margin-bottom:11px">Recent sessions</div>
+ <div id="session-list"></div>
+ </div>
+ <div class="tab-pane" id="tab-notes">
+ <div class="plbl" style="margin-bottom:7px">Teacher notes (auto-saved)</div>
+ <textarea class="notes-area" id="notes-area" placeholder="Write anything: goals, class notes, parent contact, upcoming test…"></textarea>
+ <div class="notes-saved" id="notes-saved"></div>
+ <div class="pdivider"></div>
+ <button class="btn-gen" id="btn-gen-brief">
+ <span class="bico">✦</span>
+ <span class="blbl">Generate lesson brief</span>
+ <span class="bspin"></span>
+ </button>
+ <div class="brief-out" id="brief-out"></div>
+ </div>
+ </div>
+</div>
+
+<script>
+// AUTH
+const token = localStorage.getItem('sb_token') || localStorage.getItem('knuut_token');
+const user = (() => { try { return JSON.parse(localStorage.getItem('sb_user') || localStorage.getItem('knuut_user') || '{}'); } catch { return {}; } })();
+if (!token || user?.role !== 'teacher') location.replace('/login.html?next=' + encodeURIComponent('/teacher-dashboard.html'));
+function authHeaders() { return { 'Authorization': 'Bearer ' + (localStorage.getItem('sb_token') || localStorage.getItem('knuut_token') || '') }; }
+document.getElementById('logout-link')?.addEventListener('click', (e) => { e.preventDefault(); ['knuut_token','knuut_user','sb_token','sb_user'].forEach(k => localStorage.removeItem(k)); location.replace('/login.html'); });
+
+// HEADER INIT
+const teacherName = user?.name || 'Teacher';
+document.getElementById('teacher-name').textContent = teacherName;
+document.getElementById('nav-name').textContent = teacherName;
+document.getElementById('nav-initials').textContent = teacherName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+const now = new Date();
+const hr = now.getHours();
+document.getElementById('time-greeting').textContent = hr < 12 ? 'morning' : hr < 17 ? 'afternoon' : 'evening';
+document.getElementById('date-today').textContent = now.toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+// STATE
+let learnersData = [], summaryData = {}, usingDemoData = false;
+let activeCefr = 'all', searchQ = '', panelId = null;
+let notesStore = {}, notesTmr = null;
+
+// HELPERS
+function esc(s) { if (s == null) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
+function reltime(ds) {
+ if (!ds) return 'never';
+ const d = new Date(ds), days = Math.floor((now - d) / 86400000);
+ if (days < 1) return 'today'; if (days === 1) return 'yesterday';
+ if (days < 7) return days + ' days ago'; if (days < 30) return Math.floor(days/7) + ' weeks ago';
+ return d.toLocaleDateString('fi-FI');
+}
+function cbadge(lvl) { const l = (lvl||'A1').toUpperCase(); return 'cbadge ' + (['A1','A2','B1','B2','C1','C2'].includes(l) ? l.toLowerCase() : 'a1'); }
+function inits(name) { return (name||'—').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+function isStale(d) { return !d || (now - new Date(d)) / 86400000 > 6; }
+function clamp(v, mx) { return Math.max(0, Math.min(mx, v)); }
+const AVCOLS = ['#1B4332','#2D6A4F','#5C4033','#7C3AED','#1D4ED8','#C2410C','#065F46','#6D28D9'];
+function avcol(id) { let h=0; for (let i=0;i<(id||'x').length;i++) h=(h*31+(id||'x').charCodeAt(i))&0xFFFFFF; return AVCOLS[Math.abs(h)%AVCOLS.length]; }
+function seededR(s) { const x=Math.sin(s+1)*10000; return x-Math.floor(x); }
+
+// ACTIVITY DOTS — 28 days
+function mkDots(learner, idx) {
+ const dots = [];
+ const spw = Math.min(learner.sessions_this_week||0, 7);
+ const drop = learner.at_risk ? Math.floor(8+seededR(idx*101)*7) : 0;
+ for (let i=27;i>=0;i--) {
+ if (learner.at_risk && i < drop) { dots.push(false); continue; }
+ const dow = (now.getDay() - i%7 + 14) % 7, isWe = dow===0||dow===6;
+ const wk = Math.floor(i/7);
+ let p = spw/7;
+ if (isWe) p*=0.35;
+ if (wk===0 && !learner.at_risk) p*=1.2;
+ dots.push(seededR(idx*37+i*19+7) < Math.min(p, 0.92));
+ }
+ return dots;
+}
+
+// MOCK DATA
+function buildMockLearners() {
+ const da = d => { const x=new Date(now); x.setDate(x.getDate()-d); return x.toISOString(); };
+ return [
+ {id:'demo-1',name:'Amina Hassan', email:'amina@example.com', cefr_level:'A1',mother_tongue:'Arabic', sessions_this_week:0,sessions_total:6, last_session_at:da(11),last_session:da(11),last_session_title:'Everyday errands: shop and pharmacy', streak:0,xp:300, at_risk:true, teacher_reviewed_at:null, teacher_followup_flag:false},
+ {id:'demo-2',name:'Mohamed Ali', email:'mohamed@example.com',cefr_level:'A2',mother_tongue:'Somali', sessions_this_week:3,sessions_total:14,last_session_at:da(1), last_session:da(1), last_session_title:'Workplace Finnish: asking for help', streak:4,xp:700, at_risk:false,teacher_reviewed_at:null, teacher_followup_flag:false},
+ {id:'demo-3',name:'Olena Petrenko',email:'olena@example.com', cefr_level:'B1',mother_tongue:'Ukrainian',sessions_this_week:5,sessions_total:22,last_session_at:da(0), last_session:da(0), last_session_title:'Doctor appointment roleplay', streak:9,xp:1100,at_risk:false,teacher_reviewed_at:da(2), teacher_followup_flag:false},
+ {id:'demo-4',name:'Ahmed Noor', email:'ahmed@example.com', cefr_level:'A2',mother_tongue:'Arabic', sessions_this_week:1,sessions_total:9, last_session_at:da(3), last_session:da(3), last_session_title:'Past tense in family life', streak:1,xp:450, at_risk:false,teacher_reviewed_at:null, teacher_followup_flag:true},
+ {id:'demo-5',name:'Sara Ivanova', email:'sara@example.com', cefr_level:'A1',mother_tongue:'Russian', sessions_this_week:2,sessions_total:5, last_session_at:da(2), last_session:da(2), last_session_title:'School-home communication basics', streak:2,xp:250, at_risk:false,teacher_reviewed_at:null, teacher_followup_flag:false},
+ {id:'demo-6',name:'Bilal Khan', email:'bilal@example.com', cefr_level:'A2',mother_tongue:'Urdu', sessions_this_week:0,sessions_total:11,last_session_at:da(8), last_session:da(8), last_session_title:'Housing and neighbour communication', streak:0,xp:550, at_risk:true, teacher_reviewed_at:null, teacher_followup_flag:false},
+ {id:'demo-7',name:'Fatima Malik', email:'fatima@example.com', cefr_level:'B1',mother_tongue:'Punjabi', sessions_this_week:4,sessions_total:19,last_session_at:da(0), last_session:da(0), last_session_title:'Public transport and directions', streak:7,xp:950, at_risk:false,teacher_reviewed_at:null, teacher_followup_flag:false},
+ {id:'demo-8',name:'Yusuf Osman', email:'yusuf@example.com', cefr_level:'A1',mother_tongue:'Somali', sessions_this_week:0,sessions_total:3, last_session_at:da(14),last_session:da(14),last_session_title:'Greetings and introductions', streak:0,xp:150, at_risk:true, teacher_reviewed_at:null, teacher_followup_flag:false},
+ ];
+}
+function buildMockSummary(ls) {
+ return { total_learners:ls.length, active_this_week:ls.filter(l=>(l.sessions_this_week||0)>0).length, at_risk_count:ls.filter(l=>l.at_risk).length, total_sessions_this_week:ls.reduce((s,l)=>s+(l.sessions_this_week||0),0) };
+}
+
+// INSIGHTS ENGINE
+function deriveInsights(learner, idx) {
+ const level = (learner.cefr_level||'A1').toUpperCase();
+ const sw = learner.sessions_this_week||0, st = learner.sessions_total||0, sk = learner.streak||0;
+ const stale = isStale(learner.last_session), reviewed = !!learner.teacher_reviewed_at;
+ const confScore = clamp((sw*18)+(sk*8)+(reviewed?10:0)-(stale?18:0), 100);
+ const compScore = clamp((st*8)+((level.charCodeAt(0)-64)*12)+((level[1]||'1').charCodeAt(0)-48)*6, 100);
+ const confSig = learner.teacher_confidence_note||(confScore+15<compScore?'Knows more than they currently dare to show':compScore+15<confScore?'Participates willingly but still needs structure':'Confidence and performance look balanced');
+ const FAs = ['spoken vs standard Finnish','past tense in daily life','question forms','partitive and object forms','word order','workplace Finnish','service-desk Finnish','listening speed'];
+ const STs = ['guided speaking with sentence frames','oral repetition drills','real-life roleplay','slow listening + key phrases','confidence-first pair speaking','high-frequency chunk revision'];
+ const LCs = ['daily errands','healthcare appointments','school-home communication','workplace interactions','official services','housing communication'];
+ const fa = learner.teacher_focus_area||(learner.at_risk?'re-engagement and routine recovery':FAs[idx%FAs.length]);
+ const st2 = learner.teacher_support_type||(learner.at_risk?'warm encouragement + easy restart':STs[(idx+sw)%STs.length]);
+ const lc = learner.teacher_life_context||learner.learner_goal_domain||LCs[(idx+st)%LCs.length];
+ let barrier = learner.teacher_barrier||'needs more guided repetition before freer output';
+ if (learner.at_risk) barrier='motivation may dip after time away';
+ else if (confScore+15<compScore) barrier='confidence lower than underlying knowledge';
+ else if (compScore+15<confScore) barrier='active but accuracy still needs scaffolding';
+ else if (sw===0) barrier='no recent momentum to build on';
+ let nat = learner.teacher_next_action||'Give a small speaking task with clear sentence support';
+ let nar = `Focus: ${fa}. Support: ${st2}.`, nab = 'Keeps learner engaged and moving forward.';
+ if (learner.at_risk) { nat='Send warm re-engagement + offer easy restart task'; nar=`Away ${reltime(learner.last_session)}. Low-pressure restart beats hard push.`; nab='Reduces dropout risk.'; }
+ else if ((level==='A1'||level==='A2') && st>5) { nat='Test readiness for more independent production'; nar=`${st} total sessions — may be outgrowing tightly scaffolded routines.`; nab='Spots who can move toward flexible Finnish use.'; }
+ else if (!reviewed && st>0) { nat='Quick teacher review to confirm the current path'; nar='Activity present, but no teacher review signal yet.'; nab='Keeps human oversight visible.'; }
+ const te = {
+ observed:`${learner.name||'Learner'} — ${sw} sessions this week, ${st} total, last practiced ${reltime(learner.last_session)}.`,
+ interpretation:`Main need: ${fa}. Barrier: learner ${barrier}.`,
+ nextStep:`${nat}. Use ${st2} in a ${lc} context.`,
+ };
+ return { level, sw, st, sk, stale, confScore, compScore, confSig, fa, st2, lc, barrier, nat, nar, nab, te, riskLevel:learner.at_risk?'high':sw===0?'medium':'low' };
+}
+
+// SMART ACTION
+function smartAct(learner, ins) {
+ const fn = (learner.name||'').split(' ')[0];
+ if (learner.at_risk) return { lbl:`✉ Re-engage ${fn}`, cls:'ar', type:'nudge' };
+ if (ins.sk >= 5) return { lbl:`🎉 Celebrate ${ins.sk}-day streak!`, cls:'ac', type:'open' };
+ if (!learner.teacher_reviewed_at && ins.st > 0) return { lbl:'📋 Review progress', cls:'av', type:'open' };
+ if ((ins.level==='A1'||ins.level==='A2') && ins.st>5) return { lbl:'↑ Ready to stretch', cls:'as', type:'open' };
+ if (ins.sw === 1) return { lbl:'💬 Encourage this week', cls:'an', type:'open' };
+ return { lbl:'👁 View details', cls:'', type:'open' };
+}
+
+// MOMENTUM
+function computeMom() {
+ if (!learnersData.length) return 0;
+ const n = learnersData.length;
+ const ac = summaryData.active_this_week||0, ar = summaryData.at_risk_count||0;
+ const avgSk = learnersData.reduce((s,l)=>s+(l.streak||0),0)/n;
+ return Math.min(100, Math.max(0, Math.round((ac/n)*55 + (1-ar/n)*25 + Math.min(avgSk/7,1)*20)));
+}
+function renderMom(score) {
+ const circ = 238.76, off = circ - (score/100)*circ;
+ const fill = document.getElementById('mfill');
+ document.getElementById('mval').textContent = score;
+ setTimeout(() => { fill.style.strokeDashoffset = off; }, 80);
+ fill.style.stroke = score>=65?'#2D6A4F':score>=40?'#D97706':'#991B1B';
+ const tv = Math.round(score*0.11);
+ const tr = document.getElementById('mtrend');
+ if (score>=60) { tr.textContent=`↑ +${tv} from last week`; tr.className='momentum-trend mtr-up'; }
+ else if (score>=40) { tr.textContent='→ steady this week'; tr.className='momentum-trend mtr-flat'; }
+ else { tr.textContent=`↓ ${tv} below target`; tr.className='momentum-trend mtr-down'; }
+}
+
+// BRIEFING
+function renderBriefing() {
+ const ar = summaryData.at_risk_count||0, ac = summaryData.active_this_week||0, tot = summaryData.total_learners||learnersData.length;
+ const hs = learnersData.filter(l=>(l.streak||0)>=5);
+ let t = '';
+ if (ar>=3) t=`${ar} learners away 7+ days — consider a batch nudge to bring them back.`;
+ else if (ar>0) t=`${ar} learner${ar>1?'s':''} need${ar===1?'s':''} re-engagement. ${ac} of ${tot} active this week.`;
+ else if (hs.length) t=`Great week — ${hs.map(l=>l.name?.split(' ')[0]).join(', ')} on strong streaks. ${ac}/${tot} learners active.`;
+ else if (ac>=tot*0.7) t=`Strong engagement — ${ac} of ${tot} learners practiced this week.`;
+ else t=`${ac} of ${tot} learners active. Check the Needs Attention column for next moves.`;
+ document.getElementById('briefing-text').textContent = t;
+}
+
+// RENDER CARD
+function renderCard(learner, idx) {
+ const ins = deriveInsights(learner, idx);
+ const act = smartAct(learner, ins);
+ const dots = mkDots(learner, idx);
+ const dotsH = dots.map((on,i) => `<div class="adot${on?(i>=21?' on recent':' on'):''}"></div>`).join('');
+ const streakS = (learner.streak||0)>0 ? ` · 🔥 ${learner.streak}` : '';
+ const flagH = learner.teacher_followup_flag ? '<span class="fflag" title="Follow-up flagged"></span>' : '';
+ return `<div class="lcard" data-id="${learner.id}">
+ <div class="lcard-top">
+ <div class="lavatar" style="background:${avcol(learner.id)}">${inits(learner.name)}</div>
+ <div class="linfo">
+ <div class="lname-row"><span class="lname">${esc(learner.name||'Learner')}</span><span class="${cbadge(learner.cefr_level)}">${esc((learner.cefr_level||'A1').toUpperCase())}</span>${flagH}</div>
+ <div class="lmeta">${esc(learner.mother_tongue||'—')} · ${reltime(learner.last_session_at)}${streakS}</div>
+ </div>
+ </div>
+ <div class="adots">${dotsH}</div>
+ <button class="laction ${act.cls}" data-atype="${act.type}" data-id="${learner.id}">${esc(act.lbl)}</button>
+ </div>`;
+}
+
+// FILTER
+function filtered() {
+ return learnersData.filter(l => {
+ const ms = !searchQ || (l.name||'').toLowerCase().includes(searchQ) || (l.mother_tongue||'').toLowerCase().includes(searchQ);
+ const mc = activeCefr==='all' || (activeCefr==='C1'?['C1','C2'].includes((l.cefr_level||'').toUpperCase()):(l.cefr_level||'').toUpperCase()===activeCefr);
+ return ms && mc;
+ });
+}
+
+// TRIAGE
+function renderTriage() {
+ const fl = filtered();
+ const thrive = fl.filter(l => !l.at_risk && (l.streak||0)>=3 && (l.sessions_this_week||0)>=3);
+ const risk = fl.filter(l => l.at_risk);
+ const active = fl.filter(l => !l.at_risk && !thrive.find(t=>t.id===l.id));
+ const fill = (colEl, group, empty) => {
+ if (!group.length) { colEl.innerHTML=`<div class="col-empty">${empty}</div>`; return; }
+ colEl.innerHTML = group.map(l => renderCard(l, learnersData.indexOf(l))).join('');
+ };
+ fill(document.getElementById('col-risk'), risk, 'No learners need immediate attention 🎉');
+ fill(document.getElementById('col-active'), active, 'No learners in this category');
+ fill(document.getElementById('col-thrive'), thrive, 'Keep pushing — thriving learners appear here');
+ document.getElementById('ct-risk').textContent = risk.length;
+ document.getElementById('ct-active').textContent = active.length;
+ document.getElementById('ct-thrive').textContent = thrive.length;
+ // wire interactions
+ document.querySelectorAll('.lcard').forEach(c => c.addEventListener('click', e => { if (e.target.classList.contains('laction')) return; openPanel(c.dataset.id); }));
+ document.querySelectorAll('.laction').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); if (b.dataset.atype==='nudge') doNudge(b.dataset.id, b); else openPanel(b.dataset.id); }));
+}
+
+// INSIGHTS
+function renderInsights() {
+ const el = document.getElementById('insights-grid');
+ if (!learnersData.length) { el.innerHTML=''; return; }
+ const drv = learnersData.map((l,i)=>({l,ins:deriveInsights(l,i)}));
+ const ar = drv.filter(x=>x.l.at_risk).length;
+ const lc = drv.filter(x=>x.ins.confScore+15<x.ins.compScore).length;
+ const fc={}, cc={}; drv.forEach(x=>{fc[x.ins.fa]=(fc[x.ins.fa]||0)+1;cc[x.ins.lc]=(cc[x.ins.lc]||0)+1;});
+ const topF = Object.entries(fc).sort((a,b)=>b[1]-a[1])[0]?.[0]||'speaking confidence';
+ const topC = Object.entries(cc).sort((a,b)=>b[1]-a[1])[0]?.[0]||'daily errands';
+ const avgSk = Math.round(learnersData.reduce((s,l)=>s+(l.streak||0),0)/learnersData.length);
+ const cards = [
+ {lbl:'Common teaching focus', title:topF, copy:'Build at least one short whole-group or small-group intervention around this focus this week.'},
+ {lbl:'Confidence vs competence', title:`${lc} learner${lc===1?'':' s'} may know more than they show`, copy:'Use safe speaking routines and low-pressure production rather than harder content.'},
+ {lbl:'Life-context relevance', title:topC, copy:`A strong theme for this cohort. Keep examples and tasks anchored in ${topC}.`},
+ {lbl:'Class engagement', title:`Avg streak: ${avgSk} days · ${ar} at risk`, copy:`${ar} learner${ar===1?'':' s'} need${ar===1?'s':''} re-engagement. The rest are progressing.`},
+ ];
+ el.innerHTML = cards.map(c=>`<div class="insight-card"><div class="ilbl">${esc(c.lbl)}</div><div class="ititle">${esc(c.title)}</div><div class="icopy">${esc(c.copy)}</div></div>`).join('');
+}
+
+function renderGroupings() {
+ const el = document.getElementById('grouping-grid');
+ if (!learnersData.length) { el.innerHTML=''; return; }
+ const drv = learnersData.map((l,i)=>({l,ins:deriveInsights(l,i)}));
+ const buckets = [
+ {title:'Speaking confidence support', filt:x=>x.ins.confScore+15<x.ins.compScore, reason:'These learners understand more than they produce. Use sentence frames, pair speaking, and low-stakes tasks.'},
+ {title:'Re-engagement: easy restart', filt:x=>x.l.at_risk, reason:'Soft landing back into Finnish. Small achievable tasks and warm teacher presence work best.'},
+ {title:'Ready to stretch', filt:x=>(x.ins.level==='A1'||x.ins.level==='A2')&&x.ins.st>5, reason:'May be ready to move from scaffolded routines toward freer production and realistic tasks.'},
+ ];
+ const cards = buckets.map(b=>({...b,members:drv.filter(b.filt).slice(0,5)})).filter(b=>b.members.length);
+ if (!cards.length) { el.innerHTML='<div class="insight-card" style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-style:italic;padding:24px">No strong grouping signal — cohort looks balanced.</div>'; return; }
+ el.innerHTML = cards.map(b=>`<div class="grouping-card"><div class="gtitle">${esc(b.title)}</div><div class="gmembers">${esc(b.members.map(x=>x.l.name||'Learner').join(', '))}</div><div class="greason">${esc(b.reason)}</div></div>`).join('');
+}
+
+// NUDGE
+async function doNudge(id, btn) {
+ if (btn) { btn.disabled=true; btn.classList.add('sending'); btn.textContent='Sending…'; }
+ try {
+ const r = await fetch(`/api/teacher/nudge/${id}`,{method:'POST',headers:authHeaders()});
+ if (!r.ok) throw new Error();
+ if (btn) btn.textContent='✓ Sent';
+ } catch { if (btn) { btn.disabled=false; btn.classList.remove('sending'); btn.textContent='↩ Retry'; } }
+}
+document.getElementById('btn-bulk-risk').addEventListener('click', async () => {
+ const btn = document.getElementById('btn-bulk-risk');
+ const ids = learnersData.filter(l=>l.at_risk).map(l=>l.id);
+ if (!ids.length) return;
+ btn.disabled=true; btn.textContent='Sending…';
+ try {
+ const r = await fetch('/api/teacher/nudge/bulk',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({learner_ids:ids})});
+ const d = await r.json().catch(()=>({}));
+ btn.textContent=`✓ ${d.sent||ids.length} sent`;
+ } catch { btn.disabled=false; btn.textContent='↩ Retry nudge'; }
+});
+
+// PANEL
+function openPanel(id) {
+ panelId = id;
+ const idx = learnersData.findIndex(l=>l.id===id);
+ const learner = learnersData[idx]||{};
+ const ins = deriveInsights(learner, Math.max(idx,0));
+ document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('selected'));
+ document.querySelector(`.lcard[data-id="${id}"]`)?.classList.add('selected');
+ document.getElementById('panel-name').textContent = learner.name||'—';
+ const bgs = [(learner.cefr_level||'—').toUpperCase(), learner.mother_tongue||'—', `${ins.st} sessions`, ins.sk>0?`🔥 ${ins.sk} streak`:'', learner.at_risk?'⚠ At risk':''].filter(Boolean);
+ document.getElementById('panel-badges').innerHTML = bgs.map(b=>`<span class="pbadge">${esc(b)}</span>`).join('');
+ document.getElementById('pinsight').innerHTML = `
+ <div class="plbl">What I observed</div><div class="ptext" style="margin-bottom:8px">${esc(ins.te.observed)}</div>
+ <div class="plbl">How to interpret</div><div class="ptext" style="margin-bottom:8px">${esc(ins.te.interpretation)}</div>
+ <div class="plbl">Best next move</div><div class="ptext">${esc(ins.te.nextStep)}</div>`;
+ document.getElementById('cefr-select').value = (learner.cefr_level||'A1').toUpperCase();
+ const bcs = document.getElementById('btn-cefr-save');
+ bcs.textContent='Save'; bcs.classList.remove('saved');
+ bcs.onclick = async () => {
+ const nl = document.getElementById('cefr-select').value;
+ try {
+ const r = await fetch('/api/teacher-override',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({learnerId:id,newLevel:nl})});
+ if (!r.ok) throw new Error();
+ const ld = learnersData.find(l=>l.id===id); if (ld) ld.cefr_level=nl;
+ bcs.textContent='✓ Saved'; bcs.classList.add('saved');
+ } catch { alert('Could not update CEFR.'); }
+ };
+ document.getElementById('btn-start-session').onclick = () => { window.location.href='/knuut.html?learner_id='+id; };
+ const bn = document.getElementById('btn-panel-nudge');
+ bn.textContent='Send re-engagement email'; bn.disabled=false;
+ bn.onclick = () => doNudge(id, bn);
+ const br = document.getElementById('btn-reviewed');
+ br.classList.remove('done');
+ if (learner.teacher_reviewed_at) { br.textContent='✓ Reviewed '+new Date(learner.teacher_reviewed_at).toLocaleDateString('fi-FI'); br.classList.add('done'); br.disabled=true; }
+ else { br.textContent='Mark as reviewed'; br.disabled=false; br.onclick=async()=>{ try { const r=await fetch(`/api/learners/${id}/reviewed`,{method:'POST',headers:authHeaders()}); if(!r.ok)throw new Error(); const ld=learnersData.find(l=>l.id===id); if(ld)ld.teacher_reviewed_at=new Date().toISOString(); br.textContent='✓ Reviewed '+new Date().toLocaleDateString('fi-FI'); br.classList.add('done'); br.disabled=true; } catch { alert('Could not mark as reviewed.'); } }; }
+ // Skills
+ const mockSk = [{l:'Speaking confidence',v:ins.confScore||30},{l:'Vocabulary — daily life',v:Math.min(100,Math.round((ins.compScore||30)*0.9))},{l:'Grammar accuracy',v:Math.min(100,Math.round((ins.compScore||30)*0.75))},{l:'Listening',v:Math.min(100,Math.round((ins.confScore||30)*1.1))},{l:'Written expression',v:Math.min(100,Math.round((ins.compScore||30)*0.65))}];
+ document.getElementById('skill-bars').innerHTML = mockSk.map(s=>{const cls=s.v>70?'hi':s.v>=40?'md':'lo'; return `<div class="sbar-wrap"><div class="sbar-top"><span>${esc(s.l)}</span><span>${s.v}%</span></div><div class="sbar-track"><div class="sbar-fill ${cls}" style="width:${s.v}%"></div></div></div>`;}).join('');
+ // Sessions
+ const ms = [{created_at:learner.last_session_at||new Date().toISOString(),title:learner.last_session_title||'Practice session',summary:'Practised practical Finnish in a real-life scenario with scaffolded support.'},{created_at:new Date(now.getTime()-3*86400000).toISOString(),title:'Grammar and sentence building',summary:'Worked on word order, past tense, and key high-frequency phrases.'},{created_at:new Date(now.getTime()-7*86400000).toISOString(),title:'Speaking practice',summary:'Roleplay exercise: asking for help at a service desk. Good confidence shown.'}];
+ document.getElementById('session-list').innerHTML = ms.map(s=>`<div class="sess-item"><div class="sess-date">${reltime(s.created_at)}</div><div class="sess-title">${esc(s.title)}</div><div class="sess-sum">${esc(s.summary)}</div></div>`).join('');
+ // Notes
+ const ta = document.getElementById('notes-area');
+ ta.value = notesStore[id]||'';
+ document.getElementById('notes-saved').textContent='';
+ ta.oninput = () => { clearTimeout(notesTmr); notesTmr=setTimeout(()=>{ notesStore[id]=ta.value; document.getElementById('notes-saved').textContent='✓ Saved'; setTimeout(()=>{document.getElementById('notes-saved').textContent='';},2000); },600); };
+ // Brief
+ const bo = document.getElementById('brief-out');
+ bo.classList.remove('visible'); bo.innerHTML='';
+ const bg = document.getElementById('btn-gen-brief');
+ bg.disabled=false; bg.classList.remove('loading');
+ bg.querySelector('.blbl').textContent='Generate lesson brief';
+ bg.onclick = () => genBrief(learner, ins);
+ setTab('overview');
+ document.getElementById('side-panel').classList.add('visible');
+ document.getElementById('panel-overlay').classList.add('visible');
+}
+function closePanel() {
+ document.getElementById('side-panel').classList.remove('visible');
+ document.getElementById('panel-overlay').classList.remove('visible');
+ document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('selected'));
+ panelId=null;
+}
+document.getElementById('panel-close').addEventListener('click', closePanel);
+document.getElementById('panel-overlay').addEventListener('click', closePanel);
+
+function setTab(tab) {
+ document.querySelectorAll('.ptab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+ document.querySelectorAll('.tab-pane').forEach(p=>p.classList.toggle('active',p.id==='tab-'+tab));
+}
+document.querySelectorAll('.ptab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+
+// LESSON BRIEF
+function genBrief(learner, ins) {
+ const bg = document.getElementById('btn-gen-brief'), bo = document.getElementById('brief-out');
+ bg.disabled=true; bg.classList.add('loading'); bg.querySelector('.blbl').textContent='Generating…'; bo.classList.remove('visible');
+ setTimeout(() => {
+ const fn = learner.name?.split(' ')[0]||'learner';
+ bo.innerHTML = `<div class="bh">Lesson brief — ${esc(fn)} · ${esc((learner.cefr_level||'A1').toUpperCase())} Finnish</div>
+ <div class="bp"><strong>Starting point:</strong> ${esc(ins.te.observed)} ${esc(ins.confSig)}.</div>
+ <div class="bp"><strong>Suggested focus (10 min):</strong> ${esc(ins.fa)}. Use ${esc(ins.st2)} to reduce the barrier to production.</div>
+ <div class="bp"><strong>Main activity (20 min):</strong> Short roleplay or task in ${esc(ins.lc)}. Provide sentence frames. Avoid mid-flow correction — note errors and return after.</div>
+ <div class="bp"><strong>Wrap-up (5 min):</strong> Ask learner to summarise one thing practiced today in Finnish. Celebrate effort, not accuracy. Set one micro-goal for next session.</div>
+ <div class="bp"><strong>Teacher note:</strong> ${esc(ins.nat)}. ${esc(ins.nab)}</div>`;
+ bo.classList.add('visible');
+ bg.disabled=false; bg.classList.remove('loading'); bg.querySelector('.blbl').textContent='↺ Regenerate brief';
+ }, 1400);
+}
+
+// SEARCH + FILTER
+document.getElementById('learner-search').addEventListener('input', e => { searchQ=e.target.value.toLowerCase().trim(); renderTriage(); });
+document.getElementById('cefr-filters').addEventListener('click', e => {
+ const b = e.target.closest('.cefr-btn'); if (!b) return;
+ document.querySelectorAll('.cefr-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+ activeCefr=b.dataset.cefr; renderTriage();
+});
+
+// RENDER ALL
+function renderAll() {
+ const tot = summaryData.total_learners||learnersData.length;
+ const ac = summaryData.active_this_week||0;
+ const ar = summaryData.at_risk_count||0;
+ const ss = summaryData.total_sessions_this_week||0;
+ document.getElementById('s-total').textContent = tot;
+ document.getElementById('s-active').textContent = ac;
+ document.getElementById('s-risk').textContent = ar;
+ document.getElementById('s-sess').textContent = ss;
+ document.getElementById('risk-ct').textContent = ar;
+ document.getElementById('btn-bulk-risk').disabled = ar===0;
+ renderMom(computeMom());
+ renderBriefing();
+ renderTriage();
+ renderInsights();
+ renderGroupings();
+ if (usingDemoData) document.getElementById('demo-banner').classList.add('visible');
+ else document.getElementById('demo-banner').classList.remove('visible');
+}
+
+async function loadLearners() {
+ try {
+ const res = await fetch('/api/teacher/learners', { headers: authHeaders() });
+ if (!res.ok) throw new Error();
+ const payload = await res.json();
+ learnersData = Array.isArray(payload.learners) ? payload.learners : (Array.isArray(payload) ? payload : []);
+ summaryData = payload.summary || {};
+ if (!learnersData.length) throw new Error();
+ usingDemoData = false;
+ } catch {
+ learnersData = buildMockLearners();
+ summaryData = buildMockSummary(learnersData);
+ usingDemoData = true;
+ }
+ renderAll();
+}
+loadLearners();
+</script>
 </body>
 </html>
