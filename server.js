@@ -36,7 +36,7 @@ import { getLeadsHandler, patchLeadHandler } from './api/leads.js';
 import adminOrganisationsHandler from './api/admin-organisations.js';
 import lmsHandler from './api/lms.js';
 import teacherWorkflowRouter from './api/teacher-workflow.js';
-import { query } from './api/db.js';
+import { query, isDatabaseConfigured } from './api/db.js';
 import { getSystemPrompt, langToIso } from './api/knuut-prompt.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -272,19 +272,38 @@ async function handleApi(pathname, req, res, body) {
   }
   if (route === 'health') {
     try {
-      const [nodes, edges, episodes, learners] = await Promise.all([
-        query('SELECT COUNT(*) FROM brain_nodes'),
-        query('SELECT COUNT(*) FROM brain_edges'),
-        query('SELECT COUNT(*) FROM episodes'),
-        query('SELECT COUNT(*) FROM learners'),
-      ]);
-      const counts = {
-        brain_nodes: parseInt(nodes.rows[0]?.count || 0),
-        brain_edges: parseInt(edges.rows[0]?.count || 0),
-        episodes: parseInt(episodes.rows[0]?.count || 0),
-        learners: parseInt(learners.rows[0]?.count || 0),
+      let counts = {
+        brain_nodes: null,
+        brain_edges: null,
+        episodes: null,
+        learners: null,
       };
-      const checks = { database: 'ok' };
+      const checks = {};
+
+      if (isDatabaseConfigured()) {
+        try {
+          const [nodes, edges, episodes, learners] = await Promise.all([
+            query('SELECT COUNT(*) FROM brain_nodes'),
+            query('SELECT COUNT(*) FROM brain_edges'),
+            query('SELECT COUNT(*) FROM episodes'),
+            query('SELECT COUNT(*) FROM learners'),
+          ]);
+          counts = {
+            brain_nodes: parseInt(nodes.rows[0]?.count || 0, 10),
+            brain_edges: parseInt(edges.rows[0]?.count || 0, 10),
+            episodes: parseInt(episodes.rows[0]?.count || 0, 10),
+            learners: parseInt(learners.rows[0]?.count || 0, 10),
+          };
+          checks.database = 'ok';
+        } catch (dbErr) {
+          console.error('health database:', dbErr.message);
+          checks.database = 'error';
+          checks.database_error = dbErr.message || String(dbErr);
+        }
+      } else {
+        checks.database = 'not_configured';
+      }
+
       if (process.env.OPENAI_API_KEY) {
         try {
           const oaiRes = await fetch('https://api.openai.com/v1/models', {
@@ -309,8 +328,14 @@ async function handleApi(pathname, req, res, body) {
       } else {
         checks.resend = 'skipped';
       }
+
+      const overallOk = checks.database !== 'error';
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'ok', counts, checks }));
+      res.end(JSON.stringify({
+        status: overallOk ? 'ok' : 'degraded',
+        counts,
+        checks,
+      }));
     } catch (err) {
       console.error('health:', err);
       sendError(res, 500);
@@ -493,7 +518,16 @@ const server = createServer(async (req, res) => {
   const apiHandled = await handleApi(pathname, req, res, body);
   if (apiHandled) return;
 
-  const routeRewrites = { '/quiz': 'quiz.html', '/writing': 'writing.html', '/learn': 'learn.html' };
+  const routeRewrites = {
+    '/quiz': 'quiz.html',
+    '/writing': 'writing.html',
+    '/learn': 'learn.html',
+    '/oppipolku': 'oppipolku.html',
+    '/teacher': 'teacher-dashboard.html',
+    '/onboarding': 'onboarding.html',
+    '/login': 'login.html',
+    '/student': 'student-dashboard.html',
+  };
   const staticPath = routeRewrites[pathname] || pathname;
   if (!serveStatic(staticPath, res)) {
     res.writeHead(404).end('Not found');
@@ -501,7 +535,10 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\n  SuvisBrain running at http://localhost:${PORT}\n`);
+  const origin = `http://localhost:${PORT}`;
+  console.log(`\n  SuvisBrain — ${origin}\n`);
+  console.log('  ALKUPOLKU:  /oppipolku.html   /teacher-dashboard.html   /onboarding.html   /knuut.html');
+  console.log('  Short URLs: /oppipolku   /teacher   /onboarding   /login   /student\n');
   if (!process.env.DATABASE_URL) console.log('  ⚠ DATABASE_URL not set — Brain/Agents API will fail.\n');
   if (!process.env.OPENAI_API_KEY) console.log('  ⚠ OPENAI_API_KEY not set — Voice (Knuut) will fail.\n');
   if (!process.env.OPENROUTER_API_KEY) console.log('  ⚠ OPENROUTER_API_KEY not set — session-complete will fail.\n');
