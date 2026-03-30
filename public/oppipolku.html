@@ -6,43 +6,38 @@
   <title>Knuut — Oppipolku 0→A2</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
   <style>
+    /* Horizon UI Chakra — light theme tokens (horizon-ui-chakra / theme/styles.js) */
     :root {
-      --peach: #FF6B6B;
-      --orange: #FF8E53;
-      --coral: #FF7043;
-      --cream: #FFF8F5;
-      --soft-yellow: #FFF3E0;
-      --warm-white: #FFFAF7;
-      --card-border: #FFE5D9;
-      --text-dark: #2D1B0E;
-      --text-mid: #7A4F3A;
-      --text-light: #B07060;
-      --green: #4CAF50;
-      --green-light: #E8F5E9;
-      --blue: #5C6BC0;
-      --blue-light: #E8EAF6;
-      --purple: #9C27B0;
-      --purple-light: #F3E5F5;
-      --amber: #FFB300;
-      --amber-light: #FFF8E1;
-      --lake: var(--text-dark);
-      --lake-deep: #1a1208;
-      --cyan: var(--orange);
-      --success: var(--green);
-      --bg: var(--cream);
+      --brand-400: #7551FF;
+      --brand-500: #422AFB;
+      --brand-600: #3311DB;
+      --brand-tint: #E9E3FF;
+      --brand-soft: #F2EFFF;
+      --secondary-300: #F4F7FE;
+      --secondary-400: #E9EDF7;
+      --secondary-500: #8F9BBA;
+      --secondary-600: #A3AED0;
+      --secondary-900: #1B2559;
+      --navy-700: #1B254B;
+      --blue-50: #EFF4FB;
+      --green-100: #E6FAF5;
+      --green-500: #01B574;
+      --orange-100: #FFF6DA;
+      --orange-500: #FFB547;
+      --red-500: #EE5D50;
+      --card-shadow: 14px 17px 40px 4px rgba(112, 144, 176, 0.08);
+      --btn-shadow: 45px 76px 113px 7px rgba(112, 144, 176, 0.08);
+      --bg: var(--secondary-300);
       --surface: #FFFFFF;
-      --ink: var(--text-dark);
-      --muted: var(--text-mid);
-      --border: var(--card-border);
-      --radius: 14px;
-      --shadow: 0 2px 14px rgba(255, 107, 107, 0.1);
-      --font: 'Nunito', 'Quicksand', system-ui, sans-serif;
-      --sidebar-gradient: linear-gradient(160deg, #FF6B6B 0%, #FF8E53 100%);
-      --hero-gradient: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 60%, #FFB300 100%);
-      --btn-gradient: linear-gradient(135deg, #FF6B6B, #FF8E53);
-      --chat-ai: linear-gradient(135deg, #FF6B6B, #FF8E53);
+      --ink: var(--secondary-900);
+      --muted: var(--secondary-500);
+      --border: var(--secondary-400);
+      --success: var(--green-500);
+      --radius: 20px;
+      --font: 'DM Sans', system-ui, sans-serif;
+      --hero-gradient: linear-gradient(135deg, #422AFB 0%, #7551FF 55%, #3965FF 100%);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -53,6 +48,7 @@
       display: flex;
       font-size: 18px;
       line-height: 1.5;
+      letter-spacing: -0.5px;
     }
     .eu-banner {
       position: fixed;
@@ -60,75 +56,85 @@
       left: 0;
       right: 0;
       z-index: 200;
-      background: linear-gradient(90deg, #FF6B6B 0%, #FF8E53 50%, #FF7043 100%);
-      color: rgba(255,255,255,0.98);
+      background: var(--navy-700);
+      color: rgba(255,255,255,0.92);
       padding: 10px 16px;
       font-size: 13px;
       text-align: center;
-      border-top: 1px solid rgba(255,255,255,0.2);
+      border-top: 1px solid rgba(255,255,255,0.08);
       font-weight: 600;
     }
     .sidebar {
-      width: 220px;
+      width: 260px;
       min-height: 100vh;
-      background: var(--sidebar-gradient);
+      background: var(--surface);
+      box-shadow: var(--card-shadow);
       display: flex;
       flex-direction: column;
-      padding: 24px 14px 100px;
-      gap: 4px;
+      padding: 24px 0 100px 16px;
+      gap: 2px;
       position: fixed;
       left: 0; top: 0;
       z-index: 100;
     }
-    .logo { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -0.5px; padding-left: 8px; margin-bottom: 8px; }
-    .logo span { color: rgba(255,255,255,0.95); font-weight: 800; }
-    .tagline { color: rgba(255,255,255,0.75); font-size: 11px; font-weight: 500; margin: 0 0 28px 8px; }
+    .logo { font-size: 20px; font-weight: 800; color: var(--secondary-900); letter-spacing: -0.5px; padding: 0 8px 4px 12px; margin-bottom: 4px; }
+    .logo span { color: var(--brand-500); font-weight: 800; }
+    .tagline { color: var(--secondary-500); font-size: 12px; font-weight: 500; margin: 0 0 20px 12px; }
     .nav-section {
-      font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
-      color: rgba(255,255,255,0.5); margin: 16px 0 8px; padding-left: 10px; font-weight: 700;
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--secondary-900); margin: 18px 0 8px; padding-left: 12px; font-weight: 700;
     }
     .nav-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: 12px; cursor: pointer;
-      color: #fff; font-size: 14px; font-weight: 500;
-      text-decoration: none; margin-bottom: 2px; border: none; background: transparent; width: 100%; text-align: left;
-      transition: background 0.15s, color 0.15s;
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 12px 8px 12px; margin-right: 0;
+      border-radius: 0; cursor: pointer;
+      color: var(--secondary-500); font-size: 14px; font-weight: 500;
+      text-decoration: none; margin-bottom: 0; border: none; border-right: 4px solid transparent;
+      background: transparent; width: calc(100% - 8px); text-align: left;
+      transition: color 0.2s, background 0.2s, border-color 0.2s;
     }
-    .nav-item:hover { background: rgba(255,255,255,0.12); color: #fff; }
-    .nav-item.active { background: #fff; color: var(--peach); font-weight: 700; }
-    .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
-    .sidebar-bottom { margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); }
-    .student-info { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.9); font-size: 14px; }
+    .nav-item:hover { background: rgba(66, 42, 251, 0.04); color: var(--brand-500); }
+    .nav-item.active {
+      color: var(--secondary-900);
+      font-weight: 700;
+      border-right-color: var(--brand-500);
+    }
+    .nav-item .icon { font-size: 18px; width: 26px; text-align: center; color: inherit; }
+    .nav-item.active .icon { color: var(--brand-500); }
+    .sidebar-bottom { margin-top: auto; padding: 16px 12px 0 8px; border-top: 1px solid var(--secondary-400); }
+    .student-info { display: flex; align-items: center; gap: 10px; color: var(--secondary-900); font-size: 14px; }
     .avatar {
       width: 40px; height: 40px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--peach), var(--orange));
+      background: linear-gradient(135deg, var(--brand-500), var(--brand-400));
       display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #fff;
+      box-shadow: var(--btn-shadow);
     }
     .main {
-      margin-left: 220px;
+      margin-left: 260px;
       flex: 1;
-      padding: 32px 36px 120px;
-      max-width: calc(100vw - 220px);
+      padding: 28px 32px 120px;
+      max-width: calc(100vw - 260px);
     }
-    .page-header { margin-bottom: 28px; }
-    .page-title { font-size: 30px; font-weight: 800; color: var(--text-dark); letter-spacing: -0.5px; }
-    .page-sub { color: var(--text-mid); font-size: 16px; margin-top: 6px; }
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-size: 28px; font-weight: 800; color: var(--secondary-900); letter-spacing: -0.5px; }
+    .page-sub { color: var(--secondary-500); font-size: 16px; margin-top: 6px; font-weight: 500; }
     .section { display: none; }
     .section.active { display: block; }
     .card {
       background: var(--surface);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      border: 1.5px solid var(--card-border);
-      padding: 22px 24px;
+      border-radius: var(--radius);
+      box-shadow: var(--card-shadow);
+      border: none;
+      padding: 20px;
     }
-    .card-title { font-size: 15px; font-weight: 800; color: var(--text-dark); margin-bottom: 16px; }
+    .card-title { font-size: 15px; font-weight: 700; color: var(--secondary-900); margin-bottom: 16px; }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
     @media (max-width: 900px) {
-      .sidebar { width: 72px; padding: 16px 8px 100px; }
+      .sidebar { width: 72px; padding: 16px 4px 100px 4px; box-shadow: var(--card-shadow); }
       .logo, .tagline, .nav-section, .student-info span { display: none; }
-      .nav-item { justify-content: center; padding: 14px 8px; }
+      .nav-item { justify-content: center; padding: 10px 6px; border-right: none; width: 100%; }
+      .nav-item.active { border-right: none; background: var(--brand-soft); border-radius: 12px; }
       .logo { display: none; }
       .main { margin-left: 72px; padding: 16px; max-width: calc(100vw - 72px); }
       .grid2, .grid4 { grid-template-columns: 1fr; }
@@ -156,33 +162,33 @@
     .level-fill { height: 100%; background: #fff; border-radius: 20px; transition: width 1s ease; }
     .stat-card {
       background: var(--surface);
-      border-radius: 16px;
+      border-radius: var(--radius);
       padding: 16px 18px;
-      box-shadow: none;
-      border: 1.5px solid var(--card-border);
+      box-shadow: var(--card-shadow);
+      border: none;
     }
-    .stat-num { font-size: 28px; font-weight: 800; color: var(--text-dark); line-height: 1; }
-    .stat-label { font-size: 12px; font-weight: 600; color: var(--text-light); margin-top: 6px; }
+    .stat-num { font-size: 28px; font-weight: 800; color: var(--secondary-900); line-height: 1; }
+    .stat-label { font-size: 12px; font-weight: 600; color: var(--secondary-500); margin-top: 6px; }
     .knuut-banner {
-      background: #fff;
-      color: var(--peach);
-      border-radius: 50px;
-      padding: 14px 24px;
+      background: var(--surface);
+      color: var(--brand-500);
+      border-radius: 16px;
+      padding: 16px 22px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-top: 24px;
       cursor: pointer;
       text-decoration: none;
-      border: 1.5px solid var(--card-border);
+      border: none;
       width: 100%;
       font: inherit;
       font-weight: 700;
       font-size: 15px;
-      box-shadow: var(--shadow);
-      transition: transform 0.1s, box-shadow 0.15s;
+      box-shadow: var(--card-shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-    .knuut-banner:hover { box-shadow: 0 4px 20px rgba(255, 107, 107, 0.2); transform: translateY(-1px); }
+    .knuut-banner:hover { box-shadow: 14px 17px 48px 4px rgba(112, 144, 176, 0.12); transform: translateY(-2px); }
     .alphabet-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
@@ -190,8 +196,8 @@
     }
     .letter-btn {
       min-height: 76px;
-      border-radius: 14px;
-      border: 1.5px solid var(--card-border);
+      border-radius: 16px;
+      border: 1px solid var(--secondary-400);
       background: var(--surface);
       cursor: pointer;
       display: flex;
@@ -200,13 +206,14 @@
       justify-content: center;
       font-size: 36px;
       font-weight: 800;
-      color: var(--text-dark);
-      transition: transform 0.15s, border-color 0.15s;
+      color: var(--secondary-900);
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+      box-shadow: 0 2px 8px rgba(112, 144, 176, 0.06);
     }
-    .letter-btn:hover { border-color: var(--orange); transform: translateY(-2px); }
-    .letter-btn.mastered { background: var(--green-light); border-color: #C8E6C9; }
-    .letter-btn.practicing { background: var(--soft-yellow); border-color: #FFE0B2; }
-    .letter-sub { font-size: 11px; color: var(--text-mid); margin-top: 2px; font-weight: 600; }
+    .letter-btn:hover { border-color: var(--brand-500); transform: translateY(-2px); box-shadow: var(--card-shadow); }
+    .letter-btn.mastered { background: var(--green-100); border-color: rgba(1, 181, 116, 0.35); }
+    .letter-btn.practicing { background: var(--brand-soft); border-color: var(--brand-tint); }
+    .letter-sub { font-size: 11px; color: var(--secondary-500); margin-top: 2px; font-weight: 600; }
     .letter-detail {
       background: var(--hero-gradient);
       color: #fff;
@@ -220,20 +227,21 @@
     .topic-chip {
       padding: 10px 16px;
       border-radius: 999px;
-      border: 1.5px solid var(--card-border);
+      border: 1px solid var(--secondary-400);
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       background: var(--surface);
       margin: 4px 4px 4px 0;
-      color: var(--text-dark);
+      color: var(--secondary-900);
+      box-shadow: 0 1px 3px rgba(112, 144, 176, 0.08);
     }
-    .topic-chip:hover, .topic-chip.active { border-color: var(--orange); background: var(--soft-yellow); color: var(--text-dark); }
+    .topic-chip:hover, .topic-chip.active { border-color: var(--brand-500); background: var(--brand-soft); color: var(--brand-600); }
     .lesson-area {
       min-height: 280px;
-      background: var(--warm-white);
-      border-radius: 14px;
-      border: 1.5px solid var(--card-border);
+      background: var(--secondary-300);
+      border-radius: 16px;
+      border: 1px solid var(--secondary-400);
       padding: 20px;
       font-size: 17px;
       line-height: 1.7;
@@ -241,10 +249,10 @@
       overflow-y: auto;
       max-height: 420px;
     }
-    /* AI = gradient (Knuut style); user = soft yellow */
     .msg-ai {
-      background: var(--chat-ai);
-      color: #fff;
+      background: var(--brand-soft);
+      color: var(--secondary-900);
+      border: 1px solid var(--brand-tint);
       border-radius: 16px 16px 16px 4px;
       padding: 12px 16px;
       margin: 8px auto 8px 0;
@@ -254,9 +262,10 @@
       font-size: 15px;
     }
     .msg-user {
-      background: var(--soft-yellow);
-      color: var(--text-dark);
-      border: 1.5px solid var(--card-border);
+      background: var(--surface);
+      color: var(--secondary-900);
+      border: 1px solid var(--secondary-400);
+      box-shadow: var(--card-shadow);
       border-radius: 16px 16px 4px 16px;
       padding: 12px 16px;
       margin: 8px 0 8px auto;
@@ -271,79 +280,84 @@
     .lesson-input {
       flex: 1;
       min-width: 200px;
-      padding: 10px 16px;
-      border-radius: 50px;
-      border: 1.5px solid var(--card-border);
+      padding: 12px 18px;
+      border-radius: 16px;
+      border: 1px solid var(--secondary-400);
       font-size: 15px;
       font-family: inherit;
-      background: var(--warm-white);
-      color: var(--text-dark);
+      background: var(--surface);
+      color: var(--secondary-900);
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .lesson-input:focus { outline: none; border-color: var(--orange); }
+    .lesson-input:focus { outline: none; border-color: var(--brand-500); box-shadow: 0 0 0 1px var(--brand-tint); }
     .btn {
-      padding: 12px 22px;
-      border-radius: 50px;
+      padding: 12px 24px;
+      border-radius: 16px;
       border: none;
       cursor: pointer;
       font-size: 15px;
-      font-weight: 700;
+      font-weight: 600;
       font-family: inherit;
+      transition: 0.25s all ease;
     }
     .btn-primary {
-      background: var(--btn-gradient);
+      background: var(--brand-500);
       color: #fff;
-      box-shadow: 0 2px 14px rgba(255, 107, 107, 0.35);
+      box-shadow: var(--btn-shadow);
     }
-    .btn-primary:hover { filter: brightness(1.05); }
-    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; filter: none; }
-    .btn-outline { background: #fff; border: 1.5px solid var(--card-border); color: var(--text-dark); }
+    .btn-primary:hover { background: var(--brand-600); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-outline { background: var(--secondary-300); color: var(--secondary-900); border: 1px solid var(--secondary-400); box-shadow: none; }
+    .btn-outline:hover { background: var(--secondary-400); }
     .letter-detail .btn-primary {
       background: #fff !important;
-      color: var(--peach) !important;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+      color: var(--brand-500) !important;
+      box-shadow: var(--btn-shadow);
     }
-    .letter-detail .btn-primary:hover { filter: brightness(0.98); }
+    .letter-detail .btn-primary:hover { background: var(--brand-soft) !important; }
     .yki-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-    .yki-tab { padding: 12px 20px; border-radius: 10px; border: 1.5px solid var(--card-border); background: #fff; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--text-mid); }
-    .yki-tab.active { background: var(--btn-gradient); color: #fff; border-color: transparent; }
-    .option { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; border: 1.5px solid var(--card-border); cursor: pointer; margin-bottom: 10px; font-size: 17px; background: #fff; color: var(--text-dark); }
-    .option:hover { border-color: var(--orange); }
-    .option.selected { border-color: var(--peach); background: var(--soft-yellow); }
-    .option.correct { border-color: var(--green); background: var(--green-light); }
-    .option.wrong { border-color: #E57373; background: #FFEBEE; }
-    .writing-area { width: 100%; min-height: 140px; padding: 14px; border-radius: 12px; border: 1.5px solid var(--card-border); font-size: 18px; font-family: inherit; resize: vertical; background: var(--warm-white); color: var(--text-dark); }
+    .yki-tab { padding: 12px 20px; border-radius: 16px; border: 1px solid var(--secondary-400); background: var(--surface); cursor: pointer; font-size: 15px; font-weight: 600; color: var(--secondary-500); box-shadow: var(--card-shadow); }
+    .yki-tab.active { background: var(--brand-500); color: #fff; border-color: var(--brand-500); }
+    .option { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--secondary-400); cursor: pointer; margin-bottom: 10px; font-size: 17px; background: var(--surface); color: var(--secondary-900); box-shadow: 0 2px 6px rgba(112, 144, 176, 0.06); }
+    .option:hover { border-color: var(--brand-400); }
+    .option.selected { border-color: var(--brand-500); background: var(--brand-soft); }
+    .option.correct { border-color: var(--green-500); background: var(--green-100); }
+    .option.wrong { border-color: var(--red-500); background: #FEEFEE; }
+    .writing-area { width: 100%; min-height: 140px; padding: 14px; border-radius: 16px; border: 1px solid var(--secondary-400); font-size: 18px; font-family: inherit; resize: vertical; background: var(--surface); color: var(--secondary-900); }
     .passport-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-    .passport-card { border-radius: 14px; border: 1.5px solid var(--card-border); padding: 20px; background: var(--surface); }
-    .passport-card.done { border-color: var(--green); background: var(--green-light); }
+    .passport-card { border-radius: var(--radius); border: none; padding: 20px; background: var(--surface); box-shadow: var(--card-shadow); }
+    .passport-card.done { border: 1px solid rgba(1, 181, 116, 0.4); background: var(--green-100); }
     .hops-timeline { position: relative; padding-left: 28px; }
     .hops-timeline::before {
       content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: var(--card-border);
     }
     .hops-item { margin-bottom: 20px; position: relative; }
     .hops-dot { position: absolute; left: -24px; top: 4px; width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid var(--card-border); }
-    .hops-dot.done { background: var(--green); border-color: var(--green); }
-    .hops-dot.active { background: var(--orange); border-color: var(--orange); }
+    .hops-dot.done { background: var(--green-500); border-color: var(--green-500); }
+    .hops-dot.active { background: var(--brand-500); border-color: var(--brand-500); }
     .spinner {
       width: 28px; height: 28px;
-      border: 3px solid var(--card-border);
-      border-top-color: var(--orange);
+      border: 3px solid var(--secondary-400);
+      border-top-color: var(--brand-500);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-inline { display: flex; align-items: center; gap: 12px; color: var(--text-mid); padding: 16px; }
+    .loading-inline { display: flex; align-items: center; gap: 12px; color: var(--secondary-500); padding: 16px; }
     .trust-top {
       background: var(--surface);
-      border: 1.5px solid var(--card-border);
-      border-radius: 14px;
-      padding: 12px 16px;
+      border: none;
+      border-radius: var(--radius);
+      padding: 14px 18px;
       font-size: 14px;
-      color: var(--text-dark);
+      color: var(--secondary-900);
       margin-bottom: 20px;
+      box-shadow: var(--card-shadow);
+      font-weight: 500;
     }
-    .inline-note { background: var(--blue-light); padding: 16px; border-radius: 12px; border: 1px solid var(--card-border); }
-    .inline-note-warm { background: var(--soft-yellow); padding: 16px; border-radius: 12px; border: 1px solid #FFE0B2; }
-    .yki-write-out { background: var(--green-light); border-radius: 10px; border: 1px solid #C8E6C9; }
+    .inline-note { background: var(--blue-50); padding: 16px; border-radius: 16px; border: 1px solid var(--secondary-400); }
+    .inline-note-warm { background: var(--orange-100); padding: 16px; border-radius: 16px; border: 1px solid rgba(255, 181, 71, 0.35); }
+    .yki-write-out { background: var(--green-100); border-radius: 12px; border: 1px solid rgba(1, 181, 116, 0.35); }
   </style>
 </head>
 <body>
@@ -371,8 +385,8 @@
       <div class="student-info">
         <div class="avatar" id="sb-avatar">?</div>
         <div>
-          <div style="color:#fff;font-weight:600" id="sb-name">Opiskelija</div>
-          <div style="font-size:12px;opacity:0.8">Taso: <span id="sb-level">A1</span></div>
+          <div style="color:var(--secondary-900);font-weight:700" id="sb-name">Opiskelija</div>
+          <div style="font-size:12px;color:var(--secondary-500)">Taso: <span id="sb-level">A1</span></div>
         </div>
       </div>
     </div>
@@ -398,7 +412,7 @@
         </div>
         <div class="card">
           <div class="card-title">Tänään</div>
-          <p style="font-size:17px;color:var(--text-mid);line-height:1.6" id="dash-today">Valitse kirjaimet ja harjoittele Knuutin kanssa.</p>
+          <p style="font-size:17px;color:var(--secondary-500);line-height:1.6" id="dash-today">Valitse kirjaimet ja harjoittele Knuutin kanssa.</p>
         </div>
       </div>
       <div class="grid4" style="margin-bottom:20px">
@@ -407,7 +421,7 @@
         <div class="stat-card"><div class="stat-num" id="stat-xp">—</div><div class="stat-label">XP (viikko)</div></div>
         <div class="stat-card"><div class="stat-num" id="stat-goal">500</div><div class="stat-label">Viikkotavoite XP</div></div>
       </div>
-      <a class="knuut-banner" href="knuut.html">🎙️ <span style="margin-left:16px;text-align:left"><strong style="color:var(--peach)">Puhu suomea Knuutin kanssa</strong><br><span style="font-size:14px;color:var(--text-mid)">Ääniharjoittelu — suomeksi</span></span><span style="font-size:22px;color:var(--orange)">→</span></a>
+      <a class="knuut-banner" href="knuut.html">🎙️ <span style="margin-left:16px;text-align:left"><strong style="color:var(--brand-500)">Puhu suomea Knuutin kanssa</strong><br><span style="font-size:14px;color:var(--secondary-500)">Ääniharjoittelu — suomeksi</span></span><span style="font-size:22px;color:var(--brand-400)">→</span></a>
     </div>
 
     <!-- ALPHABET -->
@@ -500,9 +514,9 @@
         <div class="page-sub">Esimerkki — demo</div>
       </div>
       <div class="passport-grid">
-        <div class="passport-card done"><strong>Hygieniapassi</strong><p style="margin-top:8px;font-size:15px;color:var(--text-mid)">Ravintola-ala</p></div>
-        <div class="passport-card"><strong>EA1</strong><p style="margin-top:8px;font-size:15px;color:var(--text-mid)">Ensiapu</p></div>
-        <div class="passport-card"><strong>Työturvallisuus</strong><p style="margin-top:8px;font-size:15px;color:var(--text-mid)">Yleinen</p></div>
+        <div class="passport-card done"><strong>Hygieniapassi</strong><p style="margin-top:8px;font-size:15px;color:var(--secondary-500)">Ravintola-ala</p></div>
+        <div class="passport-card"><strong>EA1</strong><p style="margin-top:8px;font-size:15px;color:var(--secondary-500)">Ensiapu</p></div>
+        <div class="passport-card"><strong>Työturvallisuus</strong><p style="margin-top:8px;font-size:15px;color:var(--secondary-500)">Yleinen</p></div>
       </div>
     </div>
 
@@ -514,10 +528,10 @@
       </div>
       <div class="card">
         <div class="hops-timeline">
-          <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 1–3</strong><p style="color:var(--text-mid);margin-top:6px">Aakkoset ja perussanat</p></div>
-          <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 4–5</strong><p style="color:var(--text-mid);margin-top:6px">Arjen suomi</p></div>
-          <div class="hops-item"><div class="hops-dot active"></div><strong>Viikot 6–10 (nyt)</strong><p style="color:var(--text-mid);margin-top:6px">Työelämän suomi + hygienia</p></div>
-          <div class="hops-item"><div class="hops-dot"></div><strong>Viikot 11–16</strong><p style="color:var(--text-mid);margin-top:6px">Työssäoppiminen</p></div>
+          <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 1–3</strong><p style="color:var(--secondary-500);margin-top:6px">Aakkoset ja perussanat</p></div>
+          <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 4–5</strong><p style="color:var(--secondary-500);margin-top:6px">Arjen suomi</p></div>
+          <div class="hops-item"><div class="hops-dot active"></div><strong>Viikot 6–10 (nyt)</strong><p style="color:var(--secondary-500);margin-top:6px">Työelämän suomi + hygienia</p></div>
+          <div class="hops-item"><div class="hops-dot"></div><strong>Viikot 11–16</strong><p style="color:var(--secondary-500);margin-top:6px">Työssäoppiminen</p></div>
         </div>
         <div class="inline-note-warm" style="margin-top:24px;font-size:16px;line-height:1.7">
           <strong>Opettajan kommentti (demo):</strong> Jatka päivittäistä Knuut-harjoittelua — suullinen kieli kehittyy parhaiten toistolla.
