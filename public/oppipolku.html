@@ -18,6 +18,9 @@
       --secondary-400: #E9EDF7;
       --secondary-500: #8F9BBA;
       --secondary-600: #A3AED0;
+      /* Readable “gray” copy (replaces washed-out lavenders for body text) */
+      --text-body-muted: #475569;
+      --text-body-soft: #5c6578;
       --secondary-900: #1B2559;
       --navy-700: #1B254B;
       --blue-50: #EFF4FB;
@@ -31,7 +34,7 @@
       --bg: var(--secondary-300);
       --surface: #FFFFFF;
       --ink: var(--secondary-900);
-      --muted: var(--secondary-500);
+      --muted: var(--text-body-muted);
       --border: var(--secondary-400);
       --success: var(--green-500);
       --radius: 20px;
@@ -158,7 +161,7 @@
     .page-wrap { padding-top: 8px; }
     .page-header { margin-bottom: 20px; }
     .page-title { font-size: 24px; font-weight: 700; color: var(--secondary-900); letter-spacing: -0.5px; }
-    .page-sub { color: var(--secondary-600); font-size: 14px; margin-top: 6px; font-weight: 400; }
+    .page-sub { color: var(--text-body-muted); font-size: 15px; margin-top: 6px; font-weight: 500; }
     .section { display: none; }
     .section.active { display: block; }
     .card {
@@ -203,7 +206,7 @@
       pointer-events: none;
     }
     .level-card > * { position: relative; z-index: 1; }
-    .level-label { font-size: 13px; font-weight: 600; opacity: 0.85; margin-bottom: 8px; }
+    .level-label { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.92); margin-bottom: 8px; }
     .level-value { font-size: 48px; font-weight: 800; line-height: 1; margin-bottom: 8px; letter-spacing: -0.5px; }
     .level-bar { background: rgba(255,255,255,0.25); border-radius: 20px; height: 10px; overflow: hidden; margin-top: 16px; }
     .level-fill { height: 100%; background: #fff; border-radius: 20px; transition: width 1s ease; }
@@ -240,8 +243,8 @@
     .hz-stat-label {
       font-size: 14px;
       line-height: 100%;
-      color: var(--secondary-600);
-      font-weight: 400;
+      color: var(--text-body-muted);
+      font-weight: 600;
     }
     .hz-stat-value {
       font-size: 24px;
@@ -258,7 +261,7 @@
       border: none;
     }
     .stat-num { font-size: 24px; font-weight: 700; color: var(--secondary-900); line-height: 1; }
-    .stat-label { font-size: 14px; font-weight: 400; color: var(--secondary-600); margin-top: 6px; }
+    .stat-label { font-size: 14px; font-weight: 600; color: var(--text-body-muted); margin-top: 6px; }
     .knuut-banner {
       background: var(--surface);
       color: var(--brand-500);
@@ -303,7 +306,7 @@
     .letter-btn:hover { border-color: var(--brand-500); transform: translateY(-2px); box-shadow: var(--card-shadow); }
     .letter-btn.mastered { background: var(--green-100); border-color: rgba(1, 181, 116, 0.35); }
     .letter-btn.practicing { background: var(--brand-soft); border-color: var(--brand-tint); }
-    .letter-sub { font-size: 11px; color: var(--secondary-500); margin-top: 2px; font-weight: 600; }
+    .letter-sub { font-size: 12px; color: var(--text-body-soft); margin-top: 2px; font-weight: 600; }
     .letter-detail {
       background: var(--hero-gradient);
       color: #fff;
@@ -335,6 +338,7 @@
       padding: 20px;
       font-size: 16px;
       line-height: 1.7;
+      color: var(--secondary-900);
       margin-bottom: 16px;
       overflow-y: auto;
       max-height: 420px;
@@ -406,7 +410,7 @@
     }
     .letter-detail .btn-primary:hover { background: var(--brand-soft) !important; }
     .yki-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-    .yki-tab { padding: 12px 20px; border-radius: 16px; border: 1px solid var(--secondary-400); background: var(--surface); cursor: pointer; font-size: 15px; font-weight: 600; color: var(--secondary-500); box-shadow: var(--card-shadow); }
+    .yki-tab { padding: 12px 20px; border-radius: 16px; border: 1px solid var(--secondary-400); background: var(--surface); cursor: pointer; font-size: 15px; font-weight: 600; color: var(--text-body-muted); box-shadow: var(--card-shadow); }
     .yki-tab.active { background: var(--brand-500); color: #fff; border-color: var(--brand-500); }
     .option { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--secondary-400); cursor: pointer; margin-bottom: 10px; font-size: 17px; background: var(--surface); color: var(--secondary-900); box-shadow: 0 2px 6px rgba(112, 144, 176, 0.06); }
     .option:hover { border-color: var(--brand-400); }
@@ -433,7 +437,7 @@
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-inline { display: flex; align-items: center; gap: 12px; color: var(--secondary-500); padding: 16px; }
+    .loading-inline { display: flex; align-items: center; gap: 12px; color: var(--text-body-muted); font-weight: 500; padding: 16px; }
     .trust-top {
       background: var(--surface);
       border: none;
@@ -451,20 +455,20 @@
     .lms-mod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
     .lms-mod-card { border-radius: var(--radius); padding: 18px; background: var(--surface); box-shadow: var(--card-shadow); border: 1px solid var(--secondary-400); }
     .lms-mod-card h3 { font-size: 16px; margin-bottom: 8px; color: var(--secondary-900); }
-    .lms-mod-meta { font-size: 13px; color: var(--secondary-500); margin-bottom: 10px; }
+    .lms-mod-meta { font-size: 14px; color: var(--text-body-muted); margin-bottom: 10px; font-weight: 500; }
     .lms-mod-bar { height: 8px; border-radius: 4px; background: var(--secondary-400); overflow: hidden; margin-top: 8px; }
     .lms-mod-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--brand-500), var(--brand-400)); border-radius: 4px; }
-    .lms-slot-row { font-size: 12px; color: var(--secondary-500); margin-top: 8px; }
+    .lms-slot-row { font-size: 13px; color: var(--text-body-soft); margin-top: 8px; font-weight: 500; }
     .i18n-hint {
-      font-size: 12px; color: var(--secondary-500); margin-top: 8px; line-height: 1.5;
-      padding: 8px 12px; background: var(--secondary-300); border-radius: 12px; border: 1px solid var(--secondary-400);
+      font-size: 13px; color: var(--text-body-muted); font-weight: 500; margin-top: 8px; line-height: 1.55;
+      padding: 10px 14px; background: #eef2f7; border-radius: 12px; border: 1px solid #dce3ef;
     }
     .level-badge-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
     .cefr-pill {
       display: inline-block; padding: 6px 14px; border-radius: 999px; font-weight: 800; font-size: 14px;
       background: var(--brand-soft); color: var(--brand-600); border: 1px solid var(--brand-tint);
     }
-    .path-0-a2 { font-size: 13px; font-weight: 600; color: var(--secondary-600); }
+    .path-0-a2 { font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.95); }
     .hz-navbar-inner { display: flex; align-items: center; width: 100%; justify-content: space-between; gap: 12px; }
     .notif-btn {
       position: relative; border: none; background: var(--surface); border-radius: 14px;
@@ -501,7 +505,7 @@
     .notif-item.read { opacity: 0.65; border-left-color: var(--secondary-400); }
     .pass-prep-block { margin-bottom: 20px; padding: 18px; border-radius: 16px; background: var(--blue-50); border: 1px solid var(--secondary-400); }
     .pass-prep-block h4 { margin-bottom: 10px; color: var(--secondary-900); }
-    .pass-prep-block ul { padding-left: 20px; line-height: 1.65; color: var(--secondary-600); }
+    .pass-prep-block ul { padding-left: 20px; line-height: 1.65; color: var(--text-body-muted); }
   </style>
 </head>
 <body>
@@ -587,7 +591,7 @@
         </div>
         <div class="card">
           <div class="card-title">Tänään</div>
-          <p style="font-size:16px;color:var(--secondary-600);line-height:1.6" id="dash-today">Valitse kirjaimet ja harjoittele Knuutin kanssa.</p>
+          <p style="font-size:16px;color:var(--text-body-muted);line-height:1.65;font-weight:500" id="dash-today">Valitse kirjaimet ja harjoittele Knuutin kanssa.</p>
         </div>
       </div>
       <div class="hz-stat-grid">
@@ -620,7 +624,7 @@
           </div>
         </div>
       </div>
-      <a class="knuut-banner" href="knuut.html">🎙️ <span style="margin-left:16px;text-align:left"><strong style="color:var(--brand-500)">Puhu suomea Knuutin kanssa</strong><br><span style="font-size:14px;color:var(--secondary-500)">Ääniharjoittelu — suomeksi · Speak Finnish</span></span><span style="font-size:22px;color:var(--brand-400)">→</span></a>
+      <a class="knuut-banner" href="knuut.html">🎙️ <span style="margin-left:16px;text-align:left"><strong style="color:var(--brand-500)">Puhu suomea Knuutin kanssa</strong><br><span style="font-size:14px;color:var(--text-body-muted);font-weight:500">Ääniharjoittelu — suomeksi · Speak Finnish</span></span><span style="font-size:22px;color:var(--brand-400)">→</span></a>
     </div>
 
     <!-- PÄIVÄOHJELMA & OPPIMISPOLKU -->
@@ -712,8 +716,8 @@
       </div>
       <div class="letter-detail" id="letter-detail">
         <div class="letter-big" id="letter-big">A</div>
-        <div style="font-size:18px;opacity:0.9;margin-bottom:8px" id="letter-sound"></div>
-        <div style="font-size:15px;opacity:0.75;margin-bottom:16px" id="letter-tip"></div>
+        <div style="font-size:18px;color:rgba(255,255,255,0.95);font-weight:600;margin-bottom:8px" id="letter-sound"></div>
+        <div style="font-size:15px;color:rgba(255,255,255,0.88);margin-bottom:16px" id="letter-tip"></div>
         <button type="button" class="btn btn-primary" id="btn-speak-letter">🔊 Kuuntele kirjain</button>
       </div>
     </div>
@@ -734,7 +738,7 @@
       </div>
       <div class="card">
         <div class="lesson-area" id="lesson-area">
-          <p style="color:var(--muted)">Valitse aihe ja paina <strong>Aloita tunti</strong>. Keskustelu käyttää Knuut/Nelli-agenttia palvelimella.</p>
+          <p style="color:var(--text-body-muted);font-weight:500">Valitse aihe ja paina <strong>Aloita tunti</strong>. Keskustelu käyttää Knuut/Nelli-agenttia palvelimella.</p>
         </div>
         <div class="lesson-input-row">
           <input type="text" class="lesson-input" id="lesson-input" placeholder="Kirjoita suomeksi…" autocomplete="off">
@@ -793,9 +797,9 @@
       </div>
       <p class="i18n-hint">🇬🇧 Certificates prep · العربية التحضير للشهادات</p>
       <div class="passport-grid" style="margin-bottom:20px">
-        <div class="passport-card done"><strong>🧼 Hygieniapassi</strong><p style="margin-top:8px;font-size:15px;color:var(--secondary-500)">Ravintola-ala</p></div>
-        <div class="passport-card"><strong>🩹 EA1-tietoisuus</strong><p style="margin-top:8px;font-size:15px;color:var(--secondary-500)">Ei korvaa kurssia</p></div>
-        <div class="passport-card"><strong>🦺 Työturvallisuus</strong><p style="margin-top:8px;font-size:15px;color:var(--secondary-500)">Yleinen</p></div>
+        <div class="passport-card done"><strong>🧼 Hygieniapassi</strong><p style="margin-top:8px;font-size:15px;color:var(--text-body-muted);font-weight:500">Ravintola-ala</p></div>
+        <div class="passport-card"><strong>🩹 EA1-tietoisuus</strong><p style="margin-top:8px;font-size:15px;color:var(--text-body-muted);font-weight:500">Ei korvaa kurssia</p></div>
+        <div class="passport-card"><strong>🦺 Työturvallisuus</strong><p style="margin-top:8px;font-size:15px;color:var(--text-body-muted);font-weight:500">Yleinen</p></div>
       </div>
       <div id="passport-prep-content" class="shell-placeholder">Ladataan valmennussisältöä…</div>
     </div>
@@ -808,7 +812,7 @@
       </div>
       <div class="card">
         <div class="card-title" style="margin-bottom:10px">Päivän kysymykset (opettaja)</div>
-        <ul id="lms-diary-prompts" style="font-size:16px;color:var(--secondary-600);padding-left:20px;line-height:1.6"></ul>
+        <ul id="lms-diary-prompts" style="font-size:16px;color:var(--text-body-muted);font-weight:500;padding-left:20px;line-height:1.6"></ul>
         <textarea class="writing-area" id="lms-diary-text" placeholder="Kirjoita suomeksi tai omalla kielellä — opettaja lukee…" style="margin-top:16px"></textarea>
         <p class="inline-note" style="margin-top:12px;font-size:14px">Tallennus palvelimelle: tulossa. Tämä on demo.</p>
       </div>
@@ -822,10 +826,10 @@
       </div>
       <div class="card">
         <div class="hops-timeline" id="hops-timeline-dynamic">
-          <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 1–3</strong><p style="color:var(--secondary-500);margin-top:6px">Aakkoset ja perussanat</p></div>
-          <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 4–5</strong><p style="color:var(--secondary-500);margin-top:6px">Arjen suomi</p></div>
-          <div class="hops-item"><div class="hops-dot active"></div><strong>Viikot 6–10 (nyt)</strong><p style="color:var(--secondary-500);margin-top:6px">Työelämän suomi + hygienia</p></div>
-          <div class="hops-item"><div class="hops-dot"></div><strong>Viikot 11–16</strong><p style="color:var(--secondary-500);margin-top:6px">Työssäoppiminen</p></div>
+          <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 1–3</strong><p style="color:var(--text-body-muted);font-weight:500;margin-top:6px">Aakkoset ja perussanat</p></div>
+          <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 4–5</strong><p style="color:var(--text-body-muted);font-weight:500;margin-top:6px">Arjen suomi</p></div>
+          <div class="hops-item"><div class="hops-dot active"></div><strong>Viikot 6–10 (nyt)</strong><p style="color:var(--text-body-muted);font-weight:500;margin-top:6px">Työelämän suomi + hygienia</p></div>
+          <div class="hops-item"><div class="hops-dot"></div><strong>Viikot 11–16</strong><p style="color:var(--text-body-muted);font-weight:500;margin-top:6px">Työssäoppiminen</p></div>
         </div>
         <div class="inline-note-warm" style="margin-top:24px;font-size:16px;line-height:1.7" id="hops-teacher-note">
           <strong>Opettajan kommentti (demo):</strong> Jatka päivittäistä Knuut-harjoittelua — suullinen kieli kehittyy parhaiten toistolla.
@@ -841,7 +845,7 @@
       </div>
       <p class="i18n-hint">🇬🇧 You can add a comment below · العربية يمكنك إضافة تعليق</p>
       <div class="card" id="lms-jatko-content">
-        <p style="color:var(--secondary-500)">Ladataan…</p>
+        <p style="color:var(--text-body-muted);font-weight:500">Ladataan…</p>
       </div>
       <div class="card" style="margin-top:16px">
         <div class="card-title">✏️ Oma kommentti / Your comment</div>
@@ -1045,7 +1049,7 @@
           var head = idx ? ('Moduuli ' + idx + ' · ' + escapeHtml(code) + ' · ' + escapeHtml(m.level || '')) : (escapeHtml(code) + ' · ' + escapeHtml(m.level || ''));
           var metaFi = m.theme_fi ? escapeHtml(m.theme_fi) : '';
           var metaEn = m.theme ? escapeHtml(m.theme) : '';
-          var meta = metaFi ? (metaFi + (metaEn ? '<br><span style="font-size:13px;color:var(--secondary-500)">' + metaEn + '</span>' : '')) : metaEn;
+          var meta = metaFi ? (metaFi + (metaEn ? '<br><span style="font-size:13px;color:var(--text-body-soft)">' + metaEn + '</span>' : '')) : metaEn;
           return '<div class="lms-mod-card"><h3>' + head + '</h3><div class="lms-mod-meta">' + meta + '</div><div class="lms-mod-bar"><span style="width:' + pct + '%"></span></div><div class="lms-slot-row">📹 ' + escapeHtml(sk) + '</div></div>';
         }).join('');
       }
@@ -1053,7 +1057,7 @@
       var sched = document.getElementById('schedule-list');
       if (sched && me.schedule) {
         sched.innerHTML = me.schedule.map(function (row) {
-          return '<div class="schedule-row"><span class="schedule-time">' + escapeHtml(row.time) + '</span><span style="font-size:22px">' + (row.icon || '📌') + '</span><div><div style="font-weight:700">' + escapeHtml(row.label_fi) + '</div><div style="font-size:13px;color:var(--secondary-500)">' + escapeHtml(row.label_en || '') + (row.label_ar ? ' · ' + escapeHtml(row.label_ar) : '') + '</div></div></div>';
+          return '<div class="schedule-row"><span class="schedule-time">' + escapeHtml(row.time) + '</span><span style="font-size:22px">' + (row.icon || '📌') + '</span><div><div style="font-weight:700">' + escapeHtml(row.label_fi) + '</div><div style="font-size:13px;color:var(--text-body-soft)">' + escapeHtml(row.label_en || '') + (row.label_ar ? ' · ' + escapeHtml(row.label_ar) : '') + '</div></div></div>';
         }).join('');
       }
 
@@ -1069,7 +1073,7 @@
       if (saw && me.self_assessment) {
         saw.innerHTML = me.self_assessment.map(function (q, idx) {
           var name = 'sa_' + (q.id || idx);
-          return '<div class="sa-row"><label>' + escapeHtml(q.q_fi) + '</label><p style="font-size:13px;color:var(--secondary-500);margin-bottom:8px">' + escapeHtml(q.q_en || '') + (q.q_ar ? ' · ' + escapeHtml(q.q_ar) : '') + '</p><select class="lesson-input" style="max-width:120px" name="' + name + '"><option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>';
+          return '<div class="sa-row"><label>' + escapeHtml(q.q_fi) + '</label><p style="font-size:13px;color:var(--text-body-soft);margin-bottom:8px">' + escapeHtml(q.q_en || '') + (q.q_ar ? ' · ' + escapeHtml(q.q_ar) : '') + '</p><select class="lesson-input" style="max-width:120px" name="' + name + '"><option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>';
         }).join('') + '<p class="inline-note" style="margin-top:12px">Tallennus palvelimelle tulossa. / Save coming soon.</p>';
       }
 
@@ -1077,7 +1081,7 @@
       if (hwl && me.homework) {
         hwl.innerHTML = me.homework.map(function (h) {
           var sub = h.status === 'submitted' ? ' submitted' : '';
-          return '<div class="hw-card' + sub + '"><strong>' + escapeHtml(h.title_fi) + '</strong><p style="font-size:14px;color:var(--secondary-500);margin:6px 0">' + escapeHtml(h.title_en || '') + '</p><p style="font-size:13px">📅 ' + escapeHtml(h.due || '') + ' · ' + (h.status === 'submitted' ? '✅ lähetetty / sent' : '⏳ tekemättä / pending') + '</p></div>';
+          return '<div class="hw-card' + sub + '"><strong>' + escapeHtml(h.title_fi) + '</strong><p style="font-size:14px;color:var(--text-body-soft);margin:6px 0">' + escapeHtml(h.title_en || '') + '</p><p style="font-size:13px">📅 ' + escapeHtml(h.due || '') + ' · ' + (h.status === 'submitted' ? '✅ lähetetty / sent' : '⏳ tekemättä / pending') + '</p></div>';
         }).join('');
       }
 
@@ -1094,7 +1098,7 @@
       var gl = document.getElementById('grammar-list');
       if (gl && me.grammar) {
         gl.innerHTML = me.grammar.map(function (g) {
-          return '<div class="gram-card"><strong>' + escapeHtml(g.topic_fi) + '</strong><p style="font-size:13px;color:var(--secondary-500);margin:6px 0">' + escapeHtml(g.topic_en || '') + '</p><p style="font-size:15px;line-height:1.6">' + escapeHtml(g.example || '') + '</p></div>';
+          return '<div class="gram-card"><strong>' + escapeHtml(g.topic_fi) + '</strong><p style="font-size:13px;color:var(--text-body-soft);margin:6px 0">' + escapeHtml(g.topic_en || '') + '</p><p style="font-size:15px;line-height:1.6">' + escapeHtml(g.example || '') + '</p></div>';
         }).join('');
       }
 
@@ -1103,7 +1107,7 @@
         var pp = me.passport_prep;
         var hy = pp.hygiene || {};
         var fa = pp.first_aid || {};
-        ppc.innerHTML = '<div class="pass-prep-block"><h4>' + escapeHtml(hy.title_fi) + ' / ' + escapeHtml(hy.title_en || '') + '</h4><ul>' + (hy.bullets_fi || []).map(function (b) { return '<li>' + escapeHtml(b) + '</li>'; }).join('') + '</ul><p style="font-size:13px;color:var(--secondary-500);margin-top:8px">' + (hy.bullets_en || []).map(function (b) { return escapeHtml(b); }).join(' · ') + '</p></div>' +
+        ppc.innerHTML = '<div class="pass-prep-block"><h4>' + escapeHtml(hy.title_fi) + ' / ' + escapeHtml(hy.title_en || '') + '</h4><ul>' + (hy.bullets_fi || []).map(function (b) { return '<li>' + escapeHtml(b) + '</li>'; }).join('') + '</ul><p style="font-size:13px;color:var(--text-body-soft);margin-top:8px">' + (hy.bullets_en || []).map(function (b) { return escapeHtml(b); }).join(' · ') + '</p></div>' +
           '<div class="pass-prep-block"><h4>' + escapeHtml(fa.title_fi) + ' / ' + escapeHtml(fa.title_en || '') + '</h4><ul>' + (fa.bullets_fi || []).map(function (b) { return '<li>' + escapeHtml(b) + '</li>'; }).join('') + '</ul></div>';
       }
 
@@ -1113,7 +1117,7 @@
       if (ht && goals.length) {
         ht.innerHTML = goals.map(function (g, i) {
           var cls = i < 2 ? 'done' : (i === 2 ? 'active' : '');
-          return '<div class="hops-item"><div class="hops-dot ' + cls + '"></div><strong>Vaihe ' + (i + 1) + '</strong><p style="color:var(--secondary-500);margin-top:6px">' + escapeHtml(g) + '</p></div>';
+          return '<div class="hops-item"><div class="hops-dot ' + cls + '"></div><strong>Vaihe ' + (i + 1) + '</strong><p style="color:var(--text-body-soft);margin-top:6px">' + escapeHtml(g) + '</p></div>';
         }).join('');
       }
       var tn = document.getElementById('hops-teacher-note');
@@ -1132,7 +1136,7 @@
       if (jel) {
         var opts = jc.options || [];
         jel.innerHTML = '<ul style="font-size:16px;line-height:1.7;padding-left:20px;margin-bottom:16px">' + opts.map(function (o) { return '<li>' + escapeHtml(o) + '</li>'; }).join('') + '</ul>' +
-          '<p style="font-size:16px;color:var(--secondary-600)"><strong>Opettajan näkymä — kommentti:</strong> ' + escapeHtml(jc.student_comment || '—') + '</p>' +
+          '<p style="font-size:16px;color:var(--text-body-muted)"><strong>Opettajan näkymä — kommentti:</strong> ' + escapeHtml(jc.student_comment || '—') + '</p>' +
           '<p class="inline-note" style="margin-top:16px">Tila / status: ' + escapeHtml(jc.status || 'draft') + '</p>';
       }
       var jcb = document.getElementById('jatko-comment-box');
@@ -1153,14 +1157,14 @@
         nl.innerHTML = notifs.map(function (n) {
           var r = n.read ? ' read' : '';
           var tf = n.text_fi || n.text || '';
-          var te = n.text_en ? '<div style="font-size:13px;color:var(--secondary-500);margin-top:6px">' + escapeHtml(n.text_en) + '</div>' : '';
-          return '<div class="notif-item' + r + '"><div style="font-size:12px;color:var(--secondary-500)">' + escapeHtml(n.type || '') + ' · ' + (n.at ? new Date(n.at).toLocaleString('fi-FI') : '') + '</div><div style="margin-top:6px;font-weight:600">' + escapeHtml(tf) + '</div>' + te + '</div>';
+          var te = n.text_en ? '<div style="font-size:13px;color:var(--text-body-soft);margin-top:6px">' + escapeHtml(n.text_en) + '</div>' : '';
+          return '<div class="notif-item' + r + '"><div style="font-size:12px;color:var(--text-body-soft)">' + escapeHtml(n.type || '') + ' · ' + (n.at ? new Date(n.at).toLocaleString('fi-FI') : '') + '</div><div style="margin-top:6px;font-weight:600">' + escapeHtml(tf) + '</div>' + te + '</div>';
         }).join('') || '<p class="shell-placeholder">Ei ilmoituksia</p>';
       }
 
       if (notifs.length && document.getElementById('dash-today')) {
         var t0 = notifs[0].text_fi || notifs[0].text || '';
-        document.getElementById('dash-today').innerHTML = '🔔 ' + escapeHtml(t0) + '<br><span style="font-size:14px;color:var(--secondary-500)">Päivä ' + dayN + ' / 120 · Day ' + dayN + ' / 120</span>';
+        document.getElementById('dash-today').innerHTML = '🔔 ' + escapeHtml(t0) + '<br><span style="font-size:14px;color:var(--text-body-soft)">Päivä ' + dayN + ' / 120 · Day ' + dayN + ' / 120</span>';
       }
     } catch (e) { /* LMS optional */ }
   }
