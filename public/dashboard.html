@@ -89,12 +89,6 @@
     .agent-response:not(.error) { color:#374151; }
 
     .agent-footer { margin-top:14px; padding-top:12px; border-top:1px solid #e5e7eb; font-size:12px; color:#6b7280; }
-    .lead-pipeline-btn {
-      display:inline-block; padding:8px 16px; border-radius:10px; border:1px solid #f9a8d4;
-      background:rgba(244,114,182,0.1); color:#be185d; font-size:12px; font-weight:600; text-decoration:none;
-      font-family:inherit; text-align:center; margin-top:8px; transition:all 0.2s;
-    }
-    .lead-pipeline-btn:hover { background:rgba(244,114,182,0.2); }
   </style>
 </head>
 <body>
@@ -113,9 +107,7 @@
   <a class="nav-btn" href="knuut.html">Knuut</a>
   <a class="nav-btn" href="oppipolku.html">Oppipolku</a>
   <a class="nav-btn" href="teacher-dashboard.html">Teacher</a>
-  <a class="nav-btn" href="#">Conversations</a>
-  <a class="nav-btn" href="leads.html">Lead Pipeline</a>
-  <a class="nav-btn" href="#">Settings</a>
+  <a class="nav-btn" href="privacy-ai.html">Privacy &amp; AI</a>
 </nav>
 
 <div class="stats-row">
@@ -135,9 +127,9 @@
     <div class="stat-sub">2 sleeping</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Leads Today</div>
-    <div class="stat-value" style="color:#1d9e75">14</div>
-    <div class="stat-sub">↑ 3 qualified</div>
+    <div class="stat-label">LMS (ALKUPOLKU)</div>
+    <div class="stat-value" style="font-size:20px">—</div>
+    <div class="stat-sub">cohorts &amp; modules (wired next)</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Last Deep Sleep</div>
@@ -167,7 +159,7 @@ const AGENT_DESCRIPTIONS = {
   Atlas: 'Researches Finnish pedagogy, CEFR methodology, learning science. Grounds decisions in evidence and best practices.',
   Adrian: 'Manages video content strategy and production. Thinks in formats, audiences, and timelines.',
   Nelli: 'Finnish language specialist. Handles curriculum, difficulty calibration, and cultural accuracy. Sister agent to Knuut.',
-  Nova: 'Qualifies inbound B2B leads (schools, municipalities, companies). Identifies decision-makers, budget, timeline, fit.'
+  Nova: 'Employer and partnership contacts for työssäoppiminen and Kuopio-area work placements (CRM-style; tender LMS).'
 };
 
 function escapeHtml(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -243,7 +235,6 @@ async function loadDashboard() {
         </div>
         <div class="agent-footer">
           <span>Last active: ${lastActive}</span>
-          ${a.name === 'Nova' ? '<a href="leads.html" class="lead-pipeline-btn">Lead Pipeline →</a>' : ''}
         </div>
       </div>`;
   });

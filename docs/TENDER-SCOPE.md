@@ -1,5 +1,7 @@
 # SuvisBrain / Knuut — Tender & demo scope (kotoutumiskoulu 0→A2)
 
+**→ Full procurement + LMS rebuild brief:** [`ALKUPOLKU-PLATFORM-BRIEF.md`](./ALKUPOLKU-PLATFORM-BRIEF.md) (Kuopio / TyöNavigaattori, 120-day 0→A2, teacher + student sides).
+
 This document defines the **product vision**, **roles**, **features**, and **design constraints** for a Finnish integration education platform demo. It is written so **Cursor and collaborators** can implement consistently.
 
 ---
@@ -52,7 +54,7 @@ Avoid: pure black text on pure white for long reading — use `#1A1A1A` on `#FAF
 
 | Role    | Entry / shell | Core jobs |
 |---------|-----------------|-----------|
-| **Learner** | `student-dashboard.html` → Knuut, Oppipolku module | Daily path, lessons, voice/text, YKI practice, passports |
+| **Learner** | `oppipolku.html` (→ Knuut, modules) | Daily path, lessons, voice/text, YKI practice, passports |
 | **Teacher** | `teacher-dashboard.html` | Cohort + individual plans, progress, nudges, AI suggestions (approve) |
 | **Admin**   | `admin` (new or extend) | Orgs, users, cohorts, content flags, exports |
 
