@@ -6,6 +6,7 @@
   <title>Knuut — Oppipolku 0→A2</title>
   <!-- Same font URL as horizon-ui-chakra/src/assets/css/App.css -->
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@11/dist/css/shepherd.css">
   <style>
     /* Horizon UI Chakra — tokens from src/theme/styles.js + layouts/admin + components/card */
     :root {
@@ -623,7 +624,7 @@
         <div class="page-sub" id="dash-sub">Ladataan…</div>
       </div>
       <p class="i18n-hint" id="dash-i18n">🇫🇮 <strong>FI</strong> · 🇬🇧 EN: Home · العربية AR: الرئيسية — käytä kuvakkeita!</p>
-      <div class="grid2" style="margin-bottom:20px">
+      <div class="grid2" id="etusivu-section" style="margin-bottom:20px">
         <div class="level-card">
           <div class="level-label">Nykyinen taso (CEFR) · Current level</div>
           <div class="level-value" id="dash-cefr">A1</div>
@@ -675,7 +676,7 @@
         <div class="fj-visual" id="fj-visual" aria-hidden="true"></div>
         <p style="font-size:13px;color:var(--text-body-soft);margin-top:12px" id="fj-caption"></p>
       </div>
-      <div class="card" style="margin-bottom:20px;border:1px solid rgba(66,42,251,0.2)">
+      <div class="card" id="tour-micro-practice" style="margin-bottom:20px;border:1px solid rgba(66,42,251,0.2)">
         <div class="card-title">⚡ 5 min pikaharjoitus tänään · Daily micro-practice</div>
         <p style="font-size:16px;line-height:1.65;color:var(--secondary-900);font-weight:600" id="micro-word"></p>
         <p style="font-size:15px;color:var(--text-body-muted);margin:10px 0;line-height:1.6" id="micro-pron"></p>
@@ -1623,6 +1624,11 @@
     }
   });
 })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/shepherd.js@11/dist/shepherd.min.js"></script>
+  <script src="tour.js"></script>
+  <script>
+    if (window.AlkuTour) AlkuTour.initOppipolku();
   </script>
 </body>
 </html>
