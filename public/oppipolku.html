@@ -77,34 +77,37 @@
     }
     .logo span { color: var(--brand-500); font-weight: 800; }
     .sidebar-sep { height: 1px; background: var(--secondary-400); width: 100%; margin-bottom: 20px; opacity: 0.9; }
-    .tagline { color: var(--secondary-600); font-size: 12px; font-weight: 500; margin: 8px 0 0 8px; align-self: flex-start; }
+    .tagline { color: #4a5568; font-size: 13px; font-weight: 600; margin: 8px 0 0 8px; align-self: flex-start; }
     .nav-section {
-      font-size: 14px;
-      color: var(--chakra-gray-700);
+      font-size: 15px;
+      color: var(--secondary-900);
       margin: 18px 0 12px;
       padding-left: 20px;
-      font-weight: 700;
+      font-weight: 800;
+      letter-spacing: 0.02em;
     }
     .nav-item {
       display: flex; align-items: center; gap: 12px;
-      padding: 5px 10px;
+      padding: 8px 12px;
       margin-right: 0;
       border-radius: 0; cursor: pointer;
-      color: var(--secondary-500); font-size: 14px; font-weight: 400;
+      color: #2d3748;
+      font-size: 15px;
+      font-weight: 500;
       text-decoration: none; margin-bottom: 0; border: none; border-right: 4px solid transparent;
       background: transparent; width: 100%; text-align: left;
       transition: color 0.2s, background 0.2s, border-color 0.2s;
     }
-    .nav-item:hover { background: rgba(66, 42, 251, 0.04); color: var(--brand-500); }
+    .nav-item:hover { background: rgba(66, 42, 251, 0.08); color: var(--brand-600); }
     .nav-item.active {
-      color: var(--chakra-gray-700);
+      color: var(--secondary-900);
       font-weight: 700;
       border-right-color: var(--brand-500);
     }
-    .nav-item .icon { font-size: 18px; width: 26px; text-align: center; color: inherit; }
+    .nav-item .icon { font-size: 20px; width: 28px; text-align: center; color: inherit; flex-shrink: 0; }
     .nav-item.active .icon { color: var(--brand-500); }
     .sidebar-bottom { margin-top: auto; padding: 16px 8px 0; border-top: 1px solid var(--secondary-400); }
-    .student-info { display: flex; align-items: center; gap: 10px; color: var(--secondary-900); font-size: 14px; }
+    .student-info { display: flex; align-items: center; gap: 10px; color: var(--secondary-900); font-size: 15px; font-weight: 600; }
     .avatar {
       width: 40px; height: 40px; border-radius: 50%;
       background: linear-gradient(135deg, var(--brand-500), var(--brand-400));
@@ -532,8 +535,8 @@
       <div class="student-info">
         <div class="avatar" id="sb-avatar">?</div>
         <div>
-          <div style="color:var(--secondary-900);font-weight:700" id="sb-name">Opiskelija</div>
-          <div style="font-size:12px;color:var(--secondary-500)">Taso: <span id="sb-level">A1</span></div>
+          <div style="color:var(--secondary-900);font-weight:700;font-size:15px" id="sb-name">Opiskelija</div>
+          <div style="font-size:13px;font-weight:600;color:#4a5568">Taso: <span id="sb-level">A1</span></div>
         </div>
       </div>
     </div>
