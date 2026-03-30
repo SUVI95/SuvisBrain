@@ -4,11 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Knuut — Oppipolku 0→A2</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+  <!-- Same font URL as horizon-ui-chakra/src/assets/css/App.css -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet">
   <style>
-    /* Horizon UI Chakra — light theme tokens (horizon-ui-chakra / theme/styles.js) */
+    /* Horizon UI Chakra — tokens from src/theme/styles.js + layouts/admin + components/card */
     :root {
       --brand-400: #7551FF;
       --brand-500: #422AFB;
@@ -36,8 +35,10 @@
       --border: var(--secondary-400);
       --success: var(--green-500);
       --radius: 20px;
-      --font: 'DM Sans', system-ui, sans-serif;
+      --font: "DM Sans", sans-serif;
+      --chakra-gray-700: #2D3748;
       --hero-gradient: linear-gradient(135deg, #422AFB 0%, #7551FF 55%, #3965FF 100%);
+      --sidebar-w: 300px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -46,10 +47,11 @@
       color: var(--ink);
       min-height: 100vh;
       display: flex;
-      font-size: 18px;
+      font-size: 16px;
       line-height: 1.5;
       letter-spacing: -0.5px;
     }
+    option { color: #000; }
     .eu-banner {
       position: fixed;
       bottom: 0;
@@ -65,43 +67,57 @@
       font-weight: 600;
     }
     .sidebar {
-      width: 260px;
+      width: var(--sidebar-w);
       min-height: 100vh;
       background: var(--surface);
       box-shadow: var(--card-shadow);
       display: flex;
       flex-direction: column;
-      padding: 24px 0 100px 16px;
-      gap: 2px;
+      padding: 25px 16px 100px;
+      gap: 0;
       position: fixed;
       left: 0; top: 0;
       z-index: 100;
     }
-    .logo { font-size: 20px; font-weight: 800; color: var(--secondary-900); letter-spacing: -0.5px; padding: 0 8px 4px 12px; margin-bottom: 4px; }
+    .sidebar-brand { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
+    .logo {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--navy-700);
+      letter-spacing: -0.5px;
+      padding: 0 8px;
+      margin: 8px 0 0;
+      align-self: flex-start;
+    }
     .logo span { color: var(--brand-500); font-weight: 800; }
-    .tagline { color: var(--secondary-500); font-size: 12px; font-weight: 500; margin: 0 0 20px 12px; }
+    .sidebar-sep { height: 1px; background: var(--secondary-400); width: 100%; margin-bottom: 20px; opacity: 0.9; }
+    .tagline { color: var(--secondary-600); font-size: 12px; font-weight: 500; margin: 8px 0 0 8px; align-self: flex-start; }
     .nav-section {
-      font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
-      color: var(--secondary-900); margin: 18px 0 8px; padding-left: 12px; font-weight: 700;
+      font-size: 14px;
+      color: var(--chakra-gray-700);
+      margin: 18px 0 12px;
+      padding-left: 20px;
+      font-weight: 700;
     }
     .nav-item {
       display: flex; align-items: center; gap: 12px;
-      padding: 8px 12px 8px 12px; margin-right: 0;
+      padding: 5px 10px;
+      margin-right: 0;
       border-radius: 0; cursor: pointer;
-      color: var(--secondary-500); font-size: 14px; font-weight: 500;
+      color: var(--secondary-500); font-size: 14px; font-weight: 400;
       text-decoration: none; margin-bottom: 0; border: none; border-right: 4px solid transparent;
-      background: transparent; width: calc(100% - 8px); text-align: left;
+      background: transparent; width: 100%; text-align: left;
       transition: color 0.2s, background 0.2s, border-color 0.2s;
     }
     .nav-item:hover { background: rgba(66, 42, 251, 0.04); color: var(--brand-500); }
     .nav-item.active {
-      color: var(--secondary-900);
+      color: var(--chakra-gray-700);
       font-weight: 700;
       border-right-color: var(--brand-500);
     }
     .nav-item .icon { font-size: 18px; width: 26px; text-align: center; color: inherit; }
     .nav-item.active .icon { color: var(--brand-500); }
-    .sidebar-bottom { margin-top: auto; padding: 16px 12px 0 8px; border-top: 1px solid var(--secondary-400); }
+    .sidebar-bottom { margin-top: auto; padding: 16px 8px 0; border-top: 1px solid var(--secondary-400); }
     .student-info { display: flex; align-items: center; gap: 10px; color: var(--secondary-900); font-size: 14px; }
     .avatar {
       width: 40px; height: 40px; border-radius: 50%;
@@ -109,15 +125,48 @@
       display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #fff;
       box-shadow: var(--btn-shadow);
     }
-    .main {
-      margin-left: 260px;
+    /* Admin shell: layouts/admin/index.js — main area */
+    .hz-shell {
+      margin-left: var(--sidebar-w);
       flex: 1;
-      padding: 28px 32px 120px;
-      max-width: calc(100vw - 260px);
+      width: calc(100% - var(--sidebar-w));
+      max-width: calc(100vw - var(--sidebar-w));
+      min-height: 100vh;
+      position: relative;
     }
-    .page-header { margin-bottom: 24px; }
-    .page-title { font-size: 28px; font-weight: 800; color: var(--secondary-900); letter-spacing: -0.5px; }
-    .page-sub { color: var(--secondary-500); font-size: 16px; margin-top: 6px; font-weight: 500; }
+    /* NavbarAdmin — components/navbar/NavbarAdmin.js */
+    .hz-navbar {
+      position: fixed;
+      z-index: 90;
+      top: 20px;
+      right: 30px;
+      left: var(--sidebar-w);
+      margin-left: 12px;
+      min-height: 75px;
+      padding: 8px 12px 8px 12px;
+      display: flex;
+      align-items: center;
+      background: rgba(244, 247, 254, 0.2);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1.5px solid transparent;
+      border-radius: 16px;
+      box-shadow: none;
+      line-height: 25.6px;
+    }
+    .hz-breadcrumb { font-size: 14px; color: var(--chakra-gray-700); }
+    .hz-breadcrumb a { color: var(--chakra-gray-700); text-decoration: none; }
+    .hz-breadcrumb span { color: var(--chakra-gray-700); opacity: 0.85; }
+    .hz-breadcrumb .sep { margin: 0 6px; opacity: 0.5; }
+    .main {
+      padding: 80px 30px 120px 30px;
+      width: 100%;
+    }
+    /* views/admin/default — pt offset below navbar */
+    .page-wrap { padding-top: 8px; }
+    .page-header { margin-bottom: 20px; }
+    .page-title { font-size: 24px; font-weight: 700; color: var(--secondary-900); letter-spacing: -0.5px; }
+    .page-sub { color: var(--secondary-600); font-size: 14px; margin-top: 6px; font-weight: 400; }
     .section { display: none; }
     .section.active { display: block; }
     .card {
@@ -131,13 +180,22 @@
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
     @media (max-width: 900px) {
-      .sidebar { width: 72px; padding: 16px 4px 100px 4px; box-shadow: var(--card-shadow); }
-      .logo, .tagline, .nav-section, .student-info span { display: none; }
+      :root { --sidebar-w: 72px; }
+      .sidebar { padding: 16px 4px 100px 4px; }
+      .sidebar-brand .logo, .tagline, .nav-section, .student-info span { display: none; }
+      .sidebar-sep { display: none; }
       .nav-item { justify-content: center; padding: 10px 6px; border-right: none; width: 100%; }
       .nav-item.active { border-right: none; background: var(--brand-soft); border-radius: 12px; }
-      .logo { display: none; }
-      .main { margin-left: 72px; padding: 16px; max-width: calc(100vw - 72px); }
-      .grid2, .grid4 { grid-template-columns: 1fr; }
+      .sidebar-brand .logo { display: none; }
+      .hz-navbar {
+        left: 72px;
+        right: 12px;
+        margin-left: 8px;
+        top: 12px;
+        min-height: 64px;
+      }
+      .main { padding: 72px 20px 120px 20px; }
+      .grid2, .hz-stat-grid { grid-template-columns: 1fr; }
     }
     .level-card {
       background: var(--hero-gradient);
@@ -160,15 +218,58 @@
     .level-value { font-size: 48px; font-weight: 800; line-height: 1; margin-bottom: 8px; letter-spacing: -0.5px; }
     .level-bar { background: rgba(255,255,255,0.25); border-radius: 20px; height: 10px; overflow: hidden; margin-top: 16px; }
     .level-fill { height: 100%; background: #fff; border-radius: 20px; transition: width 1s ease; }
+    /* components/card/MiniStatistics.js + Card */
+    .hz-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .hz-mini-card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 15px 20px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      align-items: center;
+      width: 100%;
+      min-width: 0;
+    }
+    .hz-icon-box {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--secondary-300);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .hz-stat-text { margin-left: 18px; flex: 1; min-width: 0; }
+    .hz-stat-label {
+      font-size: 14px;
+      line-height: 100%;
+      color: var(--secondary-600);
+      font-weight: 400;
+    }
+    .hz-stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--secondary-900);
+      margin-top: 6px;
+      line-height: 1.15;
+    }
     .stat-card {
       background: var(--surface);
       border-radius: var(--radius);
-      padding: 16px 18px;
+      padding: 15px 20px;
       box-shadow: var(--card-shadow);
       border: none;
     }
-    .stat-num { font-size: 28px; font-weight: 800; color: var(--secondary-900); line-height: 1; }
-    .stat-label { font-size: 12px; font-weight: 600; color: var(--secondary-500); margin-top: 6px; }
+    .stat-num { font-size: 24px; font-weight: 700; color: var(--secondary-900); line-height: 1; }
+    .stat-label { font-size: 14px; font-weight: 400; color: var(--secondary-600); margin-top: 6px; }
     .knuut-banner {
       background: var(--surface);
       color: var(--brand-500);
@@ -243,7 +344,7 @@
       border-radius: 16px;
       border: 1px solid var(--secondary-400);
       padding: 20px;
-      font-size: 17px;
+      font-size: 16px;
       line-height: 1.7;
       margin-bottom: 16px;
       overflow-y: auto;
@@ -363,8 +464,11 @@
 <body>
 
   <nav class="sidebar" aria-label="Päänavigaatio">
-    <div class="logo">Knuut <span>AI</span></div>
-    <div class="tagline">Kotoutumiskoulu · 0→A2</div>
+    <div class="sidebar-brand">
+      <div class="logo">Knuut <span>AI</span></div>
+      <div class="tagline">Kotoutumiskoulu · 0→A2</div>
+      <div class="sidebar-sep" aria-hidden="true"></div>
+    </div>
 
     <div class="nav-section">Oppiminen</div>
     <button type="button" class="nav-item active" data-sec="dashboard"><span class="icon">🏠</span> Etusivu</button>
@@ -392,6 +496,15 @@
     </div>
   </nav>
 
+  <div class="hz-shell">
+    <header class="hz-navbar" role="banner">
+      <nav class="hz-breadcrumb" aria-label="Murupolku">
+        <a href="#">Sivut</a>
+        <span class="sep">/</span>
+        <span id="hz-breadcrumb-page">Etusivu</span>
+      </nav>
+    </header>
+
   <main class="main">
     <div class="trust-top">
       <strong>Ihmisen päätös</strong> — tekoäly antaa ehdotuksia ja harjoituksia. Opettaja vastaa lopullisista arvioista ja suunnitelmista (EU AI Act).
@@ -412,14 +525,38 @@
         </div>
         <div class="card">
           <div class="card-title">Tänään</div>
-          <p style="font-size:17px;color:var(--secondary-500);line-height:1.6" id="dash-today">Valitse kirjaimet ja harjoittele Knuutin kanssa.</p>
+          <p style="font-size:16px;color:var(--secondary-600);line-height:1.6" id="dash-today">Valitse kirjaimet ja harjoittele Knuutin kanssa.</p>
         </div>
       </div>
-      <div class="grid4" style="margin-bottom:20px">
-        <div class="stat-card"><div class="stat-num" id="stat-episodes">—</div><div class="stat-label">Harjoituskertoja</div></div>
-        <div class="stat-card"><div class="stat-num" id="stat-streak">—</div><div class="stat-label">Päivien putki</div></div>
-        <div class="stat-card"><div class="stat-num" id="stat-xp">—</div><div class="stat-label">XP (viikko)</div></div>
-        <div class="stat-card"><div class="stat-num" id="stat-goal">500</div><div class="stat-label">Viikkotavoite XP</div></div>
+      <div class="hz-stat-grid">
+        <div class="hz-mini-card">
+          <div class="hz-icon-box" aria-hidden="true">📊</div>
+          <div class="hz-stat-text">
+            <div class="hz-stat-label">Harjoituskertoja</div>
+            <div class="hz-stat-value" id="stat-episodes">—</div>
+          </div>
+        </div>
+        <div class="hz-mini-card">
+          <div class="hz-icon-box" aria-hidden="true">🔥</div>
+          <div class="hz-stat-text">
+            <div class="hz-stat-label">Päivien putki</div>
+            <div class="hz-stat-value" id="stat-streak">—</div>
+          </div>
+        </div>
+        <div class="hz-mini-card">
+          <div class="hz-icon-box" aria-hidden="true">⭐</div>
+          <div class="hz-stat-text">
+            <div class="hz-stat-label">XP (viikko)</div>
+            <div class="hz-stat-value" id="stat-xp">—</div>
+          </div>
+        </div>
+        <div class="hz-mini-card">
+          <div class="hz-icon-box" aria-hidden="true">🎯</div>
+          <div class="hz-stat-text">
+            <div class="hz-stat-label">Viikkotavoite XP</div>
+            <div class="hz-stat-value" id="stat-goal">500</div>
+          </div>
+        </div>
       </div>
       <a class="knuut-banner" href="knuut.html">🎙️ <span style="margin-left:16px;text-align:left"><strong style="color:var(--brand-500)">Puhu suomea Knuutin kanssa</strong><br><span style="font-size:14px;color:var(--secondary-500)">Ääniharjoittelu — suomeksi</span></span><span style="font-size:22px;color:var(--brand-400)">→</span></a>
     </div>
@@ -539,6 +676,7 @@
       </div>
     </div>
   </main>
+  </div>
 
   <div class="eu-banner">Tekoäly tukee opettajaa ja opiskelijaa. Lopulliset päätökset tekee ihminen.</div>
 
@@ -594,10 +732,21 @@
     });
   });
 
+  var SECTION_TITLES = {
+    dashboard: 'Etusivu',
+    alphabet: 'Kirjaimet',
+    lesson: 'Päivän tunti',
+    yki: 'YKI',
+    passports: 'Passit',
+    hops: 'Opiskelupolku'
+  };
+
   function showSection(id) {
     document.querySelectorAll('.section').forEach(function (s) { s.classList.remove('active'); });
     var sec = document.getElementById('sec-' + id);
     if (sec) sec.classList.add('active');
+    var br = document.getElementById('hz-breadcrumb-page');
+    if (br && SECTION_TITLES[id]) br.textContent = SECTION_TITLES[id];
   }
 
   var nelliIdCache = null;
