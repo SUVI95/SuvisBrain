@@ -43,8 +43,8 @@ export default async function authHandler(req, res) {
     }
 
     const teacher = await query(
-      `SELECT id, name, email, password_hash, org_id, COALESCE(admin, false) as admin,
-              teacher_kind FROM teachers WHERE LOWER(email) = LOWER($1)`,
+      `SELECT id, name, email, password_hash, org_id, COALESCE(admin, false) as admin
+       FROM teachers WHERE LOWER(email) = LOWER($1)`,
       [email.trim()]
     );
     if (teacher.rows.length > 0) {
@@ -58,18 +58,26 @@ export default async function authHandler(req, res) {
         sendJson(res, 401, { error: 'Invalid email or password' });
         return;
       }
+      let teacherKind = null;
+      try {
+        const tk = await query('SELECT teacher_kind FROM teachers WHERE id = $1', [t.id]);
+        teacherKind = tk.rows[0]?.teacher_kind ?? null;
+      } catch (e) {
+        /* Column missing until migration 003 — login still works */
+        if (e && e.code !== '42703' && !String(e.message || '').includes('teacher_kind')) throw e;
+      }
       const role = t.admin ? 'admin' : 'teacher';
       const token = signToken({
         id: t.id,
         email: t.email,
         role,
         org_id: t.org_id || null,
-        teacher_kind: t.teacher_kind || null,
+        teacher_kind: teacherKind,
       });
       sendJson(res, 200, {
         token,
         role,
-        user: { id: t.id, name: t.name, teacher_kind: t.teacher_kind || null },
+        user: { id: t.id, name: t.name, teacher_kind: teacherKind },
       });
       return;
     }
