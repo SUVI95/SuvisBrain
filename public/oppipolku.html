@@ -54,16 +54,22 @@
     option { color: #000; }
     .sidebar {
       width: var(--sidebar-w);
-      min-height: 100vh;
+      height: 100vh;
+      max-height: 100vh;
       background: var(--surface);
       box-shadow: var(--card-shadow);
       display: flex;
       flex-direction: column;
       padding: 25px 16px 32px;
+      padding-bottom: max(32px, env(safe-area-inset-bottom, 0px));
       gap: 0;
       position: fixed;
       left: 0; top: 0;
       z-index: 100;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
     .sidebar-brand { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
     .logo {
@@ -167,7 +173,7 @@
     .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
     @media (max-width: 900px) {
       :root { --sidebar-w: 72px; }
-      .sidebar { padding: 16px 4px 32px 4px; }
+      .sidebar { padding: 16px 4px max(24px, env(safe-area-inset-bottom, 0px)) 4px; }
       .sidebar-brand .logo, .tagline, .nav-section, .student-info span { display: none; }
       .sidebar-sep { display: none; }
       .nav-item { justify-content: center; padding: 10px 6px; border-right: none; width: 100%; }
