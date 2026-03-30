@@ -4,20 +4,45 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Knuut — Oppipolku 0→A2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --lake: #1E3A5F;
-      --lake-deep: #003399;
-      --cyan: #2A9D8F;
-      --success: #2E6B4E;
-      --bg: #F4F7FA;
+      --peach: #FF6B6B;
+      --orange: #FF8E53;
+      --coral: #FF7043;
+      --cream: #FFF8F5;
+      --soft-yellow: #FFF3E0;
+      --warm-white: #FFFAF7;
+      --card-border: #FFE5D9;
+      --text-dark: #2D1B0E;
+      --text-mid: #7A4F3A;
+      --text-light: #B07060;
+      --green: #4CAF50;
+      --green-light: #E8F5E9;
+      --blue: #5C6BC0;
+      --blue-light: #E8EAF6;
+      --purple: #9C27B0;
+      --purple-light: #F3E5F5;
+      --amber: #FFB300;
+      --amber-light: #FFF8E1;
+      --lake: var(--text-dark);
+      --lake-deep: #1a1208;
+      --cyan: var(--orange);
+      --success: var(--green);
+      --bg: var(--cream);
       --surface: #FFFFFF;
-      --ink: #1A1A1A;
-      --muted: #4A5568;
-      --border: rgba(30, 58, 95, 0.12);
+      --ink: var(--text-dark);
+      --muted: var(--text-mid);
+      --border: var(--card-border);
       --radius: 14px;
-      --shadow: 0 2px 14px rgba(30, 58, 95, 0.08);
-      --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --shadow: 0 2px 14px rgba(255, 107, 107, 0.1);
+      --font: 'Nunito', 'Quicksand', system-ui, sans-serif;
+      --sidebar-gradient: linear-gradient(160deg, #FF6B6B 0%, #FF8E53 100%);
+      --hero-gradient: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 60%, #FFB300 100%);
+      --btn-gradient: linear-gradient(135deg, #FF6B6B, #FF8E53);
+      --chat-ai: linear-gradient(135deg, #FF6B6B, #FF8E53);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -35,44 +60,48 @@
       left: 0;
       right: 0;
       z-index: 200;
-      background: var(--lake);
-      color: rgba(255,255,255,0.95);
+      background: linear-gradient(90deg, #FF6B6B 0%, #FF8E53 50%, #FF7043 100%);
+      color: rgba(255,255,255,0.98);
       padding: 10px 16px;
       font-size: 13px;
       text-align: center;
-      border-top: 1px solid rgba(255,255,255,0.15);
+      border-top: 1px solid rgba(255,255,255,0.2);
+      font-weight: 600;
     }
     .sidebar {
       width: 220px;
       min-height: 100vh;
-      background: var(--lake);
+      background: var(--sidebar-gradient);
       display: flex;
       flex-direction: column;
       padding: 24px 14px 100px;
+      gap: 4px;
       position: fixed;
       left: 0; top: 0;
       z-index: 100;
     }
-    .logo { font-size: 24px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
-    .logo span { color: #7DD3C0; }
-    .tagline { color: rgba(255,255,255,0.55); font-size: 12px; margin: 4px 0 28px; }
+    .logo { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -0.5px; padding-left: 8px; margin-bottom: 8px; }
+    .logo span { color: rgba(255,255,255,0.95); font-weight: 800; }
+    .tagline { color: rgba(255,255,255,0.75); font-size: 11px; font-weight: 500; margin: 0 0 28px 8px; }
     .nav-section {
       font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
-      color: rgba(255,255,255,0.35); margin: 16px 0 8px; padding-left: 10px;
+      color: rgba(255,255,255,0.5); margin: 16px 0 8px; padding-left: 10px; font-weight: 700;
     }
     .nav-item {
       display: flex; align-items: center; gap: 10px;
-      padding: 12px 12px; border-radius: 10px; cursor: pointer;
-      color: rgba(255,255,255,0.75); font-size: 16px; font-weight: 500;
-      text-decoration: none; margin-bottom: 4px; border: none; background: none; width: 100%; text-align: left;
+      padding: 10px 12px; border-radius: 12px; cursor: pointer;
+      color: #fff; font-size: 14px; font-weight: 500;
+      text-decoration: none; margin-bottom: 2px; border: none; background: transparent; width: 100%; text-align: left;
+      transition: background 0.15s, color 0.15s;
     }
-    .nav-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
-    .nav-item.active { background: rgba(255,255,255,0.15); color: #fff; font-weight: 600; }
-    .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
-    .sidebar-bottom { margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
-    .student-info { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.7); font-size: 14px; }
+    .nav-item:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .nav-item.active { background: #fff; color: var(--peach); font-weight: 700; }
+    .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
+    .sidebar-bottom { margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); }
+    .student-info { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.9); font-size: 14px; }
     .avatar {
-      width: 40px; height: 40px; border-radius: 50%; background: var(--cyan);
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--peach), var(--orange));
       display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #fff;
     }
     .main {
@@ -82,18 +111,18 @@
       max-width: calc(100vw - 220px);
     }
     .page-header { margin-bottom: 28px; }
-    .page-title { font-size: 30px; font-weight: 800; color: var(--lake); letter-spacing: -0.5px; }
-    .page-sub { color: var(--muted); font-size: 16px; margin-top: 6px; }
+    .page-title { font-size: 30px; font-weight: 800; color: var(--text-dark); letter-spacing: -0.5px; }
+    .page-sub { color: var(--text-mid); font-size: 16px; margin-top: 6px; }
     .section { display: none; }
     .section.active { display: block; }
     .card {
       background: var(--surface);
-      border-radius: var(--radius);
+      border-radius: 18px;
       box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-      padding: 24px;
+      border: 1.5px solid var(--card-border);
+      padding: 22px 24px;
     }
-    .card-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 16px; }
+    .card-title { font-size: 15px; font-weight: 800; color: var(--text-dark); margin-bottom: 16px; }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
     @media (max-width: 900px) {
@@ -105,40 +134,55 @@
       .grid2, .grid4 { grid-template-columns: 1fr; }
     }
     .level-card {
-      background: linear-gradient(135deg, var(--lake) 0%, #2a4a6e 100%);
-      border-radius: var(--radius);
-      padding: 28px;
+      background: var(--hero-gradient);
+      border-radius: 20px;
+      padding: 28px 32px;
       color: #fff;
+      position: relative;
+      overflow: hidden;
     }
-    .level-label { font-size: 12px; opacity: 0.65; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-    .level-value { font-size: 48px; font-weight: 800; line-height: 1; margin-bottom: 8px; }
-    .level-bar { background: rgba(255,255,255,0.2); border-radius: 8px; height: 8px; overflow: hidden; margin-top: 16px; }
-    .level-fill { height: 100%; background: #7DD3C0; border-radius: 8px; transition: width 1s ease; }
+    .level-card::before {
+      content: '';
+      position: absolute; right: -30px; top: -30px;
+      width: 160px; height: 160px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .level-card > * { position: relative; z-index: 1; }
+    .level-label { font-size: 13px; font-weight: 600; opacity: 0.85; margin-bottom: 8px; }
+    .level-value { font-size: 48px; font-weight: 800; line-height: 1; margin-bottom: 8px; letter-spacing: -0.5px; }
+    .level-bar { background: rgba(255,255,255,0.25); border-radius: 20px; height: 10px; overflow: hidden; margin-top: 16px; }
+    .level-fill { height: 100%; background: #fff; border-radius: 20px; transition: width 1s ease; }
     .stat-card {
       background: var(--surface);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 18px;
+      box-shadow: none;
+      border: 1.5px solid var(--card-border);
     }
-    .stat-num { font-size: 32px; font-weight: 800; color: var(--lake); line-height: 1; }
-    .stat-label { font-size: 15px; color: var(--muted); margin-top: 6px; }
+    .stat-num { font-size: 28px; font-weight: 800; color: var(--text-dark); line-height: 1; }
+    .stat-label { font-size: 12px; font-weight: 600; color: var(--text-light); margin-top: 6px; }
     .knuut-banner {
-      background: var(--lake);
-      border-radius: var(--radius);
-      padding: 22px 26px;
-      color: #fff;
+      background: #fff;
+      color: var(--peach);
+      border-radius: 50px;
+      padding: 14px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-top: 24px;
       cursor: pointer;
       text-decoration: none;
-      border: none;
+      border: 1.5px solid var(--card-border);
       width: 100%;
       font: inherit;
+      font-weight: 700;
+      font-size: 15px;
+      box-shadow: var(--shadow);
+      transition: transform 0.1s, box-shadow 0.15s;
     }
-    .knuut-banner:hover { background: var(--lake-deep); }
+    .knuut-banner:hover { box-shadow: 0 4px 20px rgba(255, 107, 107, 0.2); transform: translateY(-1px); }
     .alphabet-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
@@ -146,8 +190,8 @@
     }
     .letter-btn {
       min-height: 76px;
-      border-radius: 12px;
-      border: 2px solid var(--border);
+      border-radius: 14px;
+      border: 1.5px solid var(--card-border);
       background: var(--surface);
       cursor: pointer;
       display: flex;
@@ -156,39 +200,40 @@
       justify-content: center;
       font-size: 36px;
       font-weight: 800;
-      color: var(--lake);
+      color: var(--text-dark);
       transition: transform 0.15s, border-color 0.15s;
     }
-    .letter-btn:hover { border-color: var(--cyan); transform: translateY(-2px); }
-    .letter-btn.mastered { background: #E8F5ED; border-color: var(--success); }
-    .letter-btn.practicing { background: #E6F7F5; border-color: var(--cyan); }
-    .letter-sub { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 500; }
+    .letter-btn:hover { border-color: var(--orange); transform: translateY(-2px); }
+    .letter-btn.mastered { background: var(--green-light); border-color: #C8E6C9; }
+    .letter-btn.practicing { background: var(--soft-yellow); border-color: #FFE0B2; }
+    .letter-sub { font-size: 11px; color: var(--text-mid); margin-top: 2px; font-weight: 600; }
     .letter-detail {
-      background: var(--lake);
+      background: var(--hero-gradient);
       color: #fff;
-      border-radius: var(--radius);
+      border-radius: 18px;
       padding: 28px;
       margin-top: 16px;
       display: none;
     }
     .letter-detail.visible { display: block; }
-    .letter-big { font-size: 72px; font-weight: 800; color: #7DD3C0; line-height: 1; margin-bottom: 8px; }
+    .letter-big { font-size: 72px; font-weight: 800; color: rgba(255,255,255,0.95); line-height: 1; margin-bottom: 8px; }
     .topic-chip {
       padding: 10px 16px;
       border-radius: 999px;
-      border: 2px solid var(--border);
+      border: 1.5px solid var(--card-border);
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       background: var(--surface);
       margin: 4px 4px 4px 0;
+      color: var(--text-dark);
     }
-    .topic-chip:hover, .topic-chip.active { border-color: var(--cyan); background: #E6F7F5; color: var(--lake); }
+    .topic-chip:hover, .topic-chip.active { border-color: var(--orange); background: var(--soft-yellow); color: var(--text-dark); }
     .lesson-area {
       min-height: 280px;
-      background: #FAFAF8;
-      border-radius: 12px;
-      border: 1px solid var(--border);
+      background: var(--warm-white);
+      border-radius: 14px;
+      border: 1.5px solid var(--card-border);
       padding: 20px;
       font-size: 17px;
       line-height: 1.7;
@@ -196,71 +241,109 @@
       overflow-y: auto;
       max-height: 420px;
     }
-    .msg-user { background: var(--lake); color: #fff; border-radius: 12px; padding: 12px 16px; margin: 8px 0 8px auto; max-width: 85%; float: right; clear: both; }
-    .msg-ai { background: #E8F4F2; border-radius: 12px; padding: 12px 16px; margin: 8px auto 8px 0; max-width: 90%; clear: both; }
+    /* AI = gradient (Knuut style); user = soft yellow */
+    .msg-ai {
+      background: var(--chat-ai);
+      color: #fff;
+      border-radius: 16px 16px 16px 4px;
+      padding: 12px 16px;
+      margin: 8px auto 8px 0;
+      max-width: 90%;
+      clear: both;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .msg-user {
+      background: var(--soft-yellow);
+      color: var(--text-dark);
+      border: 1.5px solid var(--card-border);
+      border-radius: 16px 16px 4px 16px;
+      padding: 12px 16px;
+      margin: 8px 0 8px auto;
+      max-width: 85%;
+      float: right;
+      clear: both;
+      font-weight: 600;
+      font-size: 15px;
+    }
     .clearfix { clear: both; }
-    .lesson-input-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .lesson-input-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
     .lesson-input {
       flex: 1;
       min-width: 200px;
-      padding: 14px 16px;
-      border-radius: 10px;
-      border: 2px solid var(--border);
-      font-size: 18px;
+      padding: 10px 16px;
+      border-radius: 50px;
+      border: 1.5px solid var(--card-border);
+      font-size: 15px;
       font-family: inherit;
+      background: var(--warm-white);
+      color: var(--text-dark);
     }
-    .lesson-input:focus { outline: none; border-color: var(--cyan); }
+    .lesson-input:focus { outline: none; border-color: var(--orange); }
     .btn {
-      padding: 14px 22px;
-      border-radius: 10px;
+      padding: 12px 22px;
+      border-radius: 50px;
       border: none;
       cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
+      font-size: 15px;
+      font-weight: 700;
       font-family: inherit;
     }
-    .btn-primary { background: var(--lake); color: #fff; }
-    .btn-primary:hover { background: var(--lake-deep); }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-outline { background: #fff; border: 2px solid var(--border); color: var(--ink); }
+    .btn-primary {
+      background: var(--btn-gradient);
+      color: #fff;
+      box-shadow: 0 2px 14px rgba(255, 107, 107, 0.35);
+    }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; filter: none; }
+    .btn-outline { background: #fff; border: 1.5px solid var(--card-border); color: var(--text-dark); }
+    .letter-detail .btn-primary {
+      background: #fff !important;
+      color: var(--peach) !important;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    }
+    .letter-detail .btn-primary:hover { filter: brightness(0.98); }
     .yki-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-    .yki-tab { padding: 12px 20px; border-radius: 10px; border: 2px solid var(--border); background: #fff; cursor: pointer; font-size: 15px; font-weight: 600; }
-    .yki-tab.active { background: var(--lake); color: #fff; border-color: var(--lake); }
-    .option { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 10px; border: 2px solid var(--border); cursor: pointer; margin-bottom: 10px; font-size: 17px; }
-    .option:hover { border-color: var(--cyan); }
-    .option.selected { border-color: var(--lake); background: #EEF4F8; }
-    .option.correct { border-color: var(--success); background: #E8F5ED; }
-    .option.wrong { border-color: #E05A4A; background: #FEF0EE; }
-    .writing-area { width: 100%; min-height: 140px; padding: 14px; border-radius: 10px; border: 2px solid var(--border); font-size: 18px; font-family: inherit; resize: vertical; }
+    .yki-tab { padding: 12px 20px; border-radius: 10px; border: 1.5px solid var(--card-border); background: #fff; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--text-mid); }
+    .yki-tab.active { background: var(--btn-gradient); color: #fff; border-color: transparent; }
+    .option { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; border: 1.5px solid var(--card-border); cursor: pointer; margin-bottom: 10px; font-size: 17px; background: #fff; color: var(--text-dark); }
+    .option:hover { border-color: var(--orange); }
+    .option.selected { border-color: var(--peach); background: var(--soft-yellow); }
+    .option.correct { border-color: var(--green); background: var(--green-light); }
+    .option.wrong { border-color: #E57373; background: #FFEBEE; }
+    .writing-area { width: 100%; min-height: 140px; padding: 14px; border-radius: 12px; border: 1.5px solid var(--card-border); font-size: 18px; font-family: inherit; resize: vertical; background: var(--warm-white); color: var(--text-dark); }
     .passport-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-    .passport-card { border-radius: 12px; border: 2px solid var(--border); padding: 20px; background: var(--surface); }
-    .passport-card.done { border-color: var(--success); background: #F0F9F4; }
+    .passport-card { border-radius: 14px; border: 1.5px solid var(--card-border); padding: 20px; background: var(--surface); }
+    .passport-card.done { border-color: var(--green); background: var(--green-light); }
     .hops-timeline { position: relative; padding-left: 28px; }
     .hops-timeline::before {
-      content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: var(--border);
+      content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: var(--card-border);
     }
     .hops-item { margin-bottom: 20px; position: relative; }
-    .hops-dot { position: absolute; left: -24px; top: 4px; width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid var(--border); }
-    .hops-dot.done { background: var(--success); border-color: var(--success); }
-    .hops-dot.active { background: var(--cyan); border-color: var(--cyan); }
+    .hops-dot { position: absolute; left: -24px; top: 4px; width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid var(--card-border); }
+    .hops-dot.done { background: var(--green); border-color: var(--green); }
+    .hops-dot.active { background: var(--orange); border-color: var(--orange); }
     .spinner {
       width: 28px; height: 28px;
-      border: 3px solid var(--border);
-      border-top-color: var(--cyan);
+      border: 3px solid var(--card-border);
+      border-top-color: var(--orange);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-inline { display: flex; align-items: center; gap: 12px; color: var(--muted); padding: 16px; }
+    .loading-inline { display: flex; align-items: center; gap: 12px; color: var(--text-mid); padding: 16px; }
     .trust-top {
-      background: #EEF4F8;
-      border: 1px solid var(--border);
-      border-radius: 10px;
+      background: var(--surface);
+      border: 1.5px solid var(--card-border);
+      border-radius: 14px;
       padding: 12px 16px;
       font-size: 14px;
-      color: var(--lake);
+      color: var(--text-dark);
       margin-bottom: 20px;
     }
+    .inline-note { background: var(--blue-light); padding: 16px; border-radius: 12px; border: 1px solid var(--card-border); }
+    .inline-note-warm { background: var(--soft-yellow); padding: 16px; border-radius: 12px; border: 1px solid #FFE0B2; }
+    .yki-write-out { background: var(--green-light); border-radius: 10px; border: 1px solid #C8E6C9; }
   </style>
 </head>
 <body>
@@ -315,7 +398,7 @@
         </div>
         <div class="card">
           <div class="card-title">Tänään</div>
-          <p style="font-size:17px;color:var(--muted);line-height:1.6" id="dash-today">Valitse kirjaimet ja harjoittele Knuutin kanssa.</p>
+          <p style="font-size:17px;color:var(--text-mid);line-height:1.6" id="dash-today">Valitse kirjaimet ja harjoittele Knuutin kanssa.</p>
         </div>
       </div>
       <div class="grid4" style="margin-bottom:20px">
@@ -324,7 +407,7 @@
         <div class="stat-card"><div class="stat-num" id="stat-xp">—</div><div class="stat-label">XP (viikko)</div></div>
         <div class="stat-card"><div class="stat-num" id="stat-goal">500</div><div class="stat-label">Viikkotavoite XP</div></div>
       </div>
-      <a class="knuut-banner" href="knuut.html">🎙️ <span style="margin-left:16px;text-align:left"><strong>Puhu suomea Knuutin kanssa</strong><br><span style="font-size:14px;opacity:0.85">Ääniharjoittelu — suomeksi</span></span><span style="font-size:22px">→</span></a>
+      <a class="knuut-banner" href="knuut.html">🎙️ <span style="margin-left:16px;text-align:left"><strong style="color:var(--peach)">Puhu suomea Knuutin kanssa</strong><br><span style="font-size:14px;color:var(--text-mid)">Ääniharjoittelu — suomeksi</span></span><span style="font-size:22px;color:var(--orange)">→</span></a>
     </div>
 
     <!-- ALPHABET -->
@@ -382,7 +465,7 @@
         <button type="button" class="yki-tab" data-yki="speak">Puhuminen</button>
       </div>
       <div id="yki-read" class="card">
-        <p style="margin-bottom:16px;font-size:17px;line-height:1.8;background:#EEF4F8;padding:16px;border-radius:10px">
+        <p class="inline-note" style="margin-bottom:16px;font-size:17px;line-height:1.8">
           Minun nimeni on Maria. Minä olen 32 vuotta vanha. Minä tulen Somaliasta. Nyt minä asun Kuopiossa.
         </p>
         <p style="font-weight:700;margin-bottom:12px">Missä Maria asuu nyt?</p>
@@ -402,7 +485,7 @@
         <p style="margin-bottom:12px">Kirjoita lyhyt viesti työnantajalle: olet sairas, ja palaat töihin.</p>
         <textarea class="writing-area" id="yki-write-text" placeholder="Kirjoita suomeksi…"></textarea>
         <button type="button" class="btn btn-primary" id="btn-yki-write" style="margin-top:12px">Pyydä palaute (palvelin)</button>
-        <div id="yki-write-out" style="margin-top:16px;padding:16px;background:#E8F4F2;border-radius:10px;display:none;font-size:16px;line-height:1.7"></div>
+        <div id="yki-write-out" class="yki-write-out" style="margin-top:16px;padding:16px;display:none;font-size:16px;line-height:1.7"></div>
       </div>
       <div id="yki-speak" class="card" style="display:none;text-align:center">
         <p style="font-size:18px;margin-bottom:16px">Puhuminen: avaa Knuut ja harjoittele suullista kieltä.</p>
@@ -417,9 +500,9 @@
         <div class="page-sub">Esimerkki — demo</div>
       </div>
       <div class="passport-grid">
-        <div class="passport-card done"><strong>Hygieniapassi</strong><p style="margin-top:8px;font-size:15px;color:var(--muted)">Ravintola-ala</p></div>
-        <div class="passport-card"><strong>EA1</strong><p style="margin-top:8px;font-size:15px;color:var(--muted)">Ensiapu</p></div>
-        <div class="passport-card"><strong>Työturvallisuus</strong><p style="margin-top:8px;font-size:15px;color:var(--muted)">Yleinen</p></div>
+        <div class="passport-card done"><strong>Hygieniapassi</strong><p style="margin-top:8px;font-size:15px;color:var(--text-mid)">Ravintola-ala</p></div>
+        <div class="passport-card"><strong>EA1</strong><p style="margin-top:8px;font-size:15px;color:var(--text-mid)">Ensiapu</p></div>
+        <div class="passport-card"><strong>Työturvallisuus</strong><p style="margin-top:8px;font-size:15px;color:var(--text-mid)">Yleinen</p></div>
       </div>
     </div>
 
@@ -431,12 +514,12 @@
       </div>
       <div class="card">
         <div class="hops-timeline">
-          <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 1–3</strong><p style="color:var(--muted);margin-top:6px">Aakkoset ja perussanat</p></div>
-          <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 4–5</strong><p style="color:var(--muted);margin-top:6px">Arjen suomi</p></div>
-          <div class="hops-item"><div class="hops-dot active"></div><strong>Viikot 6–10 (nyt)</strong><p style="color:var(--muted);margin-top:6px">Työelämän suomi + hygienia</p></div>
-          <div class="hops-item"><div class="hops-dot"></div><strong>Viikot 11–16</strong><p style="color:var(--muted);margin-top:6px">Työssäoppiminen</p></div>
+          <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 1–3</strong><p style="color:var(--text-mid);margin-top:6px">Aakkoset ja perussanat</p></div>
+          <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 4–5</strong><p style="color:var(--text-mid);margin-top:6px">Arjen suomi</p></div>
+          <div class="hops-item"><div class="hops-dot active"></div><strong>Viikot 6–10 (nyt)</strong><p style="color:var(--text-mid);margin-top:6px">Työelämän suomi + hygienia</p></div>
+          <div class="hops-item"><div class="hops-dot"></div><strong>Viikot 11–16</strong><p style="color:var(--text-mid);margin-top:6px">Työssäoppiminen</p></div>
         </div>
-        <div style="margin-top:24px;padding:16px;background:#EEF4F8;border-radius:10px;font-size:16px;line-height:1.7">
+        <div class="inline-note-warm" style="margin-top:24px;font-size:16px;line-height:1.7">
           <strong>Opettajan kommentti (demo):</strong> Jatka päivittäistä Knuut-harjoittelua — suullinen kieli kehittyy parhaiten toistolla.
         </div>
       </div>
