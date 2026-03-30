@@ -238,7 +238,7 @@
         localStorage.setItem('knuut_user', JSON.stringify({ ...data.user, role: data.role }));
         btn.classList.remove('loading');
         btn.classList.add('success');
-        const next = new URLSearchParams(location.search).get('next') || (data.role === 'teacher' ? '/teacher-dashboard.html' : '/student-dashboard.html');
+        const next = new URLSearchParams(location.search).get('next') || (data.role === 'teacher' ? '/teacher-dashboard.html' : '/oppipolku.html');
         setTimeout(() => { location.href = next; }, 600);
       } catch (e) {
         err.textContent = 'Network error';

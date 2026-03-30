@@ -425,10 +425,9 @@
 <body>
   <div class="container">
     <div class="nav-row">
-      <a href="index.html" class="nav-link">Brain Graph</a>
-      <a href="dashboard.html" class="nav-link">Agents</a>
-      <a href="student-dashboard.html" class="nav-link">My Progress</a>
-      <a href="teacher-dashboard.html" class="nav-link">Teacher</a>
+      <a href="oppipolku.html" class="nav-link">Oppipolku</a>
+      <a href="privacy-ai.html" class="nav-link">Privacy &amp; AI</a>
+      <a href="#" id="knuut-logout" class="nav-link">Log out</a>
     </div>
     <div class="orb-container">
       <div class="orb-static-fallback" aria-hidden="true"></div>
@@ -493,6 +492,11 @@
         location.replace('/login.html?next=' + encodeURIComponent('/knuut.html' + location.search));
         return;
       }
+      document.getElementById('knuut-logout')?.addEventListener('click', function (e) {
+        e.preventDefault();
+        ['knuut_token', 'knuut_user', 'sb_token', 'sb_user'].forEach(function (k) { localStorage.removeItem(k); });
+        location.replace('/login.html');
+      });
       const params = new URLSearchParams(location.search);
       const urlLearnerId = params.get('learner_id');
       const learnerId = urlLearnerId || (user?.role === 'learner' ? user?.id : null);
@@ -966,7 +970,7 @@
           summary.style.display = 'block';
           buttons.innerHTML = `
             <a href="/knuut.html" class="btn btn-primary">Practice again</a>
-            <a href="/student-dashboard.html" class="btn btn-success">See my progress</a>
+            <a href="/oppipolku.html" class="btn btn-success">Oppipolku</a>
           `;
         }
       }

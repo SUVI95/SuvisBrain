@@ -324,7 +324,7 @@
           localStorage.setItem('sb_user', JSON.stringify(u));
           localStorage.setItem('knuut_user', JSON.stringify(u));
         }
-        location.replace('/student-dashboard.html');
+        location.replace('/oppipolku.html');
       } catch (e) {
         banner.textContent = e.message || 'Something went wrong. Check your connection and try again.';
         banner.classList.add('show');

@@ -137,7 +137,6 @@
     <a href="dashboard.html" class="nav-link dashboard">Dashboard</a>
     <a href="knuut.html" class="nav-link" style="border-color:rgba(29,158,117,0.5);color:#7dd6b8">Knuut</a>
     <a href="oppipolku.html" class="nav-link">Oppipolku</a>
-    <a href="student-dashboard.html" class="nav-link">Student</a>
     <a href="teacher-dashboard.html" class="nav-link">Teacher</a>
   </div>
   <div id="add-buttons">
@@ -179,7 +178,7 @@ const token = localStorage.getItem('sb_token') || localStorage.getItem('knuut_to
 if (!token || !user) {
   window.location.href = '/login.html?next=' + encodeURIComponent(location.pathname || '/index.html');
 } else if (user.role !== 'teacher') {
-  window.location.href = '/student-dashboard.html';
+  window.location.href = '/oppipolku.html';
 }
 function authHdrs() { return { 'Authorization': 'Bearer ' + (localStorage.getItem('sb_token') || localStorage.getItem('knuut_token') || '') }; }
 

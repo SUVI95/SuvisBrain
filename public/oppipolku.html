@@ -280,8 +280,9 @@
     <button type="button" class="nav-item" data-sec="hops"><span class="icon">🗺️</span> Opiskelupolku</button>
 
     <div class="nav-section">Muu</div>
-    <a class="nav-item" href="student-dashboard.html"><span class="icon">📊</span> Edistyminen</a>
-    <a class="nav-item" href="knuut.html"><span class="icon">🎙️</span> Knuut</a>
+    <a class="nav-item" href="knuut.html"><span class="icon">🎙️</span> Harjoittele Knuutilla</a>
+    <a class="nav-item" href="privacy-ai.html"><span class="icon">🔒</span> Privacy &amp; AI</a>
+    <button type="button" class="nav-item" id="opp-logout"><span class="icon">🚪</span> Kirjaudu ulos</button>
 
     <div class="sidebar-bottom">
       <div class="student-info">
@@ -452,6 +453,11 @@
     location.replace('/login.html?next=' + encodeURIComponent('/oppipolku.html'));
     return;
   }
+
+  document.getElementById('opp-logout')?.addEventListener('click', function () {
+    ['knuut_token', 'knuut_user', 'sb_token', 'sb_user'].forEach(function (k) { localStorage.removeItem(k); });
+    location.replace('/login.html');
+  });
 
   const LEARNER_ID = user.id;
   const API = window.location.origin;
