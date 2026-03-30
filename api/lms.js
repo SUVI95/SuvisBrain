@@ -135,6 +135,38 @@ const MOCK = {
       'new_training_recommendation',
     ],
   },
+  /** OPH 2022 — arviointiasteikko (shell) */
+  language_assessment: {
+    framework: 'OPH perusopetus 2022 / kotoutumiskoulutus',
+    scale: ['pre-A1', 'A1', 'A2', 'B1', 'B2'],
+    notes: 'Kirjaa sisääntulo-, väli- ja päätöarviointi. Täyttö loppuraporttiin ja Koulutusporttiin.',
+    sample_entry: { student: 'Pavel Sorokin', entry: 'A1.2', midpoint: 'A2 (arvio)', exit_target: 'A2' },
+  },
+  attendance_daily_sample: [
+    { date: '2026-03-28', student: 'Amira Hassan', present: true, note: '' },
+    { date: '2026-03-28', student: 'Pavel Sorokin', present: true, note: '' },
+    { date: '2026-03-27', student: 'Li Wei', present: false, note: 'Sairas' },
+  ],
+  passi_tracking: [
+    { student_id: 's-mock-1', items: [{ name: 'Hygieniapassi', status: 'suunnitteilla' }, { name: 'EA1-tietoisuus', status: 'ei aloitettu' }] },
+    { student_id: 's-mock-2', items: [{ name: 'Hygieniapassi', status: 'suoritettu' }, { name: 'EA1-tietoisuus', status: 'käynnissä' }] },
+    { student_id: 's-mock-3', items: [{ name: 'Hygieniapassi', status: 'suoritettu' }, { name: 'EA1-tietoisuus', status: 'suoritettu' }] },
+  ],
+  feedback_tilaaja: {
+    interim: { title: 'Välipalaute (tilaajan lomake)', fields: ['Motivaatio', 'Työelämätaidot', 'Kieli', 'Toiveet'], format: 'PDF/Excel-vienti tulossa' },
+    final: { title: 'Loppupalaute (tilaajan lomake)', fields: ['Kokonaisarvio', 'Jatko', 'Suositus'], format: 'Yhteys loppuraporttiin' },
+  },
+  final_report_kuopio: {
+    forms: [
+      { id: '5182', name: 'Kuopion kaupunki e-lomake (opiskelijakohtainen raportointi)', status: 'demo-vienti' },
+      { id: '5183', name: 'Kuopion kaupunki e-lomake (lisä / täydennys)', status: 'demo-vienti' },
+    ],
+    export: 'PDF-luonnos + kenttäkartta Koulutusportti-synkkiin',
+  },
+  teacher_roles_help: {
+    vastuuopettaja: 'Täysi pedagoginen vastuu, moduulit, raportit, HOPS-hyväksyntä.',
+    ohjaaja: 'Läsnäolo, työssäoppiminen, tuki — rajattu muokkaus.',
+  },
 };
 
 async function tryDbModules() {
@@ -207,10 +239,21 @@ export default async function lmsHandler(req, res, pathSegs) {
         teachers: MOCK.teachers,
         students: MOCK.students,
         attendance_rule: MOCK.attendance_alert_rule,
+        attendance_log: MOCK.attendance_daily_sample,
         yki: MOCK.yki_readiness_sample,
         otp: MOCK.otp_report_sample,
         gdpr: MOCK.gdpr,
         employer_contacts: MOCK.employer_contacts,
+        modules: MOCK.modules,
+        hops: MOCK.hops_sample,
+        jatkosuunnitelma: MOCK.jatkosuunnitelma_sample,
+        placement: MOCK.placement_sample,
+        language_assessment: MOCK.language_assessment,
+        passi_tracking: MOCK.passi_tracking,
+        feedback_tilaaja: MOCK.feedback_tilaaja,
+        final_report_kuopio: MOCK.final_report_kuopio,
+        teacher_roles_help: MOCK.teacher_roles_help,
+        placement_sample: MOCK.placement_sample,
       });
     }
 

@@ -1,20 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fi">
 <head>
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>ALKUPOLKU — Opettaja (Knuut)</title>
- <link rel="preconnect" href="https://fonts.googleapis.com">
- <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
- <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+ <title>ALKUPOLKU — Opettaja</title>
+ <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet">
  <style>
  :root {
- --bg: #F3EFE6;
+ /* Match Oppipolku (oppipolku.html) */
+ --brand-400: #7551FF;
+ --brand-500: #422AFB;
+ --brand-600: #3311DB;
+ --brand-tint: #E9E3FF;
+ --brand-soft: #F2EFFF;
+ --secondary-300: #F4F7FE;
+ --secondary-400: #E9EDF7;
+ --secondary-500: #8F9BBA;
+ --secondary-600: #A3AED0;
+ --secondary-900: #1B2559;
+ --navy-700: #1B254B;
+ --blue-50: #EFF4FB;
+ --green-100: #E6FAF5;
+ --green-500: #01B574;
+ --orange-100: #FFF6DA;
+ --orange-500: #FFB547;
+ --red-500: #EE5D50;
+ --card-shadow: 14px 17px 40px 4px rgba(112, 144, 176, 0.08);
+ --btn-shadow: 45px 76px 113px 7px rgba(112, 144, 176, 0.08);
+ --hero-gradient: linear-gradient(135deg, #422AFB 0%, #7551FF 55%, #3965FF 100%);
+ --chakra-gray-700: #2D3748;
+ --font: "DM Sans", system-ui, sans-serif;
+ --sidebar-w: 300px;
+ --bg: var(--secondary-300);
  --surface: #FFFFFF;
- --surface2: #FAFAF7;
- --primary: #1B4332;
- --primary-mid: #2D6A4F;
- --primary-light: #D8F3DC;
+ --surface2: #F4F7FE;
+ --primary: var(--brand-600);
+ --primary-mid: var(--brand-500);
+ --primary-light: var(--brand-tint);
  --accent: #C2410C;
  --accent-light: #FFF1EC;
  --risk: #991B1B;
@@ -31,53 +53,116 @@
  --text-light: #A8A29E;
  --border: #E4DDD2;
  --border-subtle: #EDE9E4;
- --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
- --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
- --radius: 14px;
- --radius-sm: 8px;
+ --shadow: var(--card-shadow);
+ --shadow-lg: 0 8px 40px rgba(27, 37, 89, 0.12);
+ --radius: 20px;
+ --radius-sm: 12px;
+ --text: var(--secondary-900);
  }
  * { margin: 0; padding: 0; box-sizing: border-box; }
- body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+ body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
 
- /* NAV */
- .topnav { background: var(--primary); padding: 0 28px; display: flex; align-items: center; gap: 2px; height: 52px; }
- .topnav-logo { font-family: 'Fraunces', Georgia, serif; font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.02em; margin-right: 20px; flex-shrink: 0; }
- .topnav-logo span { color: #74C69D; }
- .topnav-link { padding: 6px 11px; border-radius: 6px; color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500; text-decoration: none; transition: all 0.15s; }
- .topnav-link:hover, .topnav-link.active { color: #fff; background: rgba(255,255,255,0.12); }
- .topnav-spacer { flex: 1; }
- .topnav-trust { display: flex; gap: 14px; font-size: 11px; color: rgba(255,255,255,0.45); margin-right: 16px; }
- .topnav-trust span { display: flex; align-items: center; gap: 4px; }
- .nt-dot { width: 5px; height: 5px; border-radius: 50%; background: #74C69D; }
- .topnav-user { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,0.8); }
- .topnav-avatar { width: 29px; height: 29px; border-radius: 50%; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; }
- #logout-link { color: rgba(255,255,255,0.45); font-size: 12px; margin-left: 10px; text-decoration: none; transition: color 0.15s; }
- #logout-link:hover { color: rgba(255,255,255,0.85); }
+ /* NAV — top bar hidden; use sidebar (Oppipolku layout) */
+ .topnav { display: none; }
+ .sidebar {
+   width: var(--sidebar-w); min-height: 100vh; background: var(--surface);
+   box-shadow: var(--card-shadow); display: flex; flex-direction: column;
+   padding: 25px 16px 100px; position: fixed; left: 0; top: 0; z-index: 100;
+ }
+ .sidebar-brand .logo { font-size: 22px; font-weight: 800; color: var(--navy-700); padding: 0 8px; align-self: flex-start; }
+ .sidebar-brand .logo span { color: var(--brand-500); }
+ .sidebar-sep { height: 1px; background: var(--secondary-400); width: 100%; margin: 12px 0 16px; opacity: 0.9; }
+ .tagline { color: var(--secondary-600); font-size: 12px; margin: 8px 0 0 8px; align-self: flex-start; font-weight: 500; }
+ .nav-section { font-size: 14px; color: var(--chakra-gray-700); margin: 16px 0 10px; padding-left: 20px; font-weight: 700; }
+ .nav-item {
+   display: flex; align-items: center; gap: 12px; padding: 8px 10px; width: 100%; text-align: left;
+   border: none; background: transparent; cursor: pointer; font: inherit; font-size: 14px; color: var(--secondary-500);
+   border-right: 4px solid transparent; transition: color 0.2s, background 0.2s, border-color 0.2s; text-decoration: none;
+ }
+ .nav-item:hover { background: rgba(66, 42, 251, 0.06); color: var(--brand-500); }
+ .nav-item.active { color: var(--chakra-gray-700); font-weight: 700; border-right-color: var(--brand-500); }
+ .nav-item .icon { font-size: 18px; width: 26px; text-align: center; }
+ .sidebar-bottom { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--secondary-400); }
+ .role-pill {
+   font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 999px; background: var(--brand-soft); color: var(--brand-600);
+   margin-bottom: 10px; display: inline-block;
+ }
+ .sidebar-links { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+ .sidebar-links a { color: var(--secondary-500); text-decoration: none; }
+ .sidebar-links a:hover { color: var(--brand-500); }
+ .hz-shell {
+   margin-left: var(--sidebar-w); flex: 1; width: calc(100% - var(--sidebar-w)); min-height: 100vh; position: relative;
+ }
+ .hz-navbar {
+   position: fixed; z-index: 90; top: 20px; right: 30px; left: var(--sidebar-w); margin-left: 12px;
+   min-height: 56px; padding: 8px 16px; display: flex; align-items: center;
+   background: rgba(244, 247, 254, 0.35); backdrop-filter: blur(20px); border-radius: 16px;
+ }
+ .hz-breadcrumb { font-size: 14px; color: var(--chakra-gray-700); }
+ .hz-breadcrumb .sep { margin: 0 6px; opacity: 0.5; }
+ .main { padding: 88px 30px 120px 30px; width: 100%; max-width: 1400px; }
+ .trust-top {
+   background: var(--surface); border-radius: var(--radius); padding: 14px 18px; font-size: 14px; color: var(--secondary-900);
+   margin-bottom: 20px; box-shadow: var(--card-shadow); font-weight: 500;
+ }
+ .section { display: none; }
+ .section.active { display: block; }
+ .page-header { margin-bottom: 20px; }
+ .page-title { font-size: 24px; font-weight: 700; color: var(--secondary-900); letter-spacing: -0.5px; }
+ .page-sub { color: var(--secondary-600); font-size: 14px; margin-top: 6px; }
+ .shell-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
+ .shell-placeholder { color: var(--secondary-500); font-size: 14px; line-height: 1.6; }
+ .card-title { font-size: 15px; font-weight: 700; color: var(--secondary-900); margin-bottom: 12px; }
+ .inline-note { background: var(--blue-50); padding: 14px 16px; border-radius: 16px; border: 1px solid var(--secondary-400); font-size: 14px; line-height: 1.55; }
+ .card {
+   background: var(--surface);
+   border-radius: var(--radius);
+   box-shadow: var(--card-shadow);
+   padding: 20px;
+   margin-bottom: 0;
+ }
+ .eu-banner {
+   position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: var(--navy-700); color: rgba(255,255,255,0.92);
+   padding: 10px 16px; font-size: 13px; text-align: center; font-weight: 600;
+ }
+ @media (max-width: 900px) {
+   :root { --sidebar-w: 72px; }
+   .sidebar { padding: 16px 6px 100px; }
+   .sidebar .tagline, .sidebar .nav-section, .sidebar .role-pill span, .sidebar-links { display: none; }
+   .nav-item { justify-content: center; padding: 10px; }
+   .nav-item .icon { font-size: 20px; }
+   .hz-shell { margin-left: 72px; width: calc(100% - 72px); }
+   .hz-navbar { left: 72px; }
+   .main { padding: 80px 16px 120px; }
+ }
 
- /* PAGE */
- .page { max-width: 1380px; margin: 0 auto; padding: 28px 28px 60px; }
+ #logout-link { font-size: 13px; color: var(--secondary-500); text-decoration: none; margin-top: 8px; display: inline-block; }
+ #logout-link:hover { color: var(--brand-500); }
+
+ /* PAGE (legacy inner wrap) */
+ .page { max-width: none; margin: 0; padding: 0; }
 
  /* HERO */
  .hero { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 22px; }
  .hero-left { flex: 1; }
- .hero-greeting { font-family: 'Fraunces', Georgia, serif; font-size: 34px; font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; }
- .hero-greeting em { font-style: italic; color: var(--primary-mid); }
+ .hero-greeting { font-family: var(--font); font-size: 30px; font-weight: 800; line-height: 1.15; letter-spacing: -0.5px; color: var(--secondary-900); }
+ .hero-greeting em { font-style: italic; color: var(--brand-500); }
  .hero-date { font-size: 13px; color: var(--text-muted); margin-top: 5px; font-weight: 500; }
  .demo-banner { display: none; margin-top: 12px; padding: 8px 14px; background: #FFF7ED; border: 1px solid #FED7AA; border-radius: var(--radius-sm); font-size: 12px; color: #9A3412; font-weight: 500; }
  .demo-banner.visible { display: block; }
- .briefing-pill { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 16px; background: var(--primary); color: #fff; border-radius: 999px; font-size: 13px; font-weight: 500; line-height: 1.4; max-width: 580px; }
+ .briefing-pill { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 16px; background: var(--hero-gradient); color: #fff; border-radius: 999px; font-size: 13px; font-weight: 600; line-height: 1.4; max-width: 580px; }
  .bp-icon { font-size: 13px; flex-shrink: 0; }
 
  /* MOMENTUM */
  .momentum-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 24px; min-width: 190px; display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden; }
- .momentum-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary), #52B788); }
+ .momentum-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--hero-gradient); }
  .momentum-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 10px; }
  .momentum-ring-wrap { position: relative; width: 96px; height: 96px; }
  .momentum-ring-wrap svg { transform: rotate(-90deg); }
  .mtrack { fill: none; stroke: var(--border); stroke-width: 8; }
  .mfill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1); }
  .momentum-number { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
- .momentum-val { font-family: 'Fraunces', Georgia, serif; font-size: 30px; font-weight: 700; line-height: 1; }
+ .momentum-val { font-family: var(--font); font-size: 30px; font-weight: 800; line-height: 1; color: var(--secondary-900); }
  .momentum-pct { font-size: 10px; color: var(--text-muted); }
  .momentum-trend { font-size: 11px; font-weight: 600; margin-top: 10px; }
  .mtr-up { color: var(--primary-mid); }
@@ -91,7 +176,7 @@
  .stat-chip.c-warn { border-left-color: #F59E0B; }
  .stat-chip.c-risk { border-left-color: var(--risk); }
  .stat-chip.c-sess { border-left-color: #7C3AED; }
- .stat-num { font-family: 'Fraunces', Georgia, serif; font-size: 28px; font-weight: 700; line-height: 1; }
+ .stat-num { font-family: var(--font); font-size: 28px; font-weight: 800; line-height: 1; color: var(--secondary-900); }
  .stat-lbl { font-size: 12px; color: var(--text-muted); margin-top: 3px; font-weight: 500; }
 
  /* CONTROLS */
@@ -104,7 +189,7 @@
  .cefr-filters { display: flex; gap: 5px; flex-wrap: wrap; }
  .cefr-btn { padding: 7px 11px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.15s; }
  .cefr-btn:hover { border-color: var(--primary-mid); color: var(--primary); }
- .cefr-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+ .cefr-btn.active { background: var(--brand-500); color: #fff; border-color: var(--brand-500); }
  .ctrl-spacer { flex: 1; }
  .btn-bulk-risk { padding: 9px 16px; background: var(--risk-bg); color: var(--risk); border: 1px solid var(--risk-border); border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; transition: opacity 0.15s; }
  .btn-bulk-risk:hover { opacity: 0.84; }
@@ -127,8 +212,8 @@
  /* LEARNER CARD */
  .lcard { background: var(--surface2); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 13px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; animation: cardIn 0.28s ease both; }
  @keyframes cardIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
- .lcard:hover { border-color: var(--primary-mid); box-shadow: 0 2px 10px rgba(27,67,50,0.09); }
- .lcard.selected { border-color: var(--primary); background: #F0FDF4; box-shadow: 0 0 0 2px var(--primary); }
+ .lcard:hover { border-color: var(--brand-400); box-shadow: var(--card-shadow); }
+ .lcard.selected { border-color: var(--brand-500); background: var(--brand-soft); box-shadow: 0 0 0 2px var(--brand-tint); }
  .lcard-top { display: flex; align-items: flex-start; gap: 9px; }
  .lavatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fff; flex-shrink: 0; }
  .linfo { flex: 1; min-width: 0; }
@@ -146,8 +231,8 @@
  /* Activity dots — 14 cols × 2 rows = 28 days */
  .adots { display: grid; grid-template-columns: repeat(14, 1fr); gap: 2px; margin: 9px 0 8px; }
  .adot { aspect-ratio: 1; border-radius: 2px; background: var(--border); }
- .adot.on { background: var(--primary-mid); opacity: 0.7; }
- .adot.on.recent { background: #52B788; opacity: 1; }
+ .adot.on { background: var(--brand-500); opacity: 0.65; }
+ .adot.on.recent { background: var(--brand-400); opacity: 1; }
 
  /* Smart action */
  .laction { width: 100%; padding: 7px 10px; border-radius: 6px; border: none; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; text-align: left; transition: opacity 0.15s; }
@@ -160,7 +245,7 @@
  .laction.sending { opacity: 0.5; cursor: default; }
 
  /* INSIGHTS */
- .section-h2 { font-family: 'Fraunces', Georgia, serif; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 14px; }
+ .section-h2 { font-family: var(--font); font-size: 20px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 14px; color: var(--secondary-900); }
  .insights-section { margin-bottom: 26px; }
  .insights-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
  .insight-card { background: var(--surface); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
@@ -171,9 +256,9 @@
  /* GROUPINGS */
  .groupings-section { margin-bottom: 28px; }
  .grouping-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
- .grouping-card { background: var(--surface); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); border-top: 3px solid var(--primary-mid); }
+ .grouping-card { background: var(--surface); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); border-top: 3px solid var(--brand-500); }
  .gtitle { font-size: 14px; font-weight: 700; margin-bottom: 5px; }
- .gmembers { font-size: 12px; color: var(--primary-mid); font-weight: 600; margin-bottom: 5px; }
+ .gmembers { font-size: 12px; color: var(--brand-600); font-weight: 600; margin-bottom: 5px; }
  .greason { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
 
  /* SIDE PANEL */
@@ -183,15 +268,15 @@
  .side-panel.visible { transform: translateX(0); }
  .panel-hdr { padding: 18px 18px 0; border-bottom: 1px solid var(--border-subtle); }
  .panel-hdr-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
- .panel-name { font-family: 'Fraunces', Georgia, serif; font-size: 21px; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+ .panel-name { font-family: var(--font); font-size: 21px; font-weight: 800; line-height: 1.15; letter-spacing: -0.5px; color: var(--secondary-900); }
  .panel-close { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.15s; flex-shrink: 0; }
  .panel-close:hover { background: var(--bg); }
  .panel-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 12px; }
  .pbadge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--bg); color: var(--text-muted); }
  .ptabs { display: flex; }
  .ptab { flex: 1; padding: 9px 6px; font-family: inherit; font-size: 12px; font-weight: 600; color: var(--text-muted); background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; text-align: center; }
- .ptab:hover { color: var(--primary); }
- .ptab.active { color: var(--primary); border-bottom-color: var(--primary); }
+ .ptab:hover { color: var(--brand-600); }
+ .ptab.active { color: var(--brand-600); border-bottom-color: var(--brand-500); }
  .panel-body { flex: 1; overflow-y: auto; padding: 18px; }
  .tab-pane { display: none; }
  .tab-pane.active { display: block; }
@@ -204,16 +289,16 @@
  .cefr-override { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
  .pselect { flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; background: var(--surface); color: var(--text); outline: none; cursor: pointer; }
  .pselect:focus { border-color: var(--primary-mid); }
- .btn-save-cefr { padding: 8px 13px; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
- .btn-save-cefr:hover { opacity: 0.87; }
- .btn-save-cefr.saved { background: var(--primary-mid); }
+ .btn-save-cefr { padding: 8px 13px; background: var(--brand-500); color: #fff; border: none; border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
+ .btn-save-cefr:hover { opacity: 0.9; }
+ .btn-save-cefr.saved { background: var(--brand-600); }
  .panel-actions { display: flex; flex-direction: column; gap: 7px; }
  .pbtn { width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; transition: opacity 0.15s; border: none; }
  .pbtn:hover { opacity: 0.87; }
- .pbtn.p-session { background: var(--primary); color: #fff; }
- .pbtn.p-nudge { background: var(--surface); color: var(--primary); border: 1px solid var(--border); }
+ .pbtn.p-session { background: var(--brand-500); color: #fff; }
+ .pbtn.p-nudge { background: var(--surface); color: var(--brand-600); border: 1px solid var(--border); }
  .pbtn.p-reviewed { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); font-size: 12px; }
- .pbtn.p-reviewed.done { color: var(--primary-mid); border-color: var(--primary-light); background: var(--primary-light); }
+ .pbtn.p-reviewed.done { color: var(--brand-600); border-color: var(--brand-tint); background: var(--brand-soft); }
 
  /* Skills tab */
  .sbar-wrap { margin-bottom: 11px; }
@@ -232,8 +317,8 @@
  .notes-area { width: 100%; min-height: 130px; padding: 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; color: var(--text); resize: vertical; outline: none; background: var(--surface2); line-height: 1.6; transition: border-color 0.15s; margin-bottom: 10px; }
  .notes-area:focus { border-color: var(--primary-mid); background: var(--surface); }
  .notes-area::placeholder { color: var(--text-light); }
- .notes-saved { font-size: 11px; color: var(--primary-mid); font-weight: 600; height: 15px; margin-bottom: 12px; }
- .btn-gen { width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--primary), #2D6A4F); color: #fff; border: none; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: opacity 0.2s; margin-bottom: 10px; }
+ .notes-saved { font-size: 11px; color: var(--brand-600); font-weight: 600; height: 15px; margin-bottom: 12px; }
+ .btn-gen { width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--hero-gradient); color: #fff; border: none; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: opacity 0.2s; margin-bottom: 10px; }
  .btn-gen:hover { opacity: 0.9; }
  .btn-gen:disabled { opacity: 0.55; cursor: default; }
  .bspin { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
@@ -243,7 +328,7 @@
  .brief-out { background: var(--bg); border-radius: var(--radius-sm); padding: 13px; font-size: 13px; color: var(--text); line-height: 1.65; display: none; animation: fadeUp 0.3s ease; }
  .brief-out.visible { display: block; }
  @keyframes fadeUp { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
- .bh { font-weight: 700; color: var(--primary); margin-bottom: 5px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+ .bh { font-weight: 700; color: var(--brand-600); margin-bottom: 5px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
  .bp { margin-bottom: 9px; font-size: 13px; }
  .bp:last-child { margin-bottom: 0; }
 
@@ -256,7 +341,7 @@
  .alku-table { width: 100%; font-size: 12px; border-collapse: collapse; }
  .alku-table th, .alku-table td { padding: 9px 11px; border-bottom: 1px solid var(--border-subtle); text-align: left; }
  .alku-table th { font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
- .alku-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: var(--primary-light); color: var(--primary); }
+ .alku-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: var(--brand-soft); color: var(--brand-600); }
  .alku-list { margin: 0; padding-left: 18px; font-size: 13px; color: var(--text-muted); line-height: 1.55; }
  .alku-list li { margin-bottom: 6px; }
 
@@ -268,28 +353,49 @@
 </head>
 <body>
 
-<nav class="topnav">
- <div class="topnav-logo">Knuut<span>.</span></div>
- <a href="index.html" class="topnav-link">Brain Graph</a>
- <a href="dashboard.html" class="topnav-link">Agents</a>
- <a href="teacher-dashboard.html" class="topnav-link active">Teacher</a>
- <a href="oppipolku.html" class="topnav-link">Oppipolku</a>
- <a href="privacy-ai.html" class="topnav-link">Privacy</a>
- <div class="topnav-spacer"></div>
- <div class="topnav-trust">
- <span><span class="nt-dot"></span>GDPR</span>
- <span><span class="nt-dot"></span>EU data</span>
- <span><span class="nt-dot"></span>Human-in-loop</span>
- </div>
- <div class="topnav-user">
- <div class="topnav-avatar" id="nav-initials">T</div>
- <span id="nav-name">Teacher</span>
- </div>
- <a href="#" id="logout-link">Log out</a>
+<nav class="sidebar" aria-label="Opettajan valikko">
+  <div class="sidebar-brand">
+    <div class="logo">Knuut <span>AI</span></div>
+    <div class="tagline">ALKUPOLKU · Opettaja</div>
+    <div class="sidebar-sep" aria-hidden="true"></div>
+  </div>
+  <div class="nav-section">Näkymät</div>
+  <button type="button" class="nav-item active" data-sec="dashboard"><span class="icon">🏠</span> Etusivu &amp; ryhmä</button>
+  <button type="button" class="nav-item" data-sec="modules"><span class="icon">📚</span> Moduulirakenne</button>
+  <button type="button" class="nav-item" data-sec="hops"><span class="icon">🗺️</span> HOPS (opiskelupolku)</button>
+  <button type="button" class="nav-item" data-sec="attendance"><span class="icon">📋</span> Läsnäolo</button>
+  <button type="button" class="nav-item" data-sec="assessment"><span class="icon">📊</span> Kielitaso (A1–B2)</button>
+  <button type="button" class="nav-item" data-sec="placement"><span class="icon">🏢</span> Työssäoppiminen</button>
+  <button type="button" class="nav-item" data-sec="yki"><span class="icon">📝</span> YKI-valmius</button>
+  <button type="button" class="nav-item" data-sec="passit"><span class="icon">🪪</span> Passit &amp; kortit</button>
+  <button type="button" class="nav-item" data-sec="feedback"><span class="icon">💬</span> Palaute (väli &amp; loppu)</button>
+  <button type="button" class="nav-item" data-sec="reports"><span class="icon">📄</span> Loppuraportti (e-lomake)</button>
+  <button type="button" class="nav-item" data-sec="jatko"><span class="icon">🔭</span> Jatkosuunnitelma</button>
+  <button type="button" class="nav-item" data-sec="contacts"><span class="icon">🤝</span> Työnantajakontaktit</button>
+  <div class="nav-section">Linkit</div>
+  <a class="nav-item" href="oppipolku.html"><span class="icon">🎓</span> Oppipolku</a>
+  <a class="nav-item" href="index.html"><span class="icon">🧠</span> Brain Graph</a>
+  <a class="nav-item" href="dashboard.html"><span class="icon">🤖</span> Agents</a>
+  <div class="sidebar-bottom">
+    <div class="role-pill" id="role-pill" title="Rooli ALKUPOLKU-järjestelmässä">Ladataan roolia…</div>
+    <div id="sb-name" style="font-weight:700;font-size:14px;color:var(--secondary-900);margin-bottom:8px">Opettaja</div>
+    <a href="#" id="logout-link">Kirjaudu ulos</a>
+  </div>
 </nav>
 
-<div class="page">
+<div class="hz-shell">
+  <header class="hz-navbar" role="banner">
+    <nav class="hz-breadcrumb" aria-label="Murupolku">
+      <a href="#">ALKUPOLKU</a><span class="sep">/</span><span id="hz-bc-page">Etusivu</span>
+    </nav>
+  </header>
 
+  <main class="main">
+    <div class="trust-top">
+      <strong>Ihmisen päätös</strong> — tekoäly tukee analyysiä ja luonnoksia. Lopulliset arviot, HOPS ja raportit: opettaja. EU AI Act -yhteensopiva.
+    </div>
+
+ <div id="sec-dashboard" class="section active">
  <div class="hero">
  <div class="hero-left">
  <div class="hero-greeting">Good <em id="time-greeting">morning</em>,<br><span id="teacher-name">—</span></div>
@@ -305,7 +411,7 @@
  <div class="momentum-ring-wrap">
  <svg width="96" height="96" viewBox="0 0 96 96">
  <circle class="mtrack" cx="48" cy="48" r="38"/>
- <circle class="mfill" id="mfill" cx="48" cy="48" r="38" stroke-dasharray="238.76" stroke-dashoffset="238.76" stroke="#2D6A4F"/>
+ <circle class="mfill" id="mfill" cx="48" cy="48" r="38" stroke-dasharray="238.76" stroke-dashoffset="238.76" stroke="#422AFB"/>
  </svg>
  <div class="momentum-number">
  <div class="momentum-val" id="mval">—</div>
@@ -365,13 +471,121 @@
  <div class="grouping-grid" id="grouping-grid"></div>
  </section>
 
- <section class="alku-lms-section" id="alkupolku-lms" aria-labelledby="alku-lms-heading">
- <h2 class="section-h2" id="alku-lms-heading">ALKUPOLKU — kotoutumiskoulutus (LMS)</h2>
- <p class="alku-sub" id="alku-tender-line">Ladataan tarjouskontekstia ja demo-opiskelijoita…</p>
- <div class="alku-grid" id="alku-grid"></div>
- </section>
+ </div>
 
+ <div id="sec-modules" class="section" aria-labelledby="t-mod-title">
+   <div class="page-header">
+     <div class="page-title" id="t-mod-title">Moduulirakenne</div>
+     <div class="page-sub">Luo ja muokkaa suomen moduuleja (OPH 2022) — sisältö täydennetään myöhemmin. Runko + demo.</div>
+   </div>
+   <div class="card" style="margin-bottom:16px">
+     <div class="card-title">Moduulit (video · teksti · tehtävät · sanasto · puhe · tasoitus)</div>
+     <div id="shell-mod-grid" class="shell-placeholder">Ladataan…</div>
+   </div>
+   <p class="inline-note" style="margin-top:12px;font-size:14px">Tallennus tietokantaan: <code>lms_modules</code> (Neon).</p>
+ </div>
+
+ <div id="sec-hops" class="section">
+   <div class="page-header">
+     <div class="page-title">HOPS — henkilökohtainen opiskelupolku</div>
+     <div class="page-sub">Muokkaa opiskelijakohtaista polkua 120 päivälle. Yhteistyö opiskelijan kanssa.</div>
+   </div>
+   <div class="card" style="margin-bottom:16px">
+     <label class="plbl" for="hops-student-select">Opiskelija</label>
+     <select id="hops-student-select" class="pselect" style="max-width:360px;margin-bottom:16px"></select>
+     <div class="plbl">Tavoitteet (demo)</div>
+     <textarea id="hops-editor" class="notes-area" style="min-height:160px" placeholder="Kirjoita HOPS-luonnos..."></textarea>
+     <button type="button" class="btn-save-cefr" id="btn-hops-save" style="margin-top:12px">Tallenna luonnos (demo)</button>
+   </div>
+   <div id="shell-hops-preview" class="card shell-placeholder">Ladataan…</div>
+ </div>
+
+ <div id="sec-attendance" class="section">
+   <div class="page-header">
+     <div class="page-title">Läsnäolo</div>
+     <div class="page-sub">Päiväkirja · 5 peräkkäistä poissaoloa → hälytys vastuuopettajalle ja työvoimaviranomaiselle</div>
+   </div>
+   <div id="shell-attendance-rule" class="card" style="margin-bottom:16px"></div>
+   <div class="card">
+     <div class="card-title">Viimeisimmät merkinnät (demo)</div>
+     <div id="shell-attendance-log" class="alku-table-wrap"></div>
+   </div>
+   <button type="button" class="btn-save-cefr" id="btn-att-demo" style="margin-top:14px">Merkitse läsnä (demo)</button>
+ </div>
+
+ <div id="sec-assessment" class="section">
+   <div class="page-header">
+     <div class="page-title">Kielitasoarviointi</div>
+     <div class="page-sub">A1 → B2 (OPH-pohjainen asteikko) — sisään, väli, päätös</div>
+   </div>
+   <div id="shell-assessment" class="card shell-placeholder">Ladataan…</div>
+ </div>
+
+ <div id="sec-placement" class="section">
+   <div class="page-header">
+     <div class="page-title">Työssäoppiminen</div>
+     <div class="page-sub">2–3 viikkoa · vähintään 8 op · työpaikka ja ohjaaja · kolmikantasopimus (demo)</div>
+   </div>
+   <div id="shell-placement" class="card shell-placeholder">Ladataan…</div>
+ </div>
+
+ <div id="sec-yki" class="section">
+   <div class="page-header">
+     <div class="page-title">YKI-valmius</div>
+     <div class="page-sub">Merkitse kun opiskelija on valmis keskitason YKI:ään (4 alikoetta)</div>
+   </div>
+   <div id="shell-yki" class="card shell-placeholder">Ladataan…</div>
+ </div>
+
+ <div id="sec-passit" class="section">
+   <div class="page-header">
+     <div class="page-title">Passit &amp; kortit</div>
+     <div class="page-sub">Hygieniapassi, ensiapu jne. — hinnoittelu päiväkohtaisesti (tender)</div>
+   </div>
+   <div id="shell-passit" class="card shell-placeholder">Ladataan…</div>
+ </div>
+
+ <div id="sec-feedback" class="section">
+   <div class="page-header">
+     <div class="page-title">Palaute — väli &amp; loppu</div>
+     <div class="page-sub">Tilaajan lomakeformaatti (demo)</div>
+   </div>
+   <div id="shell-feedback" class="shell-grid"></div>
+ </div>
+
+ <div id="sec-reports" class="section">
+   <div class="page-header">
+     <div class="page-title">Loppuraportti &amp; Kuopio e-lomake</div>
+     <div class="page-sub">Lomakkeet 5182 / 5183 — vienti PDF + Koulutusportti-kentät</div>
+   </div>
+   <div id="shell-reports" class="card shell-placeholder">Ladataan…</div>
+ </div>
+
+ <div id="sec-jatko" class="section">
+   <div class="page-header">
+     <div class="page-title">Jatkosuunnitelma</div>
+     <div class="page-sub">Konkreettinen, yhteisesti luotu suunnitelma</div>
+   </div>
+   <div class="card" style="margin-bottom:16px">
+     <div class="card-title">Rakenne (demo)</div>
+     <textarea id="jatko-editor" class="notes-area" style="min-height:120px" placeholder="Kirjaa jatkokoulutus-, työ- ja tukipolut..."></textarea>
+     <p class="inline-note">Opiskelijan kommentti näkyy Oppipolussa (kun synkronoitu).</p>
+   </div>
+   <div id="shell-jatko" class="card shell-placeholder">Ladataan…</div>
+ </div>
+
+ <div id="sec-contacts" class="section">
+   <div class="page-header">
+     <div class="page-title">Työnantajakontaktit (Kuopio)</div>
+     <div class="page-sub">Työssäoppiminen ja työelämäyhteistyö</div>
+   </div>
+   <div id="shell-contacts" class="card shell-placeholder">Ladataan…</div>
+ </div>
+
+  </main>
 </div>
+
+<div class="eu-banner" role="status">GDPR · EU-data · Koulutusportti-synkronointi suunnitteilla · Salassapito työvoima- ja sosiaalidatasta</div>
 
 <div class="panel-overlay" id="panel-overlay"></div>
 <div class="side-panel" id="side-panel">
@@ -445,8 +659,15 @@ document.getElementById('logout-link')?.addEventListener('click', (e) => { e.pre
 // HEADER INIT
 const teacherName = user?.name || 'Teacher';
 document.getElementById('teacher-name').textContent = teacherName;
-document.getElementById('nav-name').textContent = teacherName;
-document.getElementById('nav-initials').textContent = teacherName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+document.getElementById('sb-name').textContent = teacherName;
+(function rolePill() {
+ const pk = document.getElementById('role-pill');
+ if (!pk) return;
+ const tk = user?.teacher_kind;
+ if (tk === 'vastuuopettaja') pk.textContent = 'Vastuuopettaja (A)';
+ else if (tk === 'ohjaaja') pk.textContent = 'Ohjaaja (B)';
+ else pk.textContent = user?.role === 'admin' ? 'Ylläpito' : 'Opettaja (aseta teacher_kind)';
+})();
 const now = new Date();
 const hr = now.getHours();
 document.getElementById('time-greeting').textContent = hr < 12 ? 'morning' : hr < 17 ? 'afternoon' : 'evening';
@@ -828,37 +1049,123 @@ async function loadLearners() {
 }
 loadLearners();
 
-async function loadAlkupolkuLms() {
- const line = document.getElementById('alku-tender-line');
- const grid = document.getElementById('alku-grid');
- if (!line || !grid) return;
+const SECTION_LABELS = {
+ dashboard: 'Etusivu',
+ modules: 'Moduulit',
+ hops: 'HOPS',
+ attendance: 'Läsnäolo',
+ assessment: 'Kielitaso',
+ placement: 'Työssäoppiminen',
+ yki: 'YKI',
+ passit: 'Passit',
+ feedback: 'Palaute',
+ reports: 'Raportti',
+ jatko: 'Jatkosuunnitelma',
+ contacts: 'Kontaktit',
+};
+document.querySelectorAll('.nav-item[data-sec]').forEach(function (el) {
+ el.addEventListener('click', function () {
+  const id = el.getAttribute('data-sec');
+  if (!id) return;
+  document.querySelectorAll('.section').forEach(function (s) { s.classList.remove('active'); });
+  const sec = document.getElementById('sec-' + id);
+  if (sec) sec.classList.add('active');
+  document.querySelectorAll('.nav-item[data-sec]').forEach(function (n) { n.classList.remove('active'); });
+  el.classList.add('active');
+  document.getElementById('hz-bc-page').textContent = SECTION_LABELS[id] || id;
+ });
+});
+
+async function loadTeacherShell() {
  try {
  const res = await fetch('/api/lms/overview', { headers: authHeaders() });
  if (!res.ok) throw new Error('HTTP ' + res.status);
  const d = await res.json();
- const t = d.tender || {};
- line.textContent = `${t.client || '—'} · ${t.case_ref || ''} · ${t.period || ''} · ryhmä ${t.group_size || '—'} · polku ${t.path_days || 120} pv`;
  const students = d.students || [];
  const rule = d.attendance_rule || {};
  const yki = d.yki || {};
  const otp = d.otp || {};
  const gdpr = d.gdpr || {};
  const contacts = d.employer_contacts || [];
- const rows = students.map(s => `<tr><td>${esc(s.name)}</td><td>${esc(s.cefr_level)}</td><td>${s.day_n != null ? esc(String(s.day_n)) : '—'}</td><td>${s.consecutive_absences != null ? esc(String(s.consecutive_absences)) : '—'}</td><td>${s.alert_tyovoima ? '<span class="alku-badge">Hälytys</span>' : '—'}</td><td>${s.yki_ready ? 'Kyllä' : 'Ei'}</td></tr>`).join('');
- grid.innerHTML = `
-  <div class="insight-card alku-wide"><div class="ilbl">Läsnäolo & keskeyttämisriski</div><div class="ititle">${rule.consecutive_absence_limit || 5} peräkkäistä poissaolopäivää</div><p class="icopy">Automaattinen hälytys vastuuopettajalle ja työvoimaviranomaiselle (demo).</p><p class="icopy" style="margin-top:8px">Ilmoituskanavat: ${esc((rule.notify || []).join(', '))}</p></div>
-  <div class="insight-card alku-wide"><div class="ilbl">Opiskelijat (demo)</div><div class="alku-table-wrap"><table class="alku-table" aria-label="Demo-opiskelijat"><thead><tr><th>Nimi</th><th>Taso</th><th>Päivä</th><th>Peräkkäiset poissaolot</th><th>TVI-hälytys</th><th>YKI-valmis</th></tr></thead><tbody>${rows}</tbody></table></div></div>
-  <div class="insight-card"><div class="ilbl">YKI-valmius (malli)</div><div class="ititle">${esc(yki.recommendation || '—')}</div><p class="icopy">Alatestit: ${esc(JSON.stringify(yki.subtests || {}))}</p></div>
-  <div class="insight-card"><div class="ilbl">OTP-kk (${esc(otp.month || '')})</div><div class="ititle">Yhteensä ${esc(String(otp.total_otp != null ? otp.total_otp : '—'))} opiskelijatyöpäivää</div><p class="icopy">1 OTP = 7 h (7×45 min). Laskutusdata demo.</p></div>
-  <div class="insight-card"><div class="ilbl">GDPR / Koulutusportti</div><div class="ititle">${esc(gdpr.data_region || 'EU')}</div><p class="icopy">Säilytys vähintään ${esc(String(gdpr.retention_years_min || 2))} vuotta. Audit-loki: ${gdpr.audit_log_enabled ? 'käytössä' : '—'}.</p><ul class="alku-list">${(gdpr.koulutusportti_fields || []).map(f => `<li>${esc(f)}</li>`).join('')}</ul></div>
-  <div class="insight-card alku-wide"><div class="ilbl">Työnantajakontaktit (Kuopio-alue, demo)</div><div class="alku-table-wrap"><table class="alku-table"><thead><tr><th>Nimi</th><th>Ala</th><th>Yhteys</th></tr></thead><tbody>${contacts.map(c => `<tr><td>${esc(c.name)}</td><td>${esc(c.sector)}</td><td>${esc(c.contact)}</td></tr>`).join('')}</tbody></table></div></div>
- `;
+ const mods = d.modules || [];
+ const hops = d.hops || {};
+ const placement = d.placement_sample || d.placement || {};
+ const la = d.language_assessment || {};
+ const passi = d.passi_tracking || [];
+ const fb = d.feedback_tilaaja || {};
+ const fr = d.final_report_kuopio || {};
+ const jatko = d.jatkosuunnitelma || {};
+ const tr = d.teacher_roles_help || {};
+
+ const modHtml = mods.map(function (m) {
+  return '<div class="insight-card"><div class="ilbl">' + esc(m.code || '') + '</div><div class="ititle">' + esc(m.level || m.theme || '') + '</div><p class="icopy">' + esc(m.theme || '') + '</p><p class="icopy" style="margin-top:8px">Rakenne: video · teksti · tehtävät · sanasto · puhe · tasoitus</p></div>';
+ }).join('');
+ document.getElementById('shell-mod-grid').innerHTML = modHtml ? '<div class="insights-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">' + modHtml + '</div>' : '<p class="shell-placeholder">Ei moduuleja</p>';
+
+ const sel = document.getElementById('hops-student-select');
+ if (sel) {
+  sel.innerHTML = students.map(function (s) { return '<option value="' + String(s.id).replace(/"/g, '') + '">' + esc(s.name) + '</option>'; }).join('');
+  const goals = (hops.goals_120d || []).join('\n');
+  const he = document.getElementById('hops-editor');
+  if (he) he.value = goals;
+ }
+ document.getElementById('shell-hops-preview').innerHTML = '<p class="icopy"><strong>Opettajan muistiinnot:</strong> ' + esc(hops.teacher_notes || '—') + '</p><p class="icopy" style="margin-top:10px"><strong>Roolit:</strong> ' + esc(tr.vastuuopettaja || '') + ' / ' + esc(tr.ohjaaja || '') + '</p>';
+
+ document.getElementById('shell-attendance-rule').innerHTML = '<p class="icopy"><strong>' + (rule.consecutive_absence_limit || 5) + ' peräkkäistä poissaolopäivää</strong> → hälytys: ' + esc((rule.notify || []).join(', ')) + '.</p>';
+ const log = d.attendance_log || [];
+ document.getElementById('shell-attendance-log').innerHTML = '<table class="alku-table"><thead><tr><th>Päivä</th><th>Opiskelija</th><th>Läsnä</th><th>Huom</th></tr></thead><tbody>' + log.map(function (r) { return '<tr><td>' + esc(r.date) + '</td><td>' + esc(r.student) + '</td><td>' + (r.present ? 'Kyllä' : 'Ei') + '</td><td>' + esc(r.note || '—') + '</td></tr>'; }).join('') + '</tbody></table>';
+
+ document.getElementById('shell-assessment').innerHTML = '<p class="icopy">' + esc(la.framework || '') + '</p><p class="icopy" style="margin-top:10px"><strong>Asteikko:</strong> ' + esc((la.scale || []).join(' → ')) + '</p><p class="icopy" style="margin-top:10px">' + esc(la.notes || '') + '</p><p class="icopy" style="margin-top:12px"><strong>Esimerkki:</strong> ' + esc((la.sample_entry && la.sample_entry.student) || '') + ' — sisään ' + esc((la.sample_entry && la.sample_entry.entry) || '') + ' — väli ' + esc((la.sample_entry && la.sample_entry.midpoint) || '') + ' — tavoite ' + esc((la.sample_entry && la.sample_entry.exit_target) || '') + '</p>';
+
+ const plRows = students.map(function (s) {
+  const p = s.placement;
+  if (!p) return '<tr><td>' + esc(s.name) + '</td><td>' + esc(s.cefr_level) + '</td><td>—</td><td>—</td><td>—</td></tr>';
+  return '<tr><td>' + esc(s.name) + '</td><td>' + esc(s.cefr_level) + '</td><td>' + esc(p.employer || '-') + '</td><td>' + esc(String(p.weeks || '')) + ' vk</td><td>' + esc(String(p.credits || '')) + ' op</td></tr>';
+ }).join('');
+ document.getElementById('shell-placement').innerHTML = '<div class="alku-table-wrap"><table class="alku-table"><thead><tr><th>Opiskelija</th><th>Taso</th><th>Työpaikka</th><th>Kesto</th><th>Op</th></tr></thead><tbody>' + plRows + '</tbody></table></div><p class="icopy" style="margin-top:14px"><strong>Mallisopimus (3 osapuolta):</strong> ' + esc(JSON.stringify((placement.agreement || {}))) + '</p><p class="icopy">' + esc(placement.feedback_final || '') + '</p>';
+
+ document.getElementById('shell-yki').innerHTML = '<p class="ititle">' + esc(yki.recommendation || '') + '</p><p class="icopy">Alatestit: ' + esc(JSON.stringify(yki.subtests || {})) + '</p><p class="icopy" style="margin-top:10px">Merkitse opiskelijakohtaisesti valmis keskitason YKI:ään (tietokanta tulossa).</p>';
+
+ const nameById = {};
+ students.forEach(function (s) { nameById[s.id] = s.name; });
+ document.getElementById('shell-passit').innerHTML = passi.map(function (p) {
+  const nm = nameById[p.student_id] || p.student_id;
+  return '<div style="margin-bottom:14px;border-bottom:1px solid var(--border-subtle);padding-bottom:12px"><strong>' + esc(nm) + '</strong><ul class="alku-list">' + (p.items || []).map(function (i) { return '<li>' + esc(i.name) + ': ' + esc(i.status) + '</li>'; }).join('') + '</ul></div>';
+ }).join('') || '<p class="shell-placeholder">Ei rivejä</p>';
+
+ document.getElementById('shell-feedback').innerHTML = '<div class="insight-card"><div class="ilbl">' + esc((fb.interim && fb.interim.title) || 'Välipalaute') + '</div><p class="icopy">' + esc((fb.interim && fb.interim.fields && fb.interim.fields.join(', ')) || '') + '</p><p class="icopy">' + esc((fb.interim && fb.interim.format) || '') + '</p></div><div class="insight-card"><div class="ilbl">' + esc((fb.final && fb.final.title) || 'Loppupalaute') + '</div><p class="icopy">' + esc((fb.final && fb.final.fields && fb.final.fields.join(', ')) || '') + '</p><p class="icopy">' + esc((fb.final && fb.final.format) || '') + '</p></div>';
+
+ document.getElementById('shell-reports').innerHTML = '<p class="icopy">' + esc(fr.export || '') + '</p><ul class="alku-list">' + (fr.forms || []).map(function (f) { return '<li><strong>' + esc(f.id) + '</strong> — ' + esc(f.name) + ' (' + esc(f.status || '') + ')</li>'; }).join('') + '</ul><p class="icopy" style="margin-top:12px">OTP kk ' + esc((otp && otp.month) || '') + ': ' + esc(String((otp && otp.total_otp) != null ? otp.total_otp : '—')) + ' opiskelijatyöpäivää (laskutus).</p><p class="icopy">GDPR: ' + esc(gdpr.data_region || '') + ' · Koulutusportti-kentät: ' + (gdpr.koulutusportti_fields || []).map(function (x) { return esc(x); }).join(', ') + '</p>';
+
+ document.getElementById('jatko-editor').value = (jatko.options || []).join('\n');
+ document.getElementById('shell-jatko').innerHTML = '<p class="icopy"><strong>Opiskelijan kommentti:</strong> ' + esc(jatko.student_comment || '—') + '</p><p class="icopy">Tila: ' + esc(jatko.status || '') + '</p>';
+
+ document.getElementById('shell-contacts').innerHTML = '<div class="alku-table-wrap"><table class="alku-table"><thead><tr><th>Nimi</th><th>Ala</th><th>Yhteys</th></tr></thead><tbody>' + contacts.map(function (c) { return '<tr><td>' + esc(c.name) + '</td><td>' + esc(c.sector) + '</td><td>' + esc(c.contact) + '</td></tr>'; }).join('') + '</tbody></table></div><p class="icopy" style="margin-top:12px">' + esc((d.tender && d.tender.client) || '') + ' · ' + esc((d.tender && d.tender.case_ref) || '') + '</p>';
+
  } catch (e) {
- line.textContent = 'LMS-yhteenveto ei latautunut. Tarkista että API /api/lms/overview on käytössä ja olet kirjautunut opettajana.';
- grid.innerHTML = `<div class="insight-card"><p class="icopy">${esc(e.message || String(e))}</p></div>`;
+  const msg = esc(e.message || String(e));
+  ['shell-mod-grid','shell-hops-preview','shell-assessment','shell-placement','shell-yki','shell-passit','shell-reports','shell-jatko','shell-contacts'].forEach(function (id) {
+   const n = document.getElementById(id);
+   if (n) n.innerHTML = '<p class="shell-placeholder">Virhe: ' + msg + '</p>';
+  });
  }
 }
-loadAlkupolkuLms();
+loadTeacherShell();
+
+document.getElementById('btn-hops-save')?.addEventListener('click', async function () {
+ try {
+  const r = await fetch('/api/lms/hops', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+  const j = await r.json();
+  alert(j.message || 'OK');
+ } catch (e) { alert('Virhe'); }
+});
+document.getElementById('btn-att-demo')?.addEventListener('click', async function () {
+ try {
+  const r = await fetch('/api/lms/attendance', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+  const j = await r.json();
+  alert(j.message || 'OK');
+ } catch (e) { alert('Virhe'); }
+});
 </script>
 </body>
 </html>
