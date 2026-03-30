@@ -167,6 +167,72 @@ const MOCK = {
     vastuuopettaja: 'Täysi pedagoginen vastuu, moduulit, raportit, HOPS-hyväksyntä.',
     ohjaaja: 'Läsnäolo, työssäoppiminen, tuki — rajattu muokkaus.',
   },
+  /** Learner-only enrichments (GET /api/lms/me) */
+  learner_schedule: [
+    { time: '09:00', icon: '👥', label_fi: 'Ryhmätunti (suomi)', label_en: 'Group lesson', label_ar: 'درس جماعي' },
+    { time: '10:45', icon: '☕', label_fi: 'Tauko', label_en: 'Break', label_ar: 'استراحة' },
+    { time: '11:00', icon: '💬', label_fi: 'Keskustelu / Knuut', label_en: 'Speaking / Knuut', label_ar: 'محادثة' },
+    { time: '12:30', icon: '🍽️', label_fi: 'Lounas', label_en: 'Lunch', label_ar: 'غداء' },
+    { time: '13:30', icon: '📝', label_fi: 'Työelämän sanasto', label_en: 'Work vocabulary', label_ar: 'مفردات العمل' },
+  ],
+  learning_path_milestones: [
+    { day: 1, label_fi: 'Aakkoset & äänteet', done: true },
+    { day: 30, label_fi: 'A1.1 — arki', done: true },
+    { day: 60, label_fi: 'A1.2 — työ', done: false },
+    { day: 90, label_fi: 'A2.1 — työpaikka', done: false },
+    { day: 120, label_fi: 'A2 — tavoite', done: false },
+  ],
+  homework_demo: [
+    { id: 'hw1', title_fi: 'Kirjoita 5 lausetta: päiväni työpaikalla', title_en: 'Write 5 sentences: my day at work', due: '2026-04-02', status: 'pending' },
+    { id: 'hw2', title_fi: 'Kuuntele äänite ja vastaa kysymyksiin (M3)', title_en: 'Listen and answer (M3)', due: '2026-04-05', status: 'submitted' },
+  ],
+  self_assessment_demo: [
+    { id: 'sa1', q_fi: 'Pystyn tervehtimään ja esittelemään itseni suomeksi.', q_en: 'I can greet and introduce myself in Finnish.', q_ar: 'أستطيع التحية والتعريف بنفسي بالفنلندية.', scale: '1–5' },
+    { id: 'sa2', q_fi: 'Ymmärrän yksinkertaisia työohjeita.', q_en: 'I understand simple work instructions.', q_ar: 'أفهم تعليمات العمل البسيطة.', scale: '1–5' },
+    { id: 'sa3', q_fi: 'Uskallan pyytää apua suomeksi.', q_en: 'I dare to ask for help in Finnish.', q_ar: 'أجرؤ على طلب المساعدة بالفنلندية.', scale: '1–5' },
+  ],
+  vocabulary_banks: [
+    {
+      theme_fi: 'Työvuoro',
+      theme_en: 'Work shift',
+      words: [
+        { fi: 'vuoro', en: 'shift', ar: 'وردية' },
+        { fi: 'tauko', en: 'break', ar: 'استراحة' },
+        { fi: 'esimies', en: 'supervisor', ar: 'مشرف' },
+      ],
+    },
+    {
+      theme_fi: 'Terveydenhuolto',
+      theme_en: 'Healthcare',
+      words: [
+        { fi: 'aika', en: 'appointment', ar: 'موعد' },
+        { fi: 'särky', en: 'pain', ar: 'ألم' },
+      ],
+    },
+  ],
+  grammar_reference: [
+    { topic_fi: 'Kysymyssanat (mitä, missä, milloin)', topic_en: 'Question words', example: 'Missä on vessa? Milloin tauko?' },
+    { topic_fi: 'Genetiivi (minun, sinun)', topic_en: 'Genitive', example: 'Minun vuoroni alkaa kello 8.' },
+    { topic_fi: 'Verbityypit (1–5) — lyhyt', topic_en: 'Verb types', example: 'Asua, syödä, mennä…' },
+  ],
+  passport_prep: {
+    hygiene: {
+      title_fi: 'Hygieniapassi — valmistautuminen',
+      title_en: 'Hygiene passport — prep',
+      bullets_fi: ['Käsienpesu oikein', 'Elintarvikehygienia', 'Allergiat ja ristikontaminaatio'],
+      bullets_en: ['Hand washing', 'Food hygiene', 'Allergens'],
+    },
+    first_aid: {
+      title_fi: 'Ensiapu — perustietoisuus (ei korvaa kurssia)',
+      title_en: 'First aid — awareness (not a course)',
+      bullets_fi: ['Soita 112 hätätilanteessa', 'Tunnista tajuton', 'Älä liikuta loukkaantunutta turhaan'],
+      bullets_en: ['Call 112 in emergency', 'Recognize unconscious person'],
+    },
+  },
+  notifications_demo: [
+    { id: 'n1', type: 'schedule', text_fi: 'Huomenna tunti klo 9 siirtyy saliin B2.', text_en: 'Tomorrow 9:00 class moves to room B2.', at: '2026-03-29T08:00:00Z', read: false },
+    { id: 'n2', type: 'message', text_fi: 'Opettaja: Muista työpäiväkirjan merkintä perjantaihin mennessä.', text_en: 'Teacher: Remember diary entry by Friday.', at: '2026-03-28T14:00:00Z', read: false },
+  ],
 };
 
 async function tryDbModules() {
@@ -223,9 +289,32 @@ export default async function lmsHandler(req, res, pathSegs) {
         modules: MOCK.modules,
         hops: MOCK.hops_sample,
         jatkosuunnitelma: MOCK.jatkosuunnitelma_sample,
-        notifications: [{ id: 1, type: 'message', text: 'Tervetuloa ALKUPOLKUun — demo', at: new Date().toISOString() }],
-        diary_prompts: ['Päivä 1: Mitä opin tänään työpaikalla?'],
+        notifications: MOCK.notifications_demo,
+        diary_prompts: [
+          'Päivä: Mitä opin tänään työpaikalla? (What did you learn?)',
+          'Kenen kanssa puhuin? (Who did I speak with?)',
+        ],
+        schedule: MOCK.learner_schedule,
+        learning_path: MOCK.learning_path_milestones,
+        homework: MOCK.homework_demo,
+        self_assessment: MOCK.self_assessment_demo,
+        vocabulary: MOCK.vocabulary_banks,
+        grammar: MOCK.grammar_reference,
+        passport_prep: MOCK.passport_prep,
+        ui_hints: {
+          progress_label_fi: 'Edistyminen kohti A2',
+          progress_label_en: 'Progress toward A2',
+          multilingual_note_fi: 'Vähän suomea? Käytä kuvakkeita ja alla olevia käännöksiä.',
+        },
       });
+    }
+
+    if (sub === 'jatko-comment' && method === 'POST' && isLearner) {
+      return sendJson(res, 200, { ok: true, message: 'Kommentti vastaanotettu (demo). Opettaja näkee myöhemmin.' });
+    }
+
+    if (sub === 'homework' && method === 'POST' && isLearner) {
+      return sendJson(res, 200, { ok: true, message: 'Lähetys vastaanotettu (demo).' });
     }
 
     if (isLearner) {

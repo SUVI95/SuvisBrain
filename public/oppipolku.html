@@ -466,6 +466,53 @@
     .lms-mod-bar { height: 8px; border-radius: 4px; background: var(--secondary-400); overflow: hidden; margin-top: 8px; }
     .lms-mod-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--brand-500), var(--brand-400)); border-radius: 4px; }
     .lms-slot-row { font-size: 12px; color: var(--secondary-500); margin-top: 8px; }
+    .i18n-hint {
+      font-size: 12px; color: var(--secondary-500); margin-top: 8px; line-height: 1.5;
+      padding: 8px 12px; background: var(--secondary-300); border-radius: 12px; border: 1px solid var(--secondary-400);
+    }
+    .level-badge-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+    .cefr-pill {
+      display: inline-block; padding: 6px 14px; border-radius: 999px; font-weight: 800; font-size: 14px;
+      background: var(--brand-soft); color: var(--brand-600); border: 1px solid var(--brand-tint);
+    }
+    .path-0-a2 { font-size: 13px; font-weight: 600; color: var(--secondary-600); }
+    .hz-navbar-inner { display: flex; align-items: center; width: 100%; justify-content: space-between; gap: 12px; }
+    .notif-btn {
+      position: relative; border: none; background: var(--surface); border-radius: 14px;
+      padding: 10px 14px; cursor: pointer; font-size: 18px; box-shadow: var(--card-shadow);
+      border: 1px solid var(--secondary-400);
+    }
+    .notif-btn:hover { border-color: var(--brand-400); }
+    .notif-badge {
+      position: absolute; top: 4px; right: 6px; min-width: 18px; height: 18px; border-radius: 999px;
+      background: var(--red-500); color: #fff; font-size: 10px; font-weight: 800; line-height: 18px; text-align: center;
+    }
+    .schedule-list { display: flex; flex-direction: column; gap: 10px; }
+    .schedule-row {
+      display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--surface);
+      border-radius: 16px; border: 1px solid var(--secondary-400); box-shadow: var(--card-shadow);
+    }
+    .schedule-time { font-weight: 800; color: var(--brand-600); min-width: 52px; font-size: 15px; }
+    .path-steps { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+    .path-step {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px;
+      border: 1px dashed var(--secondary-400); background: var(--surface);
+    }
+    .path-step.done { border-color: rgba(1, 181, 116, 0.45); background: var(--green-100); }
+    .path-step .d-num { font-weight: 800; color: var(--brand-500); min-width: 44px; }
+    .hw-card { padding: 16px; border-radius: 16px; border: 1px solid var(--secondary-400); margin-bottom: 12px; background: var(--surface); }
+    .hw-card.submitted { border-color: rgba(1, 181, 116, 0.4); background: var(--green-100); }
+    .sa-row { margin-bottom: 16px; padding: 14px; border-radius: 14px; background: var(--secondary-300); border: 1px solid var(--secondary-400); }
+    .sa-row label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--secondary-900); }
+    .vocab-theme { margin-bottom: 20px; }
+    .vocab-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    .vocab-table th, .vocab-table td { padding: 10px 12px; border-bottom: 1px solid var(--secondary-400); text-align: left; }
+    .gram-card { padding: 14px; margin-bottom: 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--secondary-400); box-shadow: var(--card-shadow); }
+    .notif-item { padding: 14px; margin-bottom: 10px; border-radius: 14px; background: var(--surface); border-left: 4px solid var(--brand-500); }
+    .notif-item.read { opacity: 0.65; border-left-color: var(--secondary-400); }
+    .pass-prep-block { margin-bottom: 20px; padding: 18px; border-radius: 16px; background: var(--blue-50); border: 1px solid var(--secondary-400); }
+    .pass-prep-block h4 { margin-bottom: 10px; color: var(--secondary-900); }
+    .pass-prep-block ul { padding-left: 20px; line-height: 1.65; color: var(--secondary-600); }
   </style>
 </head>
 <body>
@@ -479,18 +526,24 @@
 
     <div class="nav-section">Oppiminen</div>
     <button type="button" class="nav-item active" data-sec="dashboard"><span class="icon">🏠</span> Etusivu</button>
+    <button type="button" class="nav-item" data-sec="schedule"><span class="icon">📅</span> Ohjelma &amp; polku</button>
     <button type="button" class="nav-item" data-sec="modules"><span class="icon">📚</span> Moduulit</button>
-    <button type="button" class="nav-item" data-sec="alphabet"><span class="icon">🔤</span> Kirjaimet</button>
+    <button type="button" class="nav-item" data-sec="alphabet"><span class="icon">🔤</span> Aakkoset (latina)</button>
+    <button type="button" class="nav-item" data-sec="self"><span class="icon">✅</span> Itsearviointi</button>
+    <button type="button" class="nav-item" data-sec="homework"><span class="icon">📎</span> Kotitehtävät</button>
+    <button type="button" class="nav-item" data-sec="vocab"><span class="icon">📖</span> Sanastot</button>
+    <button type="button" class="nav-item" data-sec="grammar"><span class="icon">📐</span> Kielioppi</button>
     <button type="button" class="nav-item" data-sec="lesson"><span class="icon">💬</span> Päivän tunti</button>
-    <button type="button" class="nav-item" data-sec="yki"><span class="icon">📝</span> YKI</button>
+    <button type="button" class="nav-item" data-sec="yki"><span class="icon">📝</span> YKI (4 osaa)</button>
 
     <div class="nav-section">Työelämä</div>
-    <button type="button" class="nav-item" data-sec="passports"><span class="icon">🪪</span> Passit</button>
+    <button type="button" class="nav-item" data-sec="passports"><span class="icon">🪪</span> Passit &amp; valmennus</button>
     <button type="button" class="nav-item" data-sec="diary"><span class="icon">📓</span> Työpäiväkirja</button>
     <button type="button" class="nav-item" data-sec="hops"><span class="icon">🗺️</span> Opiskelupolku (HOPS)</button>
     <button type="button" class="nav-item" data-sec="jatko"><span class="icon">🔭</span> Jatkosuunnitelma</button>
 
     <div class="nav-section">Muu</div>
+    <button type="button" class="nav-item" data-sec="notifications"><span class="icon">🔔</span> Ilmoitukset</button>
     <a class="nav-item" href="knuut.html"><span class="icon">🎙️</span> Harjoittele Knuutilla</a>
     <a class="nav-item" href="privacy-ai.html"><span class="icon">🔒</span> Privacy &amp; AI</a>
     <button type="button" class="nav-item" id="opp-logout"><span class="icon">🚪</span> Kirjaudu ulos</button>
@@ -508,11 +561,16 @@
 
   <div class="hz-shell">
     <header class="hz-navbar" role="banner">
-      <nav class="hz-breadcrumb" aria-label="Murupolku">
-        <a href="#">Sivut</a>
-        <span class="sep">/</span>
-        <span id="hz-breadcrumb-page">Etusivu</span>
-      </nav>
+      <div class="hz-navbar-inner">
+        <nav class="hz-breadcrumb" aria-label="Murupolku">
+          <a href="#">Oppipolku</a>
+          <span class="sep">/</span>
+          <span id="hz-breadcrumb-page">Etusivu</span>
+        </nav>
+        <button type="button" class="notif-btn" id="btn-notif" title="Ilmoitukset / Notifications" aria-label="Ilmoitukset">
+          🔔 <span id="notif-count" class="notif-badge" style="display:none">0</span>
+        </button>
+      </div>
     </header>
 
   <main class="main">
@@ -526,12 +584,17 @@
         <div class="page-title" id="dash-greeting">Hei!</div>
         <div class="page-sub" id="dash-sub">Ladataan…</div>
       </div>
+      <p class="i18n-hint" id="dash-i18n">🇫🇮 <strong>FI</strong> · 🇬🇧 EN: Home · العربية AR: الرئيسية — käytä kuvakkeita!</p>
       <div class="grid2" style="margin-bottom:20px">
         <div class="level-card">
-          <div class="level-label">Nykyinen taso (CEFR)</div>
+          <div class="level-label">Nykyinen taso (CEFR) · Current level</div>
           <div class="level-value" id="dash-cefr">A1</div>
-          <div style="opacity:0.9;font-size:16px" id="dash-cefr-sub">Tavoite: A2</div>
-          <div class="level-bar"><div class="level-fill" id="level-fill" style="width:35%"></div></div>
+          <div class="level-badge-row">
+            <span class="cefr-pill" id="level-pill">A1</span>
+            <span class="path-0-a2">0 → A2 · <span id="path-pct-label">0%</span></span>
+          </div>
+          <div style="opacity:0.95;font-size:15px;margin-top:8px" id="dash-cefr-sub">Tavoite: A2 / Goal: A2</div>
+          <div class="level-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="level-bar-a11y"><div class="level-fill" id="level-fill" style="width:35%"></div></div>
         </div>
         <div class="card">
           <div class="card-title">Tänään</div>
@@ -568,27 +631,93 @@
           </div>
         </div>
       </div>
-      <a class="knuut-banner" href="knuut.html">🎙️ <span style="margin-left:16px;text-align:left"><strong style="color:var(--brand-500)">Puhu suomea Knuutin kanssa</strong><br><span style="font-size:14px;color:var(--secondary-500)">Ääniharjoittelu — suomeksi</span></span><span style="font-size:22px;color:var(--brand-400)">→</span></a>
+      <a class="knuut-banner" href="knuut.html">🎙️ <span style="margin-left:16px;text-align:left"><strong style="color:var(--brand-500)">Puhu suomea Knuutin kanssa</strong><br><span style="font-size:14px;color:var(--secondary-500)">Ääniharjoittelu — suomeksi · Speak Finnish</span></span><span style="font-size:22px;color:var(--brand-400)">→</span></a>
+    </div>
+
+    <!-- PÄIVÄOHJELMA & OPPIMISPOLKU -->
+    <div id="sec-schedule" class="section">
+      <div class="page-header">
+        <div class="page-title">Päivän ohjelma &amp; oppimispolku</div>
+        <div class="page-sub">Tänään · Tavoite 120 päivää (0→A2)</div>
+      </div>
+      <p class="i18n-hint">🇫🇮 päiväaikataulu · 🇬🇧 schedule · العربية الجدول</p>
+      <div class="grid2" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-title">📅 Tänään / Today</div>
+          <div id="schedule-list" class="schedule-list shell-placeholder">Ladataan…</div>
+        </div>
+        <div class="card">
+          <div class="card-title">🛤️ Polku 0 → A2 (120 pv)</div>
+          <div id="path-steps" class="path-steps shell-placeholder">Ladataan…</div>
+        </div>
+      </div>
     </div>
 
     <!-- MODULES (ALKUPOLKU shell + API) -->
     <div id="sec-modules" class="section">
       <div class="page-header">
         <div class="page-title">Suomen moduulit</div>
-        <div class="page-sub">OPH 2022 — runko. Sisältö täydennetään kurssilla. · EN: Modules · AR: وحدات</div>
+        <div class="page-sub">A1.1 → A1.2 → A2 (rakenne). OPH 2022. · EN: Modules · AR: وحدات التعلم</div>
       </div>
+      <p class="i18n-hint">Opettaja lisää sisältöä. / Teacher adds content.</p>
       <div class="card">
         <p class="inline-note" style="margin-bottom:16px">Video · teksti · tehtävät · sanasto · puhe · tasoitus (demo)</p>
         <div class="lms-mod-grid" id="lms-module-grid"><div class="loading-inline"><div class="spinner"></div> Ladataan moduuleja…</div></div>
       </div>
     </div>
 
+    <!-- ITSEARVIOINTI -->
+    <div id="sec-self" class="section">
+      <div class="page-header">
+        <div class="page-title">Itsearviointi</div>
+        <div class="page-sub">Lyhyt check — ei arvosanaa, vain sinulle ja opettajalle (demo)</div>
+      </div>
+      <p class="i18n-hint">🇫🇮 Arvioi 1–5 · 🇬🇧 Rate 1–5 · العربية قيّم من ١ إلى ٥</p>
+      <div class="card" id="self-assessment-wrap"><p class="shell-placeholder">Ladataan…</p></div>
+    </div>
+
+    <!-- KOTITEHTÄVÄT -->
+    <div id="sec-homework" class="section">
+      <div class="page-header">
+        <div class="page-title">Kotitehtävät</div>
+        <div class="page-sub">Lähetä teksti tai merkintä — opettaja näkee (demo)</div>
+      </div>
+      <p class="i18n-hint">🇬🇧 Homework · العربية واجب منزلي</p>
+      <div id="homework-list" class="card shell-placeholder">Ladataan…</div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">Lähetä vastaus (demo)</div>
+        <textarea id="hw-submit-text" class="writing-area" placeholder="Kirjoita tähän… / Write here…"></textarea>
+        <button type="button" class="btn btn-primary" id="btn-hw-submit" style="margin-top:12px">📤 Lähetä</button>
+      </div>
+    </div>
+
+    <!-- SANASTOT -->
+    <div id="sec-vocab" class="section">
+      <div class="page-header">
+        <div class="page-title">Sanastopankit</div>
+        <div class="page-sub">Teemoittain — laajenee moduuleissa</div>
+      </div>
+      <p class="i18n-hint">🇬🇧 Vocabulary · العربية مفردات</p>
+      <div id="vocab-banks" class="card shell-placeholder">Ladataan…</div>
+    </div>
+
+    <!-- KIELIOPPI -->
+    <div id="sec-grammar" class="section">
+      <div class="page-header">
+        <div class="page-title">Kielioppi (lyhyt viite)</div>
+        <div class="page-sub">Tukimateriaali — ei korvaa opettajaa</div>
+      </div>
+      <p class="i18n-hint">🇬🇧 Grammar reference · العربية قواعد</p>
+      <div id="grammar-list" class="card shell-placeholder">Ladataan…</div>
+    </div>
+
     <!-- ALPHABET -->
     <div id="sec-alphabet" class="section">
       <div class="page-header">
-        <div class="page-title">Suomen aakkoset</div>
-        <div class="page-sub">Isot kirjaimet — napauta ja kuuntele (selainääni)</div>
+        <div class="page-title">Latinalaiset aakkoset</div>
+        <div class="page-sub">Jos tarvitset — napauta kirjain · kuuntele · / Latin alphabet if you need it</div>
       </div>
+      <p class="i18n-hint">🔤 Letters · الحروف اللاتينية (للفنلندية)</p>
       <div class="card" style="margin-bottom:16px">
         <div class="alphabet-grid" id="alphabet-grid"></div>
       </div>
@@ -628,9 +757,10 @@
     <!-- YKI -->
     <div id="sec-yki" class="section">
       <div class="page-header">
-        <div class="page-title">YKI-harjoitus</div>
-        <div class="page-sub">Lukeminen ja kuuntelu — paikallinen. Kirjoitus: palaute palvelimelta.</div>
+        <div class="page-title">YKI — neljä koetta</div>
+        <div class="page-sub">Lukeminen · kuuntelu · kirjoittaminen · puhuminen (keskitaso demo)</div>
       </div>
+      <p class="i18n-hint">🇬🇧 4 subtests · العربية أربعة أجزاء</p>
       <div class="yki-tabs">
         <button type="button" class="yki-tab active" data-yki="read">Lukeminen</button>
         <button type="button" class="yki-tab" data-yki="listen">Kuuntelu</button>
@@ -669,14 +799,16 @@
     <!-- PASSPORTS mock -->
     <div id="sec-passports" class="section">
       <div class="page-header">
-        <div class="page-title">Passit ja kortit</div>
-        <div class="page-sub">Esimerkki — demo</div>
+        <div class="page-title">Passit &amp; valmennus</div>
+        <div class="page-sub">Hygienia · ensiaputietoisuus — sisältyy hintaan (tender)</div>
       </div>
-      <div class="passport-grid">
-        <div class="passport-card done"><strong>Hygieniapassi</strong><p style="margin-top:8px;font-size:15px;color:var(--secondary-500)">Ravintola-ala</p></div>
-        <div class="passport-card"><strong>EA1</strong><p style="margin-top:8px;font-size:15px;color:var(--secondary-500)">Ensiapu</p></div>
-        <div class="passport-card"><strong>Työturvallisuus</strong><p style="margin-top:8px;font-size:15px;color:var(--secondary-500)">Yleinen</p></div>
+      <p class="i18n-hint">🇬🇧 Certificates prep · العربية التحضير للشهادات</p>
+      <div class="passport-grid" style="margin-bottom:20px">
+        <div class="passport-card done"><strong>🧼 Hygieniapassi</strong><p style="margin-top:8px;font-size:15px;color:var(--secondary-500)">Ravintola-ala</p></div>
+        <div class="passport-card"><strong>🩹 EA1-tietoisuus</strong><p style="margin-top:8px;font-size:15px;color:var(--secondary-500)">Ei korvaa kurssia</p></div>
+        <div class="passport-card"><strong>🦺 Työturvallisuus</strong><p style="margin-top:8px;font-size:15px;color:var(--secondary-500)">Yleinen</p></div>
       </div>
+      <div id="passport-prep-content" class="shell-placeholder">Ladataan valmennussisältöä…</div>
     </div>
 
     <!-- TYÖSSÄOPPIMISPÄIVÄKIRJA -->
@@ -716,11 +848,27 @@
     <div id="sec-jatko" class="section">
       <div class="page-header">
         <div class="page-title">Jatkosuunnitelma</div>
-        <div class="page-sub">Näet suunnitelman ja voit kommentoida · EN: Continuation plan</div>
+        <div class="page-sub">Lue · kommentoi yhdessä opettajan kanssa · EN: Continuation plan</div>
       </div>
+      <p class="i18n-hint">🇬🇧 You can add a comment below · العربية يمكنك إضافة تعليق</p>
       <div class="card" id="lms-jatko-content">
         <p style="color:var(--secondary-500)">Ladataan…</p>
       </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">✏️ Oma kommentti / Your comment</div>
+        <textarea id="jatko-comment-box" class="writing-area" placeholder="Kirjoita suomeksi tai omalla kielellä…"></textarea>
+        <button type="button" class="btn btn-primary" id="btn-jatko-send" style="margin-top:12px">📨 Lähetä kommentti (demo)</button>
+      </div>
+    </div>
+
+    <!-- ILMOITUKSET -->
+    <div id="sec-notifications" class="section">
+      <div class="page-header">
+        <div class="page-title">Ilmoitukset</div>
+        <div class="page-sub">Aikataulumuutokset · viestit opettajalta</div>
+      </div>
+      <p class="i18n-hint">🇬🇧 Notifications · العربية إشعارات</p>
+      <div class="card" id="notifications-list"><p class="shell-placeholder">Ladataan…</p></div>
     </div>
   </main>
   </div>
@@ -781,14 +929,20 @@
 
   var SECTION_TITLES = {
     dashboard: 'Etusivu',
+    schedule: 'Ohjelma & polku',
     modules: 'Moduulit',
-    alphabet: 'Kirjaimet',
+    alphabet: 'Aakkoset',
+    self: 'Itsearviointi',
+    homework: 'Kotitehtävät',
+    vocab: 'Sanastot',
+    grammar: 'Kielioppi',
     lesson: 'Päivän tunti',
     yki: 'YKI',
     passports: 'Passit',
     diary: 'Työpäiväkirja',
     hops: 'Opiskelupolku',
-    jatko: 'Jatkosuunnitelma'
+    jatko: 'Jatkosuunnitelma',
+    notifications: 'Ilmoitukset'
   };
 
   function showSection(id) {
@@ -852,8 +1006,6 @@
       document.getElementById('stat-streak').textContent = '🔥 ' + streak;
       document.getElementById('stat-xp').textContent = xp;
       document.getElementById('stat-goal').textContent = goal;
-      var pct = Math.min(100, Math.round((xp / goal) * 100));
-      document.getElementById('level-fill').style.width = pct + '%';
       document.getElementById('dash-sub').textContent = new Date().toLocaleDateString('fi-FI', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
       var today = new Date();
@@ -875,13 +1027,23 @@
       var p = me.profile || {};
       var dayN = typeof p.day_n === 'number' ? p.day_n : 1;
       var pathPct = Math.min(100, Math.round((dayN / 120) * 100));
-      document.getElementById('level-fill').style.width = pathPct + '%';
-      document.getElementById('dash-cefr-sub').textContent = 'Polku: päivä ' + dayN + ' / 120 · Tavoite: A2 (ALKUPOLKU)';
+      var lf = document.getElementById('level-fill');
+      if (lf) lf.style.width = pathPct + '%';
+      var lb = document.getElementById('level-bar-a11y');
+      if (lb) lb.setAttribute('aria-valuenow', String(pathPct));
+      var ppl = document.getElementById('path-pct-label');
+      if (ppl) ppl.textContent = pathPct + '%';
+      document.getElementById('dash-cefr-sub').textContent = 'Polku: päivä ' + dayN + ' / 120 · Tavoite A2 / Goal A2 · ALKUPOLKU';
       if (p.cefr_level) {
         var lv = String(p.cefr_level);
         document.getElementById('dash-cefr').textContent = lv.toUpperCase();
         document.getElementById('sb-level').textContent = lv.toUpperCase();
+        var pill = document.getElementById('level-pill');
+        if (pill) pill.textContent = lv.toUpperCase();
       }
+      var hints = me.ui_hints || {};
+      var di = document.getElementById('dash-i18n');
+      if (di && hints.multilingual_note_fi) di.textContent = '🇫🇮 ' + hints.multilingual_note_fi + ' · 🇬🇧 ' + (hints.progress_label_en || 'Progress toward A2');
 
       var mods = modj.modules || [];
       var prog = p.module_progress || {};
@@ -892,8 +1054,65 @@
           var pct = typeof prog[code] === 'number' ? prog[code] : 0;
           var slots = m.slots || {};
           var sk = Object.keys(slots).filter(function (k) { return slots[k]; }).slice(0, 6).join(' · ');
-          return '<div class="lms-mod-card"><h3>' + escapeHtml(code) + ' · ' + escapeHtml(m.level || '') + '</h3><div class="lms-mod-meta">' + escapeHtml(m.theme || '') + '</div><div class="lms-mod-bar"><span style="width:' + pct + '%"></span></div><div class="lms-slot-row">' + escapeHtml(sk) + '</div></div>';
+          return '<div class="lms-mod-card"><h3>' + escapeHtml(code) + ' · ' + escapeHtml(m.level || '') + '</h3><div class="lms-mod-meta">' + escapeHtml(m.theme || '') + '</div><div class="lms-mod-bar"><span style="width:' + pct + '%"></span></div><div class="lms-slot-row">📹 ' + escapeHtml(sk) + '</div></div>';
         }).join('');
+      }
+
+      var sched = document.getElementById('schedule-list');
+      if (sched && me.schedule) {
+        sched.innerHTML = me.schedule.map(function (row) {
+          return '<div class="schedule-row"><span class="schedule-time">' + escapeHtml(row.time) + '</span><span style="font-size:22px">' + (row.icon || '📌') + '</span><div><div style="font-weight:700">' + escapeHtml(row.label_fi) + '</div><div style="font-size:13px;color:var(--secondary-500)">' + escapeHtml(row.label_en || '') + (row.label_ar ? ' · ' + escapeHtml(row.label_ar) : '') + '</div></div></div>';
+        }).join('');
+      }
+
+      var pathEl = document.getElementById('path-steps');
+      if (pathEl && me.learning_path) {
+        pathEl.innerHTML = me.learning_path.map(function (m) {
+          var done = m.done ? ' done' : '';
+          return '<div class="path-step' + done + '"><span class="d-num">pv ' + m.day + '</span><div><strong>' + escapeHtml(m.label_fi) + '</strong></div></div>';
+        }).join('');
+      }
+
+      var saw = document.getElementById('self-assessment-wrap');
+      if (saw && me.self_assessment) {
+        saw.innerHTML = me.self_assessment.map(function (q, idx) {
+          var name = 'sa_' + (q.id || idx);
+          return '<div class="sa-row"><label>' + escapeHtml(q.q_fi) + '</label><p style="font-size:13px;color:var(--secondary-500);margin-bottom:8px">' + escapeHtml(q.q_en || '') + (q.q_ar ? ' · ' + escapeHtml(q.q_ar) : '') + '</p><select class="lesson-input" style="max-width:120px" name="' + name + '"><option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>';
+        }).join('') + '<p class="inline-note" style="margin-top:12px">Tallennus palvelimelle tulossa. / Save coming soon.</p>';
+      }
+
+      var hwl = document.getElementById('homework-list');
+      if (hwl && me.homework) {
+        hwl.innerHTML = me.homework.map(function (h) {
+          var sub = h.status === 'submitted' ? ' submitted' : '';
+          return '<div class="hw-card' + sub + '"><strong>' + escapeHtml(h.title_fi) + '</strong><p style="font-size:14px;color:var(--secondary-500);margin:6px 0">' + escapeHtml(h.title_en || '') + '</p><p style="font-size:13px">📅 ' + escapeHtml(h.due || '') + ' · ' + (h.status === 'submitted' ? '✅ lähetetty / sent' : '⏳ tekemättä / pending') + '</p></div>';
+        }).join('');
+      }
+
+      var voc = document.getElementById('vocab-banks');
+      if (voc && me.vocabulary) {
+        voc.innerHTML = me.vocabulary.map(function (bank) {
+          var rows = (bank.words || []).map(function (w) {
+            return '<tr><td>' + escapeHtml(w.fi) + '</td><td>' + escapeHtml(w.en || '') + '</td><td dir="rtl">' + escapeHtml(w.ar || '') + '</td></tr>';
+          }).join('');
+          return '<div class="vocab-theme" style="margin-bottom:20px"><h4 style="margin-bottom:8px">' + escapeHtml(bank.theme_fi) + ' / ' + escapeHtml(bank.theme_en || '') + '</h4><table class="vocab-table"><thead><tr><th>FI</th><th>EN</th><th>AR</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+        }).join('');
+      }
+
+      var gl = document.getElementById('grammar-list');
+      if (gl && me.grammar) {
+        gl.innerHTML = me.grammar.map(function (g) {
+          return '<div class="gram-card"><strong>' + escapeHtml(g.topic_fi) + '</strong><p style="font-size:13px;color:var(--secondary-500);margin:6px 0">' + escapeHtml(g.topic_en || '') + '</p><p style="font-size:15px;line-height:1.6">' + escapeHtml(g.example || '') + '</p></div>';
+        }).join('');
+      }
+
+      var ppc = document.getElementById('passport-prep-content');
+      if (ppc && me.passport_prep) {
+        var pp = me.passport_prep;
+        var hy = pp.hygiene || {};
+        var fa = pp.first_aid || {};
+        ppc.innerHTML = '<div class="pass-prep-block"><h4>' + escapeHtml(hy.title_fi) + ' / ' + escapeHtml(hy.title_en || '') + '</h4><ul>' + (hy.bullets_fi || []).map(function (b) { return '<li>' + escapeHtml(b) + '</li>'; }).join('') + '</ul><p style="font-size:13px;color:var(--secondary-500);margin-top:8px">' + (hy.bullets_en || []).map(function (b) { return escapeHtml(b); }).join(' · ') + '</p></div>' +
+          '<div class="pass-prep-block"><h4>' + escapeHtml(fa.title_fi) + ' / ' + escapeHtml(fa.title_en || '') + '</h4><ul>' + (fa.bullets_fi || []).map(function (b) { return '<li>' + escapeHtml(b) + '</li>'; }).join('') + '</ul></div>';
       }
 
       var hops = me.hops || {};
@@ -921,17 +1140,65 @@
       if (jel) {
         var opts = jc.options || [];
         jel.innerHTML = '<ul style="font-size:16px;line-height:1.7;padding-left:20px;margin-bottom:16px">' + opts.map(function (o) { return '<li>' + escapeHtml(o) + '</li>'; }).join('') + '</ul>' +
-          '<p style="font-size:16px;color:var(--secondary-600)"><strong>Oma kommentti:</strong> ' + escapeHtml(jc.student_comment || '—') + '</p>' +
-          '<p class="inline-note" style="margin-top:16px">Tila: ' + escapeHtml(jc.status || 'draft') + ' · demo</p>';
+          '<p style="font-size:16px;color:var(--secondary-600)"><strong>Opettajan näkymä — kommentti:</strong> ' + escapeHtml(jc.student_comment || '—') + '</p>' +
+          '<p class="inline-note" style="margin-top:16px">Tila / status: ' + escapeHtml(jc.status || 'draft') + '</p>';
+      }
+      var jcb = document.getElementById('jatko-comment-box');
+      if (jcb) {
+        jcb.value = localStorage.getItem('oppipolku_jatko_draft') || jc.student_comment || '';
+        jcb.addEventListener('input', function () { localStorage.setItem('oppipolku_jatko_draft', jcb.value); });
       }
 
-      var notes = me.notifications || [];
-      if (notes.length && document.getElementById('dash-today')) {
-        document.getElementById('dash-today').textContent = (notes[0].text || '') + ' — Päivä ' + dayN + ' / 120.';
+      var notifs = me.notifications || [];
+      var nc = document.getElementById('notif-count');
+      var unread = notifs.filter(function (n) { return !n.read; }).length;
+      if (nc) {
+        nc.textContent = String(unread || notifs.length);
+        nc.style.display = (unread || notifs.length) ? 'inline-block' : 'none';
+      }
+      var nl = document.getElementById('notifications-list');
+      if (nl) {
+        nl.innerHTML = notifs.map(function (n) {
+          var r = n.read ? ' read' : '';
+          var tf = n.text_fi || n.text || '';
+          var te = n.text_en ? '<div style="font-size:13px;color:var(--secondary-500);margin-top:6px">' + escapeHtml(n.text_en) + '</div>' : '';
+          return '<div class="notif-item' + r + '"><div style="font-size:12px;color:var(--secondary-500)">' + escapeHtml(n.type || '') + ' · ' + (n.at ? new Date(n.at).toLocaleString('fi-FI') : '') + '</div><div style="margin-top:6px;font-weight:600">' + escapeHtml(tf) + '</div>' + te + '</div>';
+        }).join('') || '<p class="shell-placeholder">Ei ilmoituksia</p>';
+      }
+
+      if (notifs.length && document.getElementById('dash-today')) {
+        var t0 = notifs[0].text_fi || notifs[0].text || '';
+        document.getElementById('dash-today').innerHTML = '🔔 ' + escapeHtml(t0) + '<br><span style="font-size:14px;color:var(--secondary-500)">Päivä ' + dayN + ' / 120 · Day ' + dayN + ' / 120</span>';
       }
     } catch (e) { /* LMS optional */ }
   }
   loadLms();
+
+  document.getElementById('btn-notif')?.addEventListener('click', function () {
+    showSection('notifications');
+    document.getElementById('hz-breadcrumb-page').textContent = SECTION_TITLES.notifications;
+    document.querySelectorAll('.nav-item[data-sec]').forEach(function (n) { n.classList.remove('active'); });
+    var nn = document.querySelector('.nav-item[data-sec="notifications"]');
+    if (nn) nn.classList.add('active');
+  });
+
+  document.getElementById('btn-jatko-send')?.addEventListener('click', async function () {
+    var txt = (document.getElementById('jatko-comment-box') && document.getElementById('jatko-comment-box').value) || '';
+    try {
+      var r = await fetch(API + '/api/lms/jatko-comment', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()), body: JSON.stringify({ comment: txt }) });
+      var j = await r.json().catch(function () { return {}; });
+      alert(j.message || (r.ok ? 'OK' : 'Virhe'));
+    } catch (err) { alert('Virhe'); }
+  });
+
+  document.getElementById('btn-hw-submit')?.addEventListener('click', async function () {
+    var txt = (document.getElementById('hw-submit-text') && document.getElementById('hw-submit-text').value) || '';
+    try {
+      var r = await fetch(API + '/api/lms/homework', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()), body: JSON.stringify({ text: txt }) });
+      var j = await r.json().catch(function () { return {}; });
+      alert(j.message || (r.ok ? 'OK' : 'Virhe'));
+    } catch (err) { alert('Virhe'); }
+  });
 
   // Alphabet
   var letters = [
