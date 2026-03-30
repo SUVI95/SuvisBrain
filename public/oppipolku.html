@@ -506,6 +506,50 @@
     .pass-prep-block { margin-bottom: 20px; padding: 18px; border-radius: 16px; background: var(--blue-50); border: 1px solid var(--secondary-400); }
     .pass-prep-block h4 { margin-bottom: 10px; color: var(--secondary-900); }
     .pass-prep-block ul { padding-left: 20px; line-height: 1.65; color: var(--text-body-muted); }
+    .fj-visual {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 16px 8px 8px;
+      min-height: 120px;
+      background: linear-gradient(180deg, #e8f4fc 0%, #f4f7fe 40%, #e6faf5 100%);
+      border-radius: 16px;
+      border: 1px solid var(--secondary-400);
+      position: relative;
+      overflow: hidden;
+    }
+    .fj-visual::before {
+      content: '';
+      position: absolute;
+      left: 8%; right: 8%; bottom: 36px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--brand-500), var(--green-500));
+      border-radius: 4px;
+      opacity: 0.35;
+    }
+    .fj-stop {
+      flex: 1;
+      text-align: center;
+      z-index: 1;
+      min-width: 0;
+    }
+    .fj-dot {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      margin: 0 auto 6px;
+      background: var(--secondary-400);
+      border: 3px solid #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .fj-dot.done { background: var(--green-500); }
+    .fj-dot.active { background: var(--brand-500); box-shadow: 0 0 0 4px var(--brand-tint); }
+    .fj-lbl { font-size: 11px; font-weight: 700; color: var(--secondary-900); line-height: 1.25; }
+    .alphabet-quiz { margin-top: 16px; padding: 16px; border-radius: 16px; background: var(--secondary-300); border: 1px solid var(--secondary-400); }
+    .alphabet-quiz .q { font-weight: 700; margin-bottom: 10px; }
+    .lms-voice-row { margin-top: 12px; }
+    .lms-voice-row a { font-size: 14px; font-weight: 700; color: var(--brand-600); text-decoration: none; }
+    .lms-voice-row a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -570,6 +614,7 @@
     <div class="trust-top">
       <strong>Ihmisen päätös</strong> — tekoäly antaa ehdotuksia ja harjoituksia. Opettaja vastaa lopullisista arvioista ja suunnitelmista (EU AI Act).
     </div>
+    <div id="session-alerts-bar" style="display:none;margin-bottom:16px"></div>
 
     <!-- DASHBOARD -->
     <div id="sec-dashboard" class="section active">
@@ -623,6 +668,24 @@
             <div class="hz-stat-value" id="stat-goal">500</div>
           </div>
         </div>
+      </div>
+      <div class="card" id="finland-journey-wrap" style="margin-bottom:20px">
+        <div class="card-title">🗺️ Matkasi Suomessa · Your Finnish journey</div>
+        <p style="font-size:14px;color:var(--text-body-muted);margin-bottom:14px;font-weight:500">Yksinkertainen polku — ei aivograafia, vain etapit joita olet ylittänyt. / A simple path — milestones you have passed.</p>
+        <div class="fj-visual" id="fj-visual" aria-hidden="true"></div>
+        <p style="font-size:13px;color:var(--text-body-soft);margin-top:12px" id="fj-caption"></p>
+      </div>
+      <div class="card" style="margin-bottom:20px;border:1px solid rgba(66,42,251,0.2)">
+        <div class="card-title">⚡ 5 min pikaharjoitus tänään · Daily micro-practice</div>
+        <p style="font-size:16px;line-height:1.65;color:var(--secondary-900);font-weight:600" id="micro-word"></p>
+        <p style="font-size:15px;color:var(--text-body-muted);margin:10px 0;line-height:1.6" id="micro-pron"></p>
+        <p style="font-size:15px;color:var(--text-body-muted);margin-bottom:14px;line-height:1.6" id="micro-dialog"></p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <a class="btn btn-primary" href="knuut.html" id="micro-knuut-link" style="text-decoration:none;display:inline-block">🎙️ Avaa Knuut (ääni)</a>
+          <button type="button" class="btn btn-outline" id="btn-micro-done">✅ Merkitse tehdyksi / Mark done</button>
+          <span style="font-size:13px;color:var(--text-body-soft)" id="micro-streak-hint"></span>
+        </div>
+        <p id="micro-done-msg" style="font-size:13px;font-weight:600;color:var(--green-500);margin-top:8px;display:none"></p>
       </div>
       <a class="knuut-banner" href="knuut.html">🎙️ <span style="margin-left:16px;text-align:left"><strong style="color:var(--brand-500)">Puhu suomea Knuutin kanssa</strong><br><span style="font-size:14px;color:var(--text-body-muted);font-weight:500">Ääniharjoittelu — suomeksi · Speak Finnish</span></span><span style="font-size:22px;color:var(--brand-400)">→</span></a>
     </div>
@@ -713,6 +776,17 @@
       <p class="i18n-hint">🔤 Letters · الحروف اللاتينية (للفنلندية)</p>
       <div class="card" style="margin-bottom:16px">
         <div class="alphabet-grid" id="alphabet-grid"></div>
+        <div class="alphabet-quiz" id="alphabet-quiz">
+          <div class="q">Kirjoitusharjoitus · Kirjoita sama kirjain kuin ääneen (kirjaimet A–Ö)</div>
+          <p style="font-size:14px;color:var(--text-body-muted);margin-bottom:10px">Paina “Uusi”, kuuntele, kirjoita laatikkoon. / Type the letter you hear.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+            <button type="button" class="btn btn-outline" id="btn-alpha-new">Uusi kirjain</button>
+            <button type="button" class="btn btn-outline" id="btn-alpha-hear">🔊 Kuuntele uudelleen</button>
+          </div>
+          <input type="text" class="lesson-input" id="alpha-type-input" maxlength="3" placeholder="Kirjain tähän" style="max-width:120px" autocomplete="off">
+          <button type="button" class="btn btn-primary" id="btn-alpha-check">Tarkista</button>
+          <p id="alpha-quiz-msg" style="margin-top:10px;font-weight:600;font-size:15px"></p>
+        </div>
       </div>
       <div class="letter-detail" id="letter-detail">
         <div class="letter-big" id="letter-big">A</div>
@@ -800,6 +874,18 @@
         <div class="passport-card done"><strong>🧼 Hygieniapassi</strong><p style="margin-top:8px;font-size:15px;color:var(--text-body-muted);font-weight:500">Ravintola-ala</p></div>
         <div class="passport-card"><strong>🩹 EA1-tietoisuus</strong><p style="margin-top:8px;font-size:15px;color:var(--text-body-muted);font-weight:500">Ei korvaa kurssia</p></div>
         <div class="passport-card"><strong>🦺 Työturvallisuus</strong><p style="margin-top:8px;font-size:15px;color:var(--text-body-muted);font-weight:500">Yleinen</p></div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Työpaikan suomi ennen työssäoppimista · Workplace Finnish (voice)</div>
+        <p style="font-size:15px;color:var(--text-body-muted);margin-bottom:12px;line-height:1.6">Harjoittele <strong>juuri sinun alasi</strong> sanastoa Knuutin kanssa — keittiö, varasto, myymälä, siivous, toimisto… / Practice vocabulary for <em>your</em> placement before you start.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <a class="btn btn-outline" href="knuut.html?workplace_prep=kitchen&amp;topic=Keitti%C3%B6%20ja%20ravintola">🍳 Keittiö</a>
+          <a class="btn btn-outline" href="knuut.html?workplace_prep=warehouse&amp;topic=Varasto">📦 Varasto</a>
+          <a class="btn btn-outline" href="knuut.html?workplace_prep=retail&amp;topic=Myym%C3%A4l%C3%A4">🛒 Myymälä</a>
+          <a class="btn btn-outline" href="knuut.html?workplace_prep=care&amp;topic=Siivous%20ja%20hoiva">🧹 Siivous / hoiva</a>
+          <a class="btn btn-outline" href="knuut.html?workplace_prep=office&amp;topic=Toimisto">🖥️ Toimisto</a>
+          <a class="btn btn-outline" href="knuut.html?workplace_prep=construction&amp;topic=Rakennus">🏗️ Rakennus</a>
+        </div>
       </div>
       <div id="passport-prep-content" class="shell-placeholder">Ladataan valmennussisältöä…</div>
     </div>
@@ -983,8 +1069,9 @@
       var streak = 0;
       var xp = 0;
       var goal = 500;
+      var pj = null;
       if (pr.ok) {
-        var pj = await pr.json();
+        pj = await pr.json();
         epCount = (pj.episodes || []).length;
       }
       if (ep.ok) {
@@ -1002,11 +1089,101 @@
       var today = new Date();
       var dayNum = Math.min(120, Math.max(1, epCount + 1));
       document.getElementById('dash-today').textContent = 'Päivä ' + dayNum + ' / 120. Harjoittele tänään kirjaimia tai avaa Knuut.';
+      var sessionAlerts = pj && pj.session_alerts ? pj.session_alerts : [];
+      renderSessionAlerts(sessionAlerts);
+      renderFinlandJourney(cefr);
+      window.__oppBrainStreak = streak;
     } catch (e) {
       document.getElementById('dash-sub').textContent = 'Tietoja ei voitu ladata kokonaan.';
+      renderSessionAlerts([]);
+      renderFinlandJourney(cefr);
+      window.__oppBrainStreak = 0;
     }
   }
-  loadDashboard();
+
+  function renderSessionAlerts(alerts) {
+    var bar = document.getElementById('session-alerts-bar');
+    if (!bar || !alerts || !alerts.length) {
+      if (bar) bar.style.display = 'none';
+      return;
+    }
+    bar.style.display = 'block';
+    bar.innerHTML = alerts.map(function (a) {
+      var bg = a.severity === 'warning' ? '#fff7ed' : '#eff6ff';
+      var bd = a.severity === 'warning' ? '#fed7aa' : '#bfdbfe';
+      return '<div style="padding:12px 14px;border-radius:14px;border:1px solid ' + bd + ';background:' + bg + ';margin-bottom:8px;font-size:15px;line-height:1.5;color:var(--secondary-900)"><strong>' + (a.severity === 'warning' ? '⚠️ ' : '💡 ') + '</strong>' + escapeHtml(a.message_fi || '') + '<br><span style="font-size:13px;color:var(--text-body-soft)">' + escapeHtml(a.message_en || '') + '</span></div>';
+    }).join('');
+  }
+
+  function renderFinlandJourney(cefrStr) {
+    var el = document.getElementById('fj-visual');
+    var cap = document.getElementById('fj-caption');
+    if (!el || !cap) return;
+    var stops = [
+      { k: 'Alku', e: 'Start' },
+      { k: 'Aakkoset', e: 'Alphabet' },
+      { k: 'Arki', e: 'Daily' },
+      { k: 'Työ', e: 'Work' },
+      { k: 'A2', e: 'A2 goal' }
+    ];
+    var s = (cefrStr || 'A1').toUpperCase();
+    var idx = 0;
+    if (/PRE|A0|0/.test(s)) idx = 0;
+    else if (/A1\.|A1[^.]|^A1$/.test(s)) idx = 2;
+    else if (/A2/.test(s)) idx = 4;
+    else if (/B1|B2|C/.test(s)) idx = 4;
+    else idx = 2;
+    el.innerHTML = stops.map(function (st, i) {
+      var cls = 'fj-dot';
+      if (i < idx) cls += ' done';
+      else if (i === idx) cls += ' active';
+      return '<div class="fj-stop"><div class="' + cls + '"></div><div class="fj-lbl">' + st.k + '<br><span style="font-weight:600;color:var(--text-body-soft);font-size:10px">' + st.e + '</span></div></div>';
+    }).join('');
+    cap.textContent = 'Olet polulla: noin ' + (idx + 1) + '/5 etappia · You are about step ' + (idx + 1) + ' of 5 (CEFR ' + s + ').';
+  }
+
+  var MICRO_BANK = [
+    { w: 'hei', fi: 'hei = hei / hello', pr: 'Lausu ääneen: hei, hei, hei.', di: 'Mini-dialogi: Hei! — Hei, mitä kuuluu? — Hyvää, kiitos.' },
+    { w: 'kiitos', fi: 'kiitos = kiitos', pr: 'Painotus: KII-tos.', di: 'Kiitos paljon. — Ole hyvä.' },
+    { w: 'apua', fi: 'apua = apua', pr: 'Lyhyt a: apua.', di: 'Anteeksi, tarvitsen apua.' },
+    { w: 'huomenna', fi: 'huomenna = tomorrow', pr: 'Jaa tavuihin: huo-men-na.', di: 'Nähdään huomenna.' },
+    { w: 'työ', fi: 'työ = work', pr: 'Y-kirjain: työ.', di: 'Minulla on työ tänään.' }
+  ];
+
+  function renderMicroPractice(streakVal, microServer) {
+    var dayKey = new Date().toISOString().slice(0, 10);
+    var seed = (LEARNER_ID || '') + dayKey;
+    var h = 0;
+    for (var i = 0; i < seed.length; i++) h = ((h << 5) - h) + seed.charCodeAt(i) | 0;
+    var ix = Math.abs(h) % MICRO_BANK.length;
+    var m = MICRO_BANK[ix];
+    window.__oppMicroKey = m.w;
+    var wEl = document.getElementById('micro-word');
+    var pEl = document.getElementById('micro-pron');
+    var dEl = document.getElementById('micro-dialog');
+    var sEl = document.getElementById('micro-streak-hint');
+    var aEl = document.getElementById('micro-knuut-link');
+    var doneMsg = document.getElementById('micro-done-msg');
+    var btnDone = document.getElementById('btn-micro-done');
+    var srvStreak = streakVal || 0;
+    var completedToday = false;
+    if (microServer && typeof microServer.streak === 'number') srvStreak = microServer.streak;
+    if (microServer && microServer.completed_today) completedToday = true;
+    if (wEl) wEl.textContent = '📌 Päivän sana / Word: ' + m.w + ' — ' + m.fi;
+    if (pEl) pEl.textContent = '🔊 Ääntäminen: ' + m.pr;
+    if (dEl) dEl.textContent = '💬 Dialogi: ' + m.di;
+    if (sEl) {
+      sEl.textContent = 'Micro-streak (tietokanta): ' + srvStreak + ' pv · Putki (Brain): ' + (streakVal || 0) + ' pv' + (srvStreak >= 3 ? ' 🔥' : '');
+    }
+    if (aEl) aEl.href = 'knuut.html?topic=' + encodeURIComponent('Pikaharjoitus: sana ' + m.w + ' — toista ja tee lyhyt dialogi');
+    if (doneMsg) {
+      doneMsg.style.display = completedToday ? 'block' : 'none';
+      doneMsg.textContent = completedToday ? '✅ Merkitty tehdyksi tänään. / Marked done today.' : '';
+    }
+    if (btnDone) btnDone.style.display = completedToday ? 'none' : 'inline-block';
+  }
+
+  loadDashboard().then(function () { loadLms(); });
 
   async function loadLms() {
     try {
@@ -1036,6 +1213,14 @@
       var di = document.getElementById('dash-i18n');
       if (di && hints.multilingual_note_fi) di.textContent = '🇫🇮 ' + hints.multilingual_note_fi + ' · 🇬🇧 ' + (hints.progress_label_en || 'Progress toward A2');
 
+      var bs = typeof window.__oppBrainStreak === 'number' ? window.__oppBrainStreak : 0;
+      var stEl = document.getElementById('stat-streak');
+      if (stEl) {
+        var parsedSt = parseInt(String(stEl.textContent).replace(/\D/g, ''), 10);
+        if (!isNaN(parsedSt)) bs = parsedSt;
+      }
+      renderMicroPractice(bs, me.micro_practice || null);
+
       var mods = modj.modules || [];
       var prog = p.module_progress || {};
       var grid = document.getElementById('lms-module-grid');
@@ -1050,7 +1235,9 @@
           var metaFi = m.theme_fi ? escapeHtml(m.theme_fi) : '';
           var metaEn = m.theme ? escapeHtml(m.theme) : '';
           var meta = metaFi ? (metaFi + (metaEn ? '<br><span style="font-size:13px;color:var(--text-body-soft)">' + metaEn + '</span>' : '')) : metaEn;
-          return '<div class="lms-mod-card"><h3>' + head + '</h3><div class="lms-mod-meta">' + meta + '</div><div class="lms-mod-bar"><span style="width:' + pct + '%"></span></div><div class="lms-slot-row">📹 ' + escapeHtml(sk) + '</div></div>';
+          var themeTopic = (m.theme_fi || m.theme || m.level || '').toString();
+          var voiceHref = 'knuut.html?oph_module=' + encodeURIComponent(code) + (themeTopic ? '&topic=' + encodeURIComponent(themeTopic) : '');
+          return '<div class="lms-mod-card"><h3>' + head + '</h3><div class="lms-mod-meta">' + meta + '</div><div class="lms-mod-bar"><span style="width:' + pct + '%"></span></div><div class="lms-slot-row">📹 ' + escapeHtml(sk) + '</div><div class="lms-voice-row"><a href="' + voiceHref + '">🎙️ Ääniharjoitus moduuliin (OPH) · Voice drill</a></div></div>';
         }).join('');
       }
 
@@ -1168,7 +1355,23 @@
       }
     } catch (e) { /* LMS optional */ }
   }
-  loadLms();
+  document.getElementById('btn-micro-done')?.addEventListener('click', async function () {
+    var key = window.__oppMicroKey || 'micro';
+    try {
+      var r = await fetch(API + '/api/lms/micro-practice', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify({ word_key: key, day: new Date().toISOString().slice(0, 10) })
+      });
+      var j = await r.json().catch(function () { return {}; });
+      if (!r.ok) throw new Error(j.error || 'Virhe');
+      var mp = j.micro_practice;
+      var bs = typeof window.__oppBrainStreak === 'number' ? window.__oppBrainStreak : 0;
+      renderMicroPractice(bs, mp);
+    } catch (err) {
+      alert(err.message || 'Tallennus epäonnistui. Tietokanta vaatii migraation 007.');
+    }
+  });
 
   document.getElementById('btn-notif')?.addEventListener('click', function () {
     showSection('notifications');
@@ -1253,6 +1456,36 @@
       u.rate = 0.85;
       speechSynthesis.speak(u);
     }
+  });
+
+  var alphaQuizLetter = null;
+  function speakAlphaQuiz(ch) {
+    if (!('speechSynthesis' in window)) return;
+    var u = new SpeechSynthesisUtterance(ch);
+    u.lang = 'fi-FI';
+    u.rate = 0.85;
+    speechSynthesis.speak(u);
+  }
+  document.getElementById('btn-alpha-new').addEventListener('click', function () {
+    var pool = letters;
+    alphaQuizLetter = pool[Math.floor(Math.random() * pool.length)];
+    document.getElementById('alpha-quiz-msg').textContent = '';
+    document.getElementById('alpha-type-input').value = '';
+    speakAlphaQuiz(alphaQuizLetter.l);
+  });
+  document.getElementById('btn-alpha-hear').addEventListener('click', function () {
+    if (alphaQuizLetter) speakAlphaQuiz(alphaQuizLetter.l);
+  });
+  document.getElementById('btn-alpha-check').addEventListener('click', function () {
+    var v = (document.getElementById('alpha-type-input').value || '').trim();
+    if (!alphaQuizLetter) {
+      document.getElementById('alpha-quiz-msg').style.color = 'var(--red-500)';
+      document.getElementById('alpha-quiz-msg').textContent = 'Paina ensin "Uusi kirjain".';
+      return;
+    }
+    var ok = v.toUpperCase() === alphaQuizLetter.l.toUpperCase();
+    document.getElementById('alpha-quiz-msg').style.color = ok ? 'var(--green-500)' : 'var(--red-500)';
+    document.getElementById('alpha-quiz-msg').textContent = ok ? 'Oikein! / Correct!' : 'Yritä uudelleen — kirjain oli: ' + alphaQuizLetter.l;
   });
 
   // Lesson

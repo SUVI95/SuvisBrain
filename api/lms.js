@@ -450,6 +450,37 @@ async function tryDbModules() {
   return null;
 }
 
+async function getMicroPracticeState(learnerId) {
+  try {
+    const r = await query(
+      `SELECT day::text AS day, word_key, completed_at
+       FROM learner_micro_practice WHERE learner_id = $1 ORDER BY day DESC LIMIT 120`,
+      [learnerId]
+    );
+    const rows = r.rows || [];
+    const daySet = new Set(rows.map((x) => String(x.day).slice(0, 10)));
+    const today = new Date().toISOString().slice(0, 10);
+    const completedToday = daySet.has(today);
+    let streak = 0;
+    const d = new Date();
+    for (let i = 0; i < 400; i++) {
+      const ds = d.toISOString().slice(0, 10);
+      if (daySet.has(ds)) {
+        streak += 1;
+        d.setDate(d.getDate() - 1);
+      } else if (streak === 0 && i === 0) {
+        d.setDate(d.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return { completed_today: completedToday, streak, recent_days: rows.slice(0, 21) };
+  } catch (e) {
+    if (e.code === '42P01') return { completed_today: false, streak: 0, recent_days: [] };
+    throw e;
+  }
+}
+
 export default async function lmsHandler(req, res, pathSegs) {
   const method = req.method || 'GET';
   const sub = pathSegs[1] || '';
@@ -477,6 +508,12 @@ export default async function lmsHandler(req, res, pathSegs) {
       const st = MOCK.students.find((s) => s.email && user.email && s.email.toLowerCase() === String(user.email).toLowerCase()) ||
         MOCK.students[0];
       const modRows = await tryDbModules();
+      let micro = { completed_today: false, streak: 0, recent_days: [] };
+      try {
+        micro = await getMicroPracticeState(user.id);
+      } catch (e) {
+        console.error('lms me micro:', e.message);
+      }
       return sendJson(res, 200, {
         profile: st,
         modules: modulesForApi(modRows),
@@ -494,6 +531,7 @@ export default async function lmsHandler(req, res, pathSegs) {
         vocabulary: MOCK.vocabulary_banks,
         grammar: MOCK.grammar_reference,
         passport_prep: MOCK.passport_prep,
+        micro_practice: micro,
         ui_hints: {
           progress_label_fi: 'Edistyminen kohti A2',
           progress_label_en: 'Progress toward A2',
@@ -508,6 +546,34 @@ export default async function lmsHandler(req, res, pathSegs) {
 
     if (sub === 'homework' && method === 'POST' && isLearner) {
       return sendJson(res, 200, { ok: true, message: 'Lähetys vastaanotettu (demo).' });
+    }
+
+    if (sub === 'micro-practice' && isLearner) {
+      const uid = user.id;
+      if (method === 'POST') {
+        const wordKey = req.body && req.body.word_key ? String(req.body.word_key).slice(0, 80) : '';
+        const day =
+          req.body && req.body.day
+            ? String(req.body.day).slice(0, 10)
+            : new Date().toISOString().slice(0, 10);
+        if (!wordKey) return sendJson(res, 400, { error: 'word_key required' });
+        try {
+          await query(
+            `INSERT INTO learner_micro_practice (learner_id, day, word_key) VALUES ($1, $2::date, $3)
+             ON CONFLICT (learner_id, day) DO UPDATE SET word_key = EXCLUDED.word_key, completed_at = now()`,
+            [uid, day, wordKey]
+          );
+          const st = await getMicroPracticeState(uid);
+          return sendJson(res, 200, { ok: true, micro_practice: st });
+        } catch (e) {
+          if (e.code === '42P01') return sendJson(res, 503, { error: 'Run migration 007-learner-micro-practice.sql' });
+          throw e;
+        }
+      }
+      if (method === 'GET') {
+        return sendJson(res, 200, await getMicroPracticeState(uid));
+      }
+      return sendJson(res, 405, { error: 'Method not allowed' });
     }
 
     if (isLearner) {

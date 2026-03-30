@@ -232,6 +232,30 @@ export default async function sessionCompleteHandler(req, res) {
       return;
     }
 
+    try {
+      const practiced = (analysis.topics_practiced || []).filter((t) => t && !isNoiseTopic(t.label));
+      const struggled = (analysis.topics_struggled || []).filter((t) => t && !isNoiseTopic(t.label));
+      const p = practiced.length;
+      const s = struggled.length;
+      let sessionScore = 50;
+      if (p + s > 0) {
+        sessionScore = Math.round(50 + (50 * (p - s * 0.85)) / Math.max(1, p + s));
+      }
+      sessionScore = Math.max(12, Math.min(100, sessionScore));
+      await query(
+        `UPDATE episodes SET metadata = jsonb_set(
+          jsonb_set(
+            jsonb_set(COALESCE(metadata, '{}'), '{session_score}', to_jsonb($2::int)),
+            '{session_practiced_n}', to_jsonb($3::int)
+          ),
+          '{session_struggled_n}', to_jsonb($4::int)
+        ) WHERE id = $1`,
+        [episodeId, sessionScore, p, s]
+      );
+    } catch (e) {
+      console.error('session-complete: session_score:', e.message);
+    }
+
     let cefrScore = null;
     if (is_mock_exam) {
       const scored = await scoreCefrRubric(transcript);

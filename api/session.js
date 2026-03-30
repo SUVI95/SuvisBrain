@@ -31,6 +31,8 @@ export default async function handler(req, res, body) {
     const reviewWords = Array.isArray(body && body.review_words) ? body.review_words : [];
     const focusTopics = Array.isArray(body && body.focusTopics) ? body.focusTopics : [];
     const writingSample = (body && body.writing_sample) ? String(body.writing_sample).slice(0, 2000) : null;
+    const ophModule = body && body.oph_module ? String(body.oph_module).slice(0, 8) : null;
+    const workplacePrep = body && body.workplace_prep ? String(body.workplace_prep).slice(0, 40) : null;
 
     let learnerId = null;
     if (req.user.role === 'learner') {
@@ -41,6 +43,7 @@ export default async function handler(req, res, body) {
 
     let learnerCefr = null;
     let nativeLanguage = null;
+    let motherTongueName = null;
     let learnerName = null;
     let isFirstSession = false;
     let lastEpisode = null;
@@ -75,6 +78,7 @@ export default async function handler(req, res, body) {
           const row = learnerResult.rows[0];
           learnerName = row.name || null;
           learnerCefr = row.cefr_level || null;
+          motherTongueName = row.mother_tongue || null;
           nativeLanguage = row.mother_tongue ? langToIso(row.mother_tongue) : null;
           isFirstSession = parseInt(row.session_count, 10) === 0;
         }
@@ -107,6 +111,9 @@ export default async function handler(req, res, body) {
       lastEpisode,
       brainNodes,
       isFirstSession,
+      ophModule,
+      workplacePrep,
+      motherTongueName,
     });
 
     const createResp = await fetch('https://api.openai.com/v1/realtime/sessions', {

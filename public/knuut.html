@@ -462,6 +462,30 @@
     }
     body.knuut-text-fallback h1,
     body.knuut-text-fallback .subtitle { display: none; }
+    .panic-btn {
+      display: none;
+      margin-top: 14px;
+      padding: 14px 22px;
+      border-radius: 16px;
+      border: 2px solid #f59e0b;
+      background: linear-gradient(135deg, #fffbeb, #fef3c7);
+      color: #92400e;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: var(--card-shadow);
+      max-width: 92vw;
+    }
+    .panic-btn:hover { filter: brightness(0.98); }
+    .oph-hint {
+      font-size: 13px;
+      color: var(--secondary-500);
+      margin: 10px auto 0;
+      max-width: 520px;
+      line-height: 1.5;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -495,7 +519,9 @@
         <span>YKI Exam Mode — B1 level</span>
         <span class="timer" id="yki-timer">15:00</span>
       </div>
+      <p class="oph-hint" id="oph-context-hint" style="display:none"></p>
       <button id="knuut-talk-btn" class="talk-button">Talk with Knuut</button>
+      <button type="button" id="knuut-panic-btn" class="panic-btn" aria-label="Help in my language">🆘 Hätäapu — selitä omalla kielellä / Help in my language</button>
       <div id="status-text" class="status-text"></div>
       <div class="text-fallback-input-row" id="text-fallback-input-row">
         <input type="text" id="text-fallback-input" placeholder="Kirjoita suomeksi..." autocomplete="off" />
@@ -544,6 +570,22 @@
       const learnerId = urlLearnerId || (user?.role === 'learner' ? user?.id : null);
       const dashboardMode = params.get('mode') || null;
       const topicParam = params.get('topic') || null;
+      const ophModuleParam = params.get('oph_module') || params.get('module') || null;
+      const workplacePrepParam = params.get('workplace_prep') || params.get('workplace') || null;
+      (function () {
+        var hint = document.getElementById('oph-context-hint');
+        if (!hint) return;
+        var parts = [];
+        if (ophModuleParam) parts.push('OPH-moduuli / module: ' + ophModuleParam);
+        if (workplacePrepParam) parts.push('Työpaikkaharjoittelu / workplace: ' + workplacePrepParam);
+        if (topicParam && (ophModuleParam || workplacePrepParam)) {
+          try { parts.push(decodeURIComponent(topicParam)); } catch (e) { parts.push(topicParam); }
+        }
+        if (parts.length) {
+          hint.style.display = 'block';
+          hint.textContent = parts.join(' · ');
+        }
+      })();
       let reviewWords = [];
       if (dashboardMode === 'review') {
         const reviewWordsParam = params.get('review_words');
@@ -564,6 +606,8 @@
       }
 
       let pc, micStream, remoteAudioEl, isActive = false, isStarting = false;
+      var sessionInstructions = '';
+      var baseSessionInstructions = '';
       let sessionTranscript = '';
       let sessionStartTime = 0;
       let examMode = false;
@@ -1123,7 +1167,8 @@
           var cc = document.getElementById('learning-cards-container');
           if (cc) cc.innerHTML = '';
 
-          let sessionInstructions = '';
+          sessionInstructions = '';
+          baseSessionInstructions = '';
           oaiChannel = pc.createDataChannel('oai-events');
           const channel = oaiChannel;
           channel.onopen = function() {
@@ -1194,7 +1239,9 @@
             focusTopics: focusTopics,
             topic: topicParam ? decodeURIComponent(topicParam) : undefined,
             review_words: reviewWords.length > 0 ? reviewWords : undefined,
-            writing_sample: writingSample || undefined
+            writing_sample: writingSample || undefined,
+            oph_module: ophModuleParam || undefined,
+            workplace_prep: workplacePrepParam || undefined
           };
           try {
             const resp = await fetch(SERVER_URL + '/api/session', {
@@ -1210,7 +1257,8 @@
 
             const data = await resp.json();
             const answerSdp = typeof data.answer === 'string' ? data.answer : (data.sdp || '');
-            sessionInstructions = data.instructions || '';
+            baseSessionInstructions = data.instructions || '';
+            sessionInstructions = baseSessionInstructions;
             await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
           } catch (sessionErr) {
             console.error(sessionErr);
@@ -1237,6 +1285,8 @@
           isActive = true;
           btn.textContent = 'Stop Knuut';
           btn.classList.add('active');
+          var pbtn = document.getElementById('knuut-panic-btn');
+          if (pbtn) pbtn.style.display = 'inline-block';
           updateStatus('Ready to talk', true);
 
           if (examMode) {
@@ -1269,6 +1319,8 @@
         isActive = false;
         btn.textContent = 'Talk with Knuut';
         btn.classList.remove('active');
+        var pbtn2 = document.getElementById('knuut-panic-btn');
+        if (pbtn2) pbtn2.style.display = 'none';
         updateStatus('');
         try { if (pc) pc.close(); } catch {}
         pc = null;
@@ -1277,6 +1329,31 @@
         document.querySelectorAll('#voice-bars .vb').forEach(el => {
           el.style.transform = 'scaleY(1)';
           el.style.opacity = '0.5';
+        });
+      }
+
+      function panicHelpAppendix(mt) {
+        var label = (mt && String(mt).trim()) ? String(mt).trim() : 'the learner\'s mother tongue (not Finnish)';
+        return '\n\nPANIC / HELP BUTTON ACTIVATED.\nThe learner felt lost or anxious during Finnish practice.\nFor your NEXT spoken response ONLY:\n1) Speak ONLY in ' + label + '.\n2) In very simple words, explain what you were practicing in Finnish just now.\n3) Reassure them — this is difficult for everyone at first.\n4) Offer: hear one Finnish sentence again slowly, OR continue with one short phrase together.\nKeep under about one minute of speaking. Then return to normal bilingual teaching rules.\n';
+      }
+
+      var panicBtn = document.getElementById('knuut-panic-btn');
+      if (panicBtn) {
+        panicBtn.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          if (!oaiChannel || oaiChannel.readyState !== 'open' || !baseSessionInstructions) return;
+          var mt = (user && user.mother_tongue) || '';
+          try {
+            oaiChannel.send(JSON.stringify({
+              type: 'session.update',
+              session: { instructions: baseSessionInstructions + panicHelpAppendix(mt), voice: 'verse' }
+            }));
+            oaiChannel.send(JSON.stringify({
+              type: 'response.create',
+              response: { modalities: ['audio', 'text'], conversation: 'auto' }
+            }));
+            updateStatus('Help — explaining in your language…', true);
+          } catch (err) { console.error(err); }
         });
       }
 

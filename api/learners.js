@@ -1,6 +1,47 @@
 // api/learners.js — GET /api/learners, GET /api/learners/:id/progress
 import { query } from './db.js';
 
+function buildSessionAlerts(episodes) {
+  const alerts = [];
+  const scored = (episodes || [])
+    .map((e) => {
+      const sc = e.metadata && typeof e.metadata.session_score === 'number' ? e.metadata.session_score : null;
+      return sc == null ? null : { at: e.created_at, score: sc };
+    })
+    .filter(Boolean)
+    .slice(0, 12);
+  if (scored.length >= 3) {
+    const a = scored[0].score;
+    const b = scored[1].score;
+    const c = scored[2].score;
+    if (a < b && b < c && c < 58 && a < 50) {
+      alerts.push({
+        type: 'session_score_trend_down',
+        severity: 'info',
+        message_fi: 'Viimeisten sessioiden pisteet ovat tulleet alas. Käytä Knuutissa Hätäapu-painiketta omalla kielelläsi.',
+        message_en: 'Your last few session scores have dropped. Use the Help button in Knuut in your language.',
+      });
+    }
+    if (a < 40 && b < 45 && c < 48) {
+      alerts.push({
+        type: 'session_scores_low_run',
+        severity: 'warning',
+        message_fi: 'Harjoitukset ovat tuntuneet raskailta. Lyhyet sessiot ja lepo auttavat.',
+        message_en: 'Recent sessions have been difficult. Short practices and rest help.',
+      });
+    }
+  }
+  if (scored.length >= 1 && scored[0].score < 35) {
+    alerts.push({
+      type: 'low_last_session',
+      severity: 'warning',
+      message_fi: 'Viime harjoitus oli erityisen haastava. Riittää yksi lyhyt kerta tänään.',
+      message_en: 'Last practice was especially hard. One short session is enough today.',
+    });
+  }
+  return alerts;
+}
+
 export default async function learnersHandler(req, res, pathname) {
   const match = pathname.match(/^\/api\/learners\/([a-f0-9-]+)\/progress$/);
   const learnerId = match ? match[1] : null;
@@ -118,6 +159,7 @@ export default async function learnersHandler(req, res, pathname) {
           nodes,
           episodes,
           yki_episodes: ykiEpisodes,
+          session_alerts: buildSessionAlerts(episodes),
         })
       );
     } catch (err) {

@@ -138,3 +138,46 @@ INSERT INTO lms_modules (code, level_label, theme, sort_order, content) VALUES
   ('YX', '+All', 'Finnish society & culture (yhteiskuntatietous)', 7, '{"title_fi":"Moduuli 7: Yhteiskuntatietous ja suomalainen kulttuuri","title_en":"Module 7: Finnish society & culture (yhteiskuntatietous)","body":"Oikeudet, velvollisuudet, äänestäminen — perusteet.","oph":"OPH 2022 — kotoutumiskoulutus","video":"Demo: yhteiskunta ja palvelut Suomessa","exercises":["Palvelut kartalla","Keskusteluaiheita"],"vocabulary":["kunta","palvelu","laki"],"speaking":"Keskustelu: arki Suomessa.","quiz":"Yhteiskuntatietous — mini"}'),
   ('EL', '+All', 'Life management (elämänhallinta)', 8, '{"title_fi":"Moduuli 8: Elämänhallinta ja hyvinvointi","title_en":"Module 8: Life management (elämänhallinta)","body":"Budjetti, tavoitteet, tuki — peruskäsitteet.","oph":"OPH 2022 — kotoutumiskoulutus","video":"Demo: talous ja arjen suunnittelu","exercises":["Arjen tavoitteet","Apua mistä?"],"vocabulary":["tavoite","aika","tuki"],"speaking":"Pieni tavoite itselle — kerro suomeksi.","quiz":"Elämänhallinta — mini"}')
 ON CONFLICT (code) DO NOTHING;
+
+-- 14. Teacher workflow: placements + HOPS draft (ALKUPOLKU)
+CREATE TABLE IF NOT EXISTS learner_placements (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  learner_id uuid NOT NULL REFERENCES learners(id) ON DELETE CASCADE,
+  status text NOT NULL DEFAULT 'not_started'
+    CHECK (status IN (
+      'not_started',
+      'employer_found',
+      'briefing_done',
+      'active',
+      'completed',
+      'feedback_given'
+    )),
+  employer_name text,
+  employer_contact text,
+  start_date date,
+  end_date date,
+  briefing_at timestamptz,
+  feedback_at timestamptz,
+  notes text,
+  updated_at timestamptz DEFAULT now(),
+  created_at timestamptz DEFAULT now(),
+  UNIQUE (learner_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_learner_placements_status ON learner_placements(status);
+CREATE INDEX IF NOT EXISTS idx_learner_placements_start ON learner_placements(start_date);
+
+ALTER TABLE learners ADD COLUMN IF NOT EXISTS hops_draft text;
+ALTER TABLE learners ADD COLUMN IF NOT EXISTS hops_draft_at timestamptz;
+
+-- 15. Learner micro-practice (daily completion)
+CREATE TABLE IF NOT EXISTS learner_micro_practice (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  learner_id uuid NOT NULL REFERENCES learners(id) ON DELETE CASCADE,
+  day date NOT NULL,
+  word_key text NOT NULL,
+  completed_at timestamptz DEFAULT now(),
+  UNIQUE (learner_id, day)
+);
+
+CREATE INDEX IF NOT EXISTS idx_learner_micro_learner ON learner_micro_practice(learner_id, day DESC);

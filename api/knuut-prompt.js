@@ -362,8 +362,73 @@ const MODE_CONTEXTS = {
 };
 
 const FIRST_SESSION = `
-FIRST SESSION: Introduce warmly. Ask: Where from? Why Finnish? Experience? Be extra encouraging.
+FIRST SESSION (MULTILINGUAL — CRITICAL):
+The learner may be anxious or new to Finland. Their human language is named in MOTHER TONGUE below.
+
+For approximately the FIRST 3–5 MINUTES of this conversation:
+- Speak ONLY in their mother tongue (not Finnish) unless they clearly ask for Finnish.
+- Give a warm welcome: you are Knuut, their Finnish practice partner for the integration course (OPH 2022 / kotoutumiskoulutus).
+- Explain in simple terms: (1) what this course is for (language + work/life in Finland), (2) that they will practice Finnish with you step by step, (3) how the app works (Oppipolku modules, exercises, this voice button), (4) that they can use a HELP button during voice if they get lost — you will explain in their language.
+- Only after this orientation, switch gradually to Finnish + mother tongue support as in LANGUAGE RULES.
+
+Then continue with: where they are from, why Finnish matters to them, one small win for today. Be extra encouraging.
 `;
+
+/** OPH 2022 module — scenario focus for tender-aligned voice practice */
+const OPH_MODULE_SCENARIOS = {
+  M1: 'Latin alphabet, Finnish letters ä ö å, numbers 1–20, first words (hei, moi, kiitos, anteeksi)',
+  M2: 'Greetings, introducing yourself (Minun nimi on…), family, daily routines',
+  M3: 'Work vocabulary: asking for help, understanding instructions, shifts',
+  M4: 'Healthcare, services, transport: appointments, pharmacy, directions',
+  M5: 'Workplace Finnish: safety, instructions, colleagues, breaks',
+  M6: 'Job search, interviews, CV phrases, YKI orientation',
+  YX: 'Finnish society and culture (yhteiskuntatietous): rights, services, basics',
+  EL: 'Life management: goals, wellbeing, everyday planning',
+};
+
+const WORKPLACE_PREP_SCENARIOS = {
+  kitchen: 'Restaurant/kitchen: orders, hygiene, hot surfaces, teamwork (voisitko auttaa, missä on…, varovasti, kiire).',
+  warehouse: 'Warehouse/logistics: locations (missä on lava), safety shoes, lifting, schedules.',
+  retail: 'Retail/customer service: prices, returns, opening hours, polite service phrases.',
+  care: 'Care/cleaning: clients, schedules, hygiene, respectful address.',
+  office: 'Office: messages, meetings, phone, breaks, email basics.',
+  construction: 'Construction/site: safety gear, warnings, tools, site phrases.',
+};
+
+function ophModuleAddendum(code, topic) {
+  const c = (code || '').toUpperCase().trim();
+  const scenarios = OPH_MODULE_SCENARIOS[c];
+  if (!scenarios && !topic) return '';
+  let out = '\nOPH 2022 MODULE VOICE SESSION (tender-aligned):\n';
+  if (c) out += `- Module code: ${c}.\n`;
+  if (topic) out += `- Theme from platform: ${String(topic).slice(0, 400)}\n`;
+  if (scenarios) out += `- Practice ONLY these situations and vocabulary clusters: ${scenarios}\n`;
+  out +=
+    '- Role-play and drill exactly these scenarios. Use the learner\'s native language to explain new words, then practice the Finnish phrases aloud.\n' +
+    '- Do NOT drift into unrelated small talk until core module phrases are practiced.\n';
+  return out;
+}
+
+function workplacePrepAddendum(sector) {
+  const key = String(sector || '')
+    .toLowerCase()
+    .trim();
+  const scenario = WORKPLACE_PREP_SCENARIOS[key];
+  if (!scenario) return '';
+  return (
+    '\nWORK PLACEMENT LANGUAGE PREP (before työssäoppiminen):\n' +
+    `- Workplace type: ${key}.\n` +
+    `- Focus: ${scenario}\n` +
+    '- Simulate short dialogues they will hear at work. Explain difficult words in their native language, then repeat in Finnish.\n'
+  );
+}
+
+function motherTongueNameAddendum(name) {
+  if (!name || typeof name !== 'string') return '';
+  const t = name.trim();
+  if (!t) return '';
+  return `\nMOTHER TONGUE (human language name — use for first-session and explanations): ${t}.\n`;
+}
 
 // ---------------------------------------------------------------------------
 // HELPERS
@@ -455,6 +520,9 @@ export function getSystemPrompt(opts) {
   const lastEpisode = options.lastEpisode || null;
   const brainNodes = options.brainNodes || [];
   const isFirstSession = options.isFirstSession || false;
+  const ophModule = options.ophModule || null;
+  const workplacePrep = options.workplacePrep || null;
+  const motherTongueName = options.motherTongueName || null;
 
   const effectiveMode = dashboardMode || mode;
   const modePrompt = effectiveMode === 'yki' ? YKI_MODE : REGULAR_MODE;
@@ -479,6 +547,9 @@ export function getSystemPrompt(opts) {
     REAL_LIFE,
     modePrompt,
     modeContextAddendum(dashboardMode, reviewWords, topic, writingSample),
+    ophModuleAddendum(ophModule, topic),
+    workplacePrepAddendum(workplacePrep),
+    motherTongueNameAddendum(motherTongueName),
     isFirstSession ? FIRST_SESSION : '',
     learnerMemoryAddendum(learnerName, lastEpisode),
     brainAddendum(brainNodes),
@@ -486,6 +557,24 @@ export function getSystemPrompt(opts) {
     levelAddendum(learnerCefr),
     nativeLanguageAddendum(nativeLanguage),
   ].join('\n').trim();
+}
+
+/** Appended client-side via session.update when learner presses HELP (panic) in voice UI */
+export function getPanicHelpAppendix(motherTongueLabel) {
+  const label =
+    motherTongueLabel && String(motherTongueLabel).trim()
+      ? String(motherTongueLabel).trim()
+      : 'the learner’s mother tongue (not Finnish)';
+  return (
+    '\n\nPANIC / HELP BUTTON ACTIVATED.\n' +
+    'The learner felt lost or anxious during Finnish practice.\n' +
+    'For your NEXT spoken response ONLY:\n' +
+    `1) Speak ONLY in ${label}.\n` +
+    '2) In very simple words, explain what you were practicing in Finnish just now.\n' +
+    '3) Reassure them — this is difficult for everyone at first.\n' +
+    '4) Offer: hear one Finnish sentence again slowly, OR continue with one short phrase together.\n' +
+    'Keep under about one minute of speaking. Then return to normal bilingual teaching rules.\n'
+  );
 }
 
 export function langToIso(lang) {

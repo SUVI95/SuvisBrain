@@ -361,6 +361,29 @@
  @media (max-width: 1100px) { .insights-grid { grid-template-columns: repeat(2, 1fr); } .grouping-grid { grid-template-columns: repeat(2, 1fr); } }
  @media (max-width: 900px) { .triage-board { grid-template-columns: 1fr; } .hero { flex-direction: column; } .side-panel { width: 100%; } }
  @media (max-width: 680px) { .page { padding: 14px; } .insights-grid, .grouping-grid { grid-template-columns: 1fr; } .topnav-trust { display: none; } }
+
+ .daily-command { margin-bottom: 24px; }
+ .wf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; margin-bottom: 14px; }
+ .wf-card { background: var(--surface); border-radius: var(--radius-sm); padding: 12px 14px; box-shadow: var(--shadow); border-left: 4px solid var(--brand-500); }
+ .wf-card.warn { border-left-color: #f59e0b; }
+ .wf-card.risk { border-left-color: #ee5d50; }
+ .wf-card.ok { border-left-color: #01b574; }
+ .wf-card h4 { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-body-muted); margin-bottom: 6px; }
+ .wf-card .wf-n { font-size: 22px; font-weight: 800; color: var(--secondary-900); line-height: 1.1; }
+ .wf-names { font-size: 12px; color: var(--text-body-muted); margin-top: 8px; max-height: 64px; overflow-y: auto; line-height: 1.4; font-weight: 500; }
+ .wf-alert-list { list-style: none; padding: 0; margin: 0; }
+ .wf-alert-list li { padding: 10px 12px; margin-bottom: 8px; border-radius: 12px; font-size: 14px; font-weight: 500; }
+ .wf-alert-list li.sev-warning { background: #fffbeb; border: 1px solid #fde68a; }
+ .wf-alert-list li.sev-success { background: #ecfdf5; border: 1px solid #a7f3d0; }
+ .wf-alert-list li.sev-info { background: #eff6ff; border: 1px solid #bfdbfe; }
+ .wf-cohort-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
+ .wf-cohort-row span:first-child { width: 72px; font-weight: 700; color: var(--secondary-900); }
+ .wf-cohort-bar { flex: 1; height: 12px; background: var(--secondary-400); border-radius: 8px; overflow: hidden; }
+ .wf-cohort-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--brand-600), var(--brand-400)); border-radius: 8px; }
+ .wf-pl-select { font-size: 12px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); max-width: 200px; }
+ .wf-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+ .wf-pl-inp { font-size: 12px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); width: 100%; min-width: 0; box-sizing: border-box; }
+ @media (max-width: 900px) { .wf-grid2 { grid-template-columns: 1fr; } }
  </style>
 </head>
 <body>
@@ -473,6 +496,37 @@
  </div>
  </div>
 
+ <section class="daily-command" id="daily-command" aria-labelledby="wf-title">
+   <h2 class="section-h2" id="wf-title">Päivän komentokeskus</h2>
+   <p class="alku-sub" style="margin-top:-6px">Triage yllä — tässä päivän numerot, automaattiset hälytykset, ryhmän tasojakauma, raporttiluonnokset ja työssäoppimisen tila (yksi näkymä).</p>
+   <p id="wf-loading" class="shell-placeholder">Ladataan päivän tilannetta…</p>
+   <div id="wf-content" style="display:none">
+     <div class="wf-grid" id="wf-grid"></div>
+     <div class="card" style="margin-bottom:14px">
+       <div class="card-title">Automaattiset hälytykset</div>
+       <ul class="wf-alert-list" id="wf-alert-list"></ul>
+       <p class="icopy" id="wf-alert-empty" style="display:none">Ei aktiivisia hälytyksiä.</p>
+     </div>
+     <div class="grid2 wf-grid2">
+       <div class="card">
+         <div class="card-title">Ryhmän kielitasot (CEFR)</div>
+         <div id="wf-cohort"></div>
+       </div>
+       <div class="card">
+         <div class="card-title">Raportit — luonnos (toteuma / loppu)</div>
+         <pre id="wf-reports-pre" style="font-size:12px;white-space:pre-wrap;max-height:200px;overflow:auto;background:var(--surface2);padding:12px;border-radius:12px;margin:8px 0"></pre>
+         <button type="button" class="btn-save-cefr" id="wf-copy-toteuma">Kopioi toteumaraportti</button>
+         <button type="button" class="btn-save-cefr" id="wf-copy-loppu" style="margin-left:8px">Kopioi loppuraportti</button>
+       </div>
+     </div>
+     <div class="card">
+       <div class="card-title">Työssäoppiminen — tilataulukko</div>
+       <p class="icopy" style="margin-bottom:10px">Tila: ei aloitettu → työnantaja → palaveri → käynnissä → valmis → palaute kirjattu</p>
+       <div class="alku-table-wrap" id="wf-placement-wrap"></div>
+     </div>
+   </div>
+ </section>
+
  <section class="insights-section">
  <h2 class="section-h2">Class insights</h2>
  <div class="insights-grid" id="insights-grid"></div>
@@ -507,7 +561,12 @@
      <select id="hops-student-select" class="pselect" style="max-width:360px;margin-bottom:16px"></select>
      <div class="plbl">Tavoitteet (demo)</div>
      <textarea id="hops-editor" class="notes-area" style="min-height:160px" placeholder="Kirjoita HOPS-luonnos..."></textarea>
-     <button type="button" class="btn-save-cefr" id="btn-hops-save" style="margin-top:12px">Tallenna luonnos (demo)</button>
+     <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+       <button type="button" class="btn-gen" id="btn-hops-gen" title="Generoi luonnos tasosta, sessioista ja aivograafista">
+         <span class="bico">✦</span><span class="blbl">Generoi HOPS datasta</span>
+       </button>
+       <button type="button" class="btn-save-cefr" id="btn-hops-save">Tallenna luonnos (demo)</button>
+     </div>
    </div>
    <div id="shell-hops-preview" class="card shell-placeholder">Ladataan…</div>
  </div>
@@ -1020,6 +1079,174 @@ document.getElementById('cefr-filters').addEventListener('click', e => {
  activeCefr=b.dataset.cefr; renderTriage();
 });
 
+let workflowData = null;
+let wfReportToteumaText = '';
+let wfReportLoppuText = '';
+
+const WF_PL_OPTS = [
+ ['not_started', 'Ei aloitettu'],
+ ['employer_found', 'Työnantaja löytynyt'],
+ ['briefing_done', 'Palaveri tehty'],
+ ['active', 'Käynnissä'],
+ ['completed', 'Valmis'],
+ ['feedback_given', 'Palaute kirjattu'],
+];
+
+function wfNameList(arr, n) {
+ const a = arr || [];
+ const s = a.slice(0, n).map(function (x) { return x.name; }).join(', ');
+ return s || '—';
+}
+
+function renderWorkflow(w) {
+ workflowData = w;
+ const d = w.daily || {};
+ function plMonNames() {
+  const arr = d.placement_starts_next_monday || [];
+  return arr.slice(0, 6).map(function (x) { return x.learner_name || x.name || '—'; }).join(', ') || '—';
+ }
+ const cards = [
+  ['Harjoitus tänään', (d.active_today || []).length, wfNameList(d.active_today, 6), 'ok'],
+  ['Ei harjoitusta tänään', (d.not_practiced_today || []).length, wfNameList(d.not_practiced_today, 6), 'warn'],
+  ['Ei kirjautunut 24 h', (d.no_recent_login_24h || []).length, wfNameList(d.no_recent_login_24h, 6), 'warn'],
+  ['3+ pv ilman harjoitusta', (d.inactive_3_days || []).length, wfNameList(d.inactive_3_days, 6), 'risk'],
+  ['Putki katkennut', (d.streak_broken || []).length, wfNameList(d.streak_broken, 6), 'warn'],
+  ['YKI-ehdokkaat', (d.yki_ready_candidates || []).length, wfNameList(d.yki_ready_candidates, 6), 'ok'],
+  ['Työssäopp. alkaa ma', (d.placement_starts_next_monday || []).length, plMonNames(), 'warn'],
+  ['HOPS-katselmointi', (d.hops_review_suggested || []).length, wfNameList(d.hops_review_suggested, 6), 'risk'],
+ ];
+ document.getElementById('wf-grid').innerHTML = cards.map(function (row) {
+  var title = row[0], num = row[1], names = row[2], cls = row[3];
+  return '<div class="wf-card ' + cls + '"><h4>' + esc(title) + '</h4><div class="wf-n">' + num + '</div><div class="wf-names">' + esc(names) + '</div></div>';
+ }).join('');
+
+ var alerts = w.alerts || [];
+ var alEl = document.getElementById('wf-alert-list');
+ var emptyEl = document.getElementById('wf-alert-empty');
+ if (!alerts.length) {
+  alEl.innerHTML = '';
+  emptyEl.style.display = 'block';
+ } else {
+  emptyEl.style.display = 'none';
+  alEl.innerHTML = alerts.map(function (a) {
+   var sev = a.severity === 'success' ? 'sev-success' : a.severity === 'info' ? 'sev-info' : 'sev-warning';
+   return '<li class="' + sev + '"><strong>' + esc(a.learner_name) + '</strong> — ' + esc(a.message) + '</li>';
+  }).join('');
+ }
+
+ var dist = (w.cohort && w.cohort.cefr_distribution) || {};
+ var keys = Object.keys(dist).sort();
+ var max = 1;
+ keys.forEach(function (k) { if (dist[k] > max) max = dist[k]; });
+ document.getElementById('wf-cohort').innerHTML = keys.length
+  ? keys.map(function (k) {
+   var pct = Math.round((dist[k] / max) * 100);
+   return '<div class="wf-cohort-row"><span>' + esc(k) + '</span><div class="wf-cohort-bar"><i style="width:' + pct + '%"></i></div><span>' + dist[k] + '</span></div>';
+  }).join('')
+  : '<p class="icopy">Ei dataa</p>';
+
+ var rp = w.reports_preview || {};
+ wfReportToteumaText = (rp.toteumaraportti_lines || []).join('\n');
+ wfReportLoppuText = (rp.loppuraportti_lines || []).join('\n');
+ document.getElementById('wf-reports-pre').textContent = wfReportToteumaText + '\n\n---\n\n' + wfReportLoppuText;
+
+ var learners = w.learners || [];
+ var plById = {};
+ (w.placements || []).forEach(function (p) { plById[p.learner_id] = p; });
+ var tbody = learners.map(function (l) {
+  var p = plById[l.id] || {};
+  var st = p.status || 'not_started';
+  var opts = WF_PL_OPTS.map(function (opt) {
+   var v = opt[0], lab = opt[1];
+   return '<option value="' + v + '"' + (v === st ? ' selected' : '') + '>' + esc(lab) + '</option>';
+  }).join('');
+  var sd = p.start_date ? String(p.start_date).slice(0, 10) : '';
+  var ed = p.end_date ? String(p.end_date).slice(0, 10) : '';
+  return '<tr data-learner-id="' + String(l.id).replace(/"/g, '') + '"><td>' + esc(l.name) + '</td><td><select class="wf-pl-select wf-pl-f" data-k="status">' + opts + '</select></td><td><input type="text" class="wf-pl-inp wf-pl-f" data-k="employer_name" value="' + esc(p.employer_name || '') + '" placeholder="—" /></td><td><input type="text" class="wf-pl-inp wf-pl-f" data-k="employer_contact" value="' + esc(p.employer_contact || '') + '" placeholder="—" /></td><td><input type="date" class="wf-pl-inp wf-pl-f" data-k="start_date" value="' + esc(sd) + '" /></td><td><input type="date" class="wf-pl-inp wf-pl-f" data-k="end_date" value="' + esc(ed) + '" /></td><td><button type="button" class="btn-save-cefr wf-pl-save">Tallenna</button></td></tr>';
+ }).join('');
+ document.getElementById('wf-placement-wrap').innerHTML = learners.length
+  ? '<table class="alku-table"><thead><tr><th>Opiskelija</th><th>Tila</th><th>Työnantaja</th><th>Yhteys</th><th>Alku</th><th>Loppu</th><th></th></tr></thead><tbody>' + tbody + '</tbody></table>'
+  : '<p class="icopy">Ei opiskelijoita</p>';
+}
+
+async function loadTeacherWorkflow() {
+ var loadEl = document.getElementById('wf-loading');
+ var contentEl = document.getElementById('wf-content');
+ try {
+  var res = await fetch('/api/teacher/workflow', { headers: authHeaders() });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  var data = await res.json();
+  loadEl.style.display = 'none';
+  contentEl.style.display = 'block';
+  renderWorkflow(data);
+ } catch (e) {
+  loadEl.textContent = 'Päivän tilanne: ei voitu ladata. Tarkista kirjautuminen tai että tietokanta on päivitetty (006).';
+ }
+}
+
+document.getElementById('wf-placement-wrap').addEventListener('click', async function (e) {
+ var btn = e.target.closest('.wf-pl-save');
+ if (!btn) return;
+ var tr = btn.closest('tr');
+ if (!tr || !tr.dataset.learnerId) return;
+ var id = tr.dataset.learnerId;
+ var body = {};
+ tr.querySelectorAll('.wf-pl-f').forEach(function (inp) {
+  var k = inp.dataset.k;
+  if (!k) return;
+  if (inp.tagName === 'SELECT') body[k] = inp.value;
+  else if (inp.type === 'date') body[k] = inp.value || null;
+  else body[k] = inp.value || null;
+ });
+ btn.disabled = true;
+ try {
+  var r = await fetch('/api/teacher/workflow/placements/' + encodeURIComponent(id), {
+   method: 'PATCH',
+   headers: Object.assign({}, authHeaders(), { 'Content-Type': 'application/json' }),
+   body: JSON.stringify(body),
+  });
+  var j = await r.json().catch(function () { return {}; });
+  if (!r.ok) throw new Error(j.error || String(r.status));
+  btn.textContent = 'Tallennettu';
+  setTimeout(function () { btn.textContent = 'Tallenna'; btn.disabled = false; }, 1200);
+ } catch (err) {
+  alert(err.message || 'Tallennus epäonnistui');
+  btn.disabled = false;
+ }
+});
+
+document.getElementById('wf-copy-toteuma').addEventListener('click', function () {
+ if (wfReportToteumaText) navigator.clipboard.writeText(wfReportToteumaText);
+});
+document.getElementById('wf-copy-loppu').addEventListener('click', function () {
+ if (wfReportLoppuText) navigator.clipboard.writeText(wfReportLoppuText);
+});
+
+document.getElementById('btn-hops-gen').addEventListener('click', async function () {
+ var sel = document.getElementById('hops-student-select');
+ var id = sel && sel.value;
+ if (!id) { alert('Valitse opiskelija'); return; }
+ var btn = this;
+ btn.disabled = true;
+ btn.classList.add('loading');
+ try {
+  var r = await fetch('/api/teacher/workflow/hops-draft', {
+   method: 'POST',
+   headers: Object.assign({}, authHeaders(), { 'Content-Type': 'application/json' }),
+   body: JSON.stringify({ learner_id: id }),
+  });
+  var j = await r.json();
+  if (!r.ok) throw new Error(j.error || 'Virhe');
+  var he = document.getElementById('hops-editor');
+  if (he && j.draft) he.value = j.draft;
+ } catch (e) {
+  alert(e.message || 'HOPS-luonnos epäonnistui');
+ } finally {
+  btn.disabled = false;
+  btn.classList.remove('loading');
+ }
+});
+
 // RENDER ALL
 function renderAll() {
  const tot = summaryData.total_learners||learnersData.length;
@@ -1058,6 +1285,7 @@ async function loadLearners() {
  renderAll();
 }
 loadLearners();
+loadTeacherWorkflow();
 
 const SECTION_LABELS = {
  dashboard: 'Etusivu',

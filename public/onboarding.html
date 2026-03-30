@@ -163,144 +163,279 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .error-banner { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 14px; border-radius: 10px; font-size: 14px; margin-bottom: 20px; display: none; }
     .error-banner.show { display: block; }
+    .welcome-scroll {
+      max-height: min(52vh, 380px);
+      overflow-y: auto;
+      padding: 12px 4px;
+      margin-bottom: 16px;
+      font-size: 15px;
+      line-height: 1.65;
+      color: #374151;
+      border-radius: 12px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+    }
+    .welcome-scroll p { margin-bottom: 12px; }
+    .welcome-scroll strong { color: #1a1a2e; }
   </style>
 </head>
 <body>
   <div class="card">
     <div class="error-banner" id="error-banner"></div>
-    <div class="dots">
+    <div class="dots" id="dots-wrap">
       <span class="dot active" data-step="0"></span>
       <span class="dot" data-step="1"></span>
       <span class="dot" data-step="2"></span>
+      <span class="dot" data-step="3"></span>
+      <span class="dot" data-step="4"></span>
     </div>
 
     <div class="step active" data-step="0">
-      <h1>Who are you?</h1>
-      <p class="sub">Let's personalize your experience</p>
-      <label for="name">Full name</label>
-      <input type="text" id="name" placeholder="e.g. Amira Hassan" maxlength="200">
-      <label for="lang">Native language</label>
+      <h1 id="t-s0-title">Language first</h1>
+      <p class="sub" id="t-s0-sub">Choose the language you understand best. The next screen will welcome you in that language.</p>
+      <label for="lang" id="t-lang-label">Your language / kieli</label>
       <select id="lang">
         <option value="">Select...</option>
-        <option value="Arabic">Arabic</option>
-        <option value="Russian">Russian</option>
-        <option value="Somali">Somali</option>
-        <option value="Mandarin">Mandarin</option>
-        <option value="Ukrainian">Ukrainian</option>
+        <option value="Arabic">العربية · Arabic</option>
+        <option value="Russian">Русский · Russian</option>
+        <option value="Somali">Soomaali · Somali</option>
+        <option value="Ukrainian">Українська · Ukrainian</option>
         <option value="English">English</option>
-        <option value="Spanish">Spanish</option>
-        <option value="Persian">Persian</option>
-        <option value="Other">Other</option>
+        <option value="Spanish">Español · Spanish</option>
+        <option value="Persian">فارسی · Persian</option>
+        <option value="Mandarin">中文 · Mandarin</option>
+        <option value="Other">Other / muu</option>
       </select>
-      <button class="btn" id="btn-step0">Continue</button>
+      <button class="btn" id="btn-step0">Continue →</button>
     </div>
 
     <div class="step" data-step="1">
-      <h1>Why are you learning Finnish?</h1>
-      <p class="sub">Choose one</p>
-      <div class="goal-cards">
-        <div class="goal-card" data-goal="For work"><div class="emoji">💼</div><div class="label">For work</div></div>
-        <div class="goal-card" data-goal="For citizenship"><div class="emoji">🇫🇮</div><div class="label">For citizenship</div></div>
-        <div class="goal-card" data-goal="For family"><div class="emoji">👨‍👩‍👧</div><div class="label">For family</div></div>
-        <div class="goal-card" data-goal="For school"><div class="emoji">📚</div><div class="label">For school</div></div>
-      </div>
+      <h1 id="welcome-title">Welcome</h1>
+      <div class="welcome-scroll" id="welcome-body"></div>
+      <button class="btn" id="btn-step1">Continue →</button>
     </div>
 
     <div class="step" data-step="2">
-      <h1>Quick placement</h1>
-      <p class="sub">3 quick questions to find your level</p>
+      <h1 id="t-name-title">Your name</h1>
+      <p class="sub" id="t-name-sub">We use this in the app and with your teacher.</p>
+      <label for="name" id="t-name-label">Full name</label>
+      <input type="text" id="name" placeholder="" maxlength="200">
+      <button class="btn" id="btn-step2a">Continue →</button>
+    </div>
 
-      <div class="quiz-q">
-        <div class="q">What does "hei" mean?</div>
-        <div class="quiz-options">
-          <div class="quiz-opt" data-q="0" data-a="0">Hello</div>
-          <div class="quiz-opt" data-q="0" data-a="1">Goodbye</div>
-          <div class="quiz-opt" data-q="0" data-a="2">Thank you</div>
-          <div class="quiz-opt" data-q="0" data-a="3">Yes</div>
-        </div>
-      </div>
-      <div class="quiz-q">
-        <div class="q">Which is correct?</div>
-        <div class="quiz-options">
-          <div class="quiz-opt" data-q="1" data-a="0">Minä olen</div>
-          <div class="quiz-opt" data-q="1" data-a="1">Minä ole</div>
-          <div class="quiz-opt" data-q="1" data-a="2">Minä on</div>
-          <div class="quiz-opt" data-q="1" data-a="3">Minä oleva</div>
-        </div>
-      </div>
-      <div class="quiz-q">
-        <div class="q">What number is "viisi"?</div>
-        <div class="quiz-options">
-          <div class="quiz-opt" data-q="2" data-a="0">3</div>
-          <div class="quiz-opt" data-q="2" data-a="1">4</div>
-          <div class="quiz-opt" data-q="2" data-a="2">5</div>
-          <div class="quiz-opt" data-q="2" data-a="3">6</div>
-        </div>
-      </div>
+    <div class="step" data-step="3">
+      <h1 id="t-goal-title">Why Finnish?</h1>
+      <p class="sub" id="t-goal-sub">Choose one</p>
+      <div class="goal-cards" id="goal-cards"></div>
+    </div>
 
+    <div class="step" data-step="4">
+      <h1 id="t-quiz-title">Quick placement</h1>
+      <p class="sub" id="t-quiz-sub">3 questions — Finnish stays in Finnish; hints are in your language.</p>
+      <div id="quiz-mount"></div>
       <div id="err-register" class="err" style="display:none;"></div>
-      <button class="btn" id="btn-step2">Start learning</button>
+      <button class="btn" id="btn-step4">Start learning</button>
     </div>
   </div>
 
   <script>
-    const CORRECT = [0, 0, 2]; // Hello, Minä olen, 5
-    let state = { name: '', mother_tongue: '', learning_goal: '' };
+    const CORRECT = [0, 0, 2];
+    let state = { name: '', mother_tongue: '', learning_goal: '', langKey: 'en' };
 
-    function go(step) {
-      document.querySelectorAll('.step').forEach((s) => s.classList.remove('active'));
-      document.querySelectorAll('.dot').forEach((d) => d.classList.remove('active'));
-      const s = document.querySelector(`.step[data-step="${step}"]`);
-      const d = document.querySelector(`.dot[data-step="${step}"]`);
-      if (s) s.classList.add('active');
-      if (d) d.classList.add('active');
+    const I18N = {
+      en: {
+        s0Title: 'Language first', s0Sub: 'Choose the language you understand best. The next screen will welcome you in that language.',
+        langLabel: 'Your language',
+        welcomeTitle: 'Welcome to Knuut & ALKUPOLKU',
+        welcomeHtml: '<p><strong>Hello.</strong> You are safe here. This program helps you learn Finnish for life and work in Finland (integration course, OPH 2022 framework).</p><p><strong>Oppipolku</strong> is your learning path: modules, exercises, vocabulary, and a daily rhythm. <strong>Knuut</strong> is your AI voice coach — you speak, he answers in Finnish and supports you in <em>your language</em> when you need it.</p><p>There is a <strong>Help</strong> button during voice if you feel lost — Knuut will explain in your language. Your teacher sees progress and helps with plans (HOPS). Take your time — small steps every day count.</p>',
+        nameTitle: 'Your name', nameSub: 'We use this in the app and with your teacher.', nameLabel: 'Full name', namePh: 'e.g. Amira Hassan',
+        goalTitle: 'Why are you learning Finnish?', goalSub: 'Choose one',
+        goals: [['work','For work','💼'], ['citizenship','For citizenship','🇫🇮'], ['family','For family','👨‍👩‍👧'], ['school','For school','📚']],
+        quizTitle: 'Quick placement', quizSub: '3 questions — Finnish stays in Finnish; hints are in your language.',
+        q: ['What does “hei” mean?','Which sentence is correct?','What number is “viisi”?'],
+        qHint: ['Greeting','Grammar','Number'],
+        a0: ['Hello','Goodbye','Thank you','Yes'],
+        a1: ['Minä olen','Minä ole','Minä on','Minä oleva'],
+        a2: ['3','4','5','6'],
+        btnNext: 'Continue →', btnStart: 'Start learning', creating: 'Creating account…'
+      },
+      ar: {
+        s0Title: 'اللغة أولاً', s0Sub: 'اختر اللغة التي تفهمها جيداً. الشاشة التالية ترحب بك بهذه اللغة.',
+        langLabel: 'لغتك',
+        welcomeTitle: 'مرحباً في Knuut و ALKUPOLKU',
+        welcomeHtml: '<p><strong>أهلاً.</strong> أنت بأمان هنا. هذا البرنامج يساعدك على تعلم الفنلندية للحياة والعمل في فنلندا (دمج، إطار OPH 2022).</p><p><strong>Oppipolku</strong> هو مسارك: وحدات، تمارين، مفردات، وإيقاع يومي. <strong>Knuut</strong> هو مدربك الصوتي بالذكاء الاصطناعي — تتحدث، يجيب بالفنلندية ويدعمك بلغتك عند الحاجة.</p><p>هناك زر <strong>مساعدة</strong> أثناء الصوت إذا شعرت بالضياع — يشرح بلغتك. المعلم يرى التقدم ويساعد في الخطط. خذ وقتك — خطوات صغيرة كل يوم.</p>',
+        nameTitle: 'اسمك', nameSub: 'نستخدمه في التطبيق ومع المعلم.', nameLabel: 'الاسم الكامل', namePh: 'مثال: …',
+        goalTitle: 'لماذا تتعلم الفنلندية؟', goalSub: 'اختر واحداً',
+        goals: [['work','من أجل العمل','💼'], ['citizenship','من أجل الجنسية','🇫🇮'], ['family','من أجل العائلة','👨‍👩‍👧'], ['school','من أجل المدرسة','📚']],
+        quizTitle: 'تحديد مستوى سريع', quizSub: '3 أسئلة — الفنلندية تبقى بالفنلندية؛ التلميحات بلغتك.',
+        q: ['ماذا يعني “hei”؟','أي جملة صحيحة؟','ما رقم “viisi”؟'],
+        qHint: ['ترحيب','قواعد','رقم'],
+        a0: ['مرحبا','وداعا','شكرا','نعم'],
+        a1: ['Minä olen','Minä ole','Minä on','Minä oleva'],
+        a2: ['3','4','5','6'],
+        btnNext: 'متابعة →', btnStart: 'ابدأ التعلم', creating: 'جاري إنشاء الحساب…'
+      },
+      ru: {
+        s0Title: 'Сначала язык', s0Sub: 'Выберите язык, который вы понимаете лучше всего.',
+        langLabel: 'Ваш язык',
+        welcomeTitle: 'Добро пожаловать в Knuut',
+        welcomeHtml: '<p><strong>Здравствуйте.</strong> Эта программа помогает учить финский для жизни и работы в Финляндии (интеграционный курс, OPH 2022).</p><p><strong>Oppipolku</strong> — ваш путь: модули, упражнения, слова. <strong>Knuut</strong> — голосовой тренер: вы говорите, он отвечает по-фински и поддерживает на <em>вашем языке</em>.</p><p>Кнопка <strong>Помощь</strong> во время разговора — объяснит по-вашему, если страшно или непонятно.</p>',
+        nameTitle: 'Ваше имя', nameSub: 'Используем в приложении и с учителем.', nameLabel: 'Полное имя', namePh: 'Например: …',
+        goalTitle: 'Зачем финский?', goalSub: 'Выберите',
+        goals: [['work','Для работы','💼'], ['citizenship','Для гражданства','🇫🇮'], ['family','Для семьи','👨‍👩‍👧'], ['school','Для школы','📚']],
+        quizTitle: 'Быстрый тест', quizSub: '3 вопроса — финский остаётся по-фински.',
+        q: ['Что значит “hei”?','Какое предложение верное?','Какое число “viisi”?'],
+        qHint: ['Приветствие','Грамматика','Число'],
+        a0: ['Привет','Пока','Спасибо','Да'],
+        a1: ['Minä olen','Minä ole','Minä on','Minä oleva'],
+        a2: ['3','4','5','6'],
+        btnNext: 'Далее →', btnStart: 'Начать', creating: 'Создаём аккаунт…'
+      },
+      so: {
+        s0Title: 'Luqadda hore', s0Sub: 'Dooro luqadda aad ugu fiican fahamto.',
+        langLabel: 'Luqadaada',
+        welcomeTitle: 'Ku soo dhawoow Knuut',
+        welcomeHtml: '<p><strong>Salaan.</strong> Barnaamijkan wuxuu kaa caawinayaa barashada Fiinishka nolosha iyo shaqada Finland (koorso isku-darka, OPH 2022).</p><p><strong>Oppipolku</strong> waa wadadaada: cutubyada, jimicsiyada, ereyada. <strong>Knuut</strong> waa tababare cod ah — waxaad ku hadashaa, wuxuu ku jawaabaa Fiinishka oo ku taageeraa <em>luqadaada</em>.</p><p>Badhanka <strong>Caawimaad</strong> inta codka — wuxuu kuu sharxi doonaa luqadaada haddii aad wareersan tahay.</p>',
+        nameTitle: 'Magacaaga', nameSub: 'Waxaan u isticmaalnaa barnaamijka iyo macallin.', nameLabel: 'Magaca oo dhan', namePh: 'Tusaale: …',
+        goalTitle: 'Maxaad u baranaysaa Fiinishka?', goalSub: 'Dooro hal',
+        goals: [['work','Shaqo','💼'], ['citizenship','Muwaadinnimada','🇫🇮'], ['family','Qoyska','👨‍👩‍👧'], ['school','Dugsiga','📚']],
+        quizTitle: 'Imtixaan degdeg ah', quizSub: '3 su\'aalood — Fiinishka waa Fiinish.',
+        q: ['“hei” micnaheedu waa maxay?','Xukunka saxda ah?','Lambarka “viisi”?'],
+        qHint: ['Salaan','Naxwaha','Lambarka'],
+        a0: ['Hello','Goodbye','Thanks','Yes'],
+        a1: ['Minä olen','Minä ole','Minä on','Minä oleva'],
+        a2: ['3','4','5','6'],
+        btnNext: 'Sii wad →', btnStart: 'Bilow barashada', creating: 'Akoon la sameynayaa…'
+      },
+      uk: {
+        s0Title: 'Спочатку мова', s0Sub: 'Оберіть мову, якою вам найзручніше читати.',
+        langLabel: 'Ваша мова',
+        welcomeTitle: 'Ласкаво просимо до Knuut',
+        welcomeHtml: '<p><strong>Вітаємо.</strong> Ця програма допомагає вивчати фінську для життя та роботи у Фінляндії (інтеграційний курс, OPH 2022).</p><p><strong>Oppipolku</strong> — ваш шлях: модулі, вправи, слова. <strong>Knuut</strong> — голосовий тренер: ви говорите, він відповідає фінською і підтримує <em>вашою мовою</em>.</p><p>Кнопка <strong>Допомога</strong> під час голосу — пояснить вашою мовою, якщо страшно або незрозуміло.</p>',
+        nameTitle: 'Ваше ім’я', nameSub: 'Використовуємо в застосунку та з учителем.', nameLabel: 'Повне ім’я', namePh: 'Наприклад: …',
+        goalTitle: 'Навіщо фінська?', goalSub: 'Оберіть одне',
+        goals: [['work','Для роботи','💼'], ['citizenship','Для громадянства','🇫🇮'], ['family','Для сім’ї','👨‍👩‍👧'], ['school','Для школи','📚']],
+        quizTitle: 'Швидкий тест', quizSub: '3 питання — фінська залишається фінською.',
+        q: ['Що означає “hei”?','Яке речення правильне?','Яке число “viisi”?'],
+        qHint: ['Привітання','Граматика','Число'],
+        a0: ['Привіт','Бувай','Дякую','Так'],
+        a1: ['Minä olen','Minä ole','Minä on','Minä oleva'],
+        a2: ['3','4','5','6'],
+        btnNext: 'Далі →', btnStart: 'Почати навчання', creating: 'Створюємо акаунт…'
+      }
+    };
+
+    const LANG_MAP = { Arabic: 'ar', Russian: 'ru', Somali: 'so', Ukrainian: 'uk', English: 'en', Spanish: 'en', Persian: 'en', Mandarin: 'en', Other: 'en' };
+
+    function T() {
+      const k = state.langKey;
+      return I18N[k] || I18N.en;
     }
 
-    document.getElementById('btn-step0').addEventListener('click', () => {
-      const name = document.getElementById('name').value.trim();
+    function applyStaticI18n() {
+      const t = T();
+      document.getElementById('t-s0-title').textContent = t.s0Title;
+      document.getElementById('t-s0-sub').textContent = t.s0Sub;
+      document.getElementById('t-lang-label').textContent = t.langLabel;
+      document.getElementById('welcome-title').textContent = t.welcomeTitle;
+      document.getElementById('welcome-body').innerHTML = t.welcomeHtml;
+      document.getElementById('t-name-title').textContent = t.nameTitle;
+      document.getElementById('t-name-sub').textContent = t.nameSub;
+      document.getElementById('t-name-label').textContent = t.nameLabel;
+      document.getElementById('name').placeholder = t.namePh;
+      document.getElementById('t-goal-title').textContent = t.goalTitle;
+      document.getElementById('t-goal-sub').textContent = t.goalSub;
+      document.getElementById('t-quiz-title').textContent = t.quizTitle;
+      document.getElementById('t-quiz-sub').textContent = t.quizSub;
+      document.getElementById('btn-step0').textContent = t.btnNext;
+      document.getElementById('btn-step1').textContent = t.btnNext;
+      document.getElementById('btn-step2a').textContent = t.btnNext;
+      document.getElementById('btn-step4').textContent = t.btnStart;
+      const gc = document.getElementById('goal-cards');
+      gc.innerHTML = t.goals.map(function (g) {
+        return '<div class="goal-card" data-goal="' + g[0] + '"><div class="emoji">' + g[2] + '</div><div class="label">' + g[1] + '</div></div>';
+      }).join('');
+      gc.querySelectorAll('.goal-card').forEach(function (c) {
+        c.onclick = function () {
+          gc.querySelectorAll('.goal-card').forEach(function (x) { x.classList.remove('selected'); });
+          c.classList.add('selected');
+          var map = { work: 'For work', citizenship: 'For citizenship', family: 'For family', school: 'For school' };
+          state.learning_goal = map[c.dataset.goal] || c.dataset.goal;
+          setTimeout(function () { go(4); renderQuiz(); }, 280);
+        };
+      });
+    }
+
+    function renderQuiz() {
+      const t = T();
+      const mount = document.getElementById('quiz-mount');
+      let html = '';
+      for (let qi = 0; qi < 3; qi++) {
+        html += '<div class="quiz-q"><div class="q">' + t.q[qi] + ' <span style="font-size:12px;color:#9ca3af">(' + t.qHint[qi] + ')</span></div><div class="quiz-options">';
+        const opts = qi === 0 ? t.a0 : qi === 1 ? t.a1 : t.a2;
+        for (let ai = 0; ai < 4; ai++) {
+          html += '<div class="quiz-opt" data-q="' + qi + '" data-a="' + ai + '">' + opts[ai] + '</div>';
+        }
+        html += '</div></div>';
+      }
+      mount.innerHTML = html;
+      mount.querySelectorAll('.quiz-opt').forEach(function (o) {
+        o.onclick = function () {
+          const q = parseInt(o.dataset.q, 10);
+          const a = parseInt(o.dataset.a, 10);
+          mount.querySelectorAll('.quiz-opt[data-q="' + q + '"]').forEach(function (x) { x.classList.remove('selected'); });
+          o.classList.add('selected');
+          answers[q] = a;
+        };
+      });
+    }
+
+    function go(step) {
+      document.querySelectorAll('.step').forEach(function (s) { s.classList.remove('active'); });
+      document.querySelectorAll('.dot').forEach(function (d) { d.classList.remove('active'); });
+      const el = document.querySelector('.step[data-step="' + step + '"]');
+      const dot = document.querySelector('.dot[data-step="' + step + '"]');
+      if (el) el.classList.add('active');
+      if (dot) dot.classList.add('active');
+    }
+
+    document.getElementById('btn-step0').addEventListener('click', function () {
       const lang = document.getElementById('lang').value;
-      if (!name) return;
-      state.name = name;
-      state.mother_tongue = lang || 'Other';
+      if (!lang) return;
+      state.mother_tongue = lang;
+      state.langKey = LANG_MAP[lang] || 'en';
+      applyStaticI18n();
       go(1);
     });
 
-    document.querySelectorAll('.goal-card').forEach((c) => {
-      c.addEventListener('click', () => {
-        document.querySelectorAll('.goal-card').forEach((x) => x.classList.remove('selected'));
-        c.classList.add('selected');
-        state.learning_goal = c.dataset.goal;
-        setTimeout(() => go(2), 300);
-      });
+    document.getElementById('btn-step1').addEventListener('click', function () { go(2); });
+
+    document.getElementById('btn-step2a').addEventListener('click', function () {
+      const name = document.getElementById('name').value.trim();
+      if (!name) return;
+      state.name = name;
+      go(3);
     });
 
     const answers = [null, null, null];
-    document.querySelectorAll('.quiz-opt').forEach((o) => {
-      o.addEventListener('click', () => {
-        const q = parseInt(o.dataset.q, 10);
-        const a = parseInt(o.dataset.a, 10);
-        document.querySelectorAll(`.quiz-opt[data-q="${q}"]`).forEach((x) => x.classList.remove('selected'));
-        o.classList.add('selected');
-        answers[q] = a;
-      });
-    });
 
     function getCefr() {
-      const correct = answers.filter((a, i) => a === CORRECT[i]).length;
+      const correct = answers.filter(function (a, i) { return a === CORRECT[i]; }).length;
       if (correct <= 1) return 'A1';
       if (correct === 2) return 'A2';
       return 'B1';
     }
 
-    document.getElementById('btn-step2').addEventListener('click', async () => {
-      if (answers.some((a) => a === null)) return;
-      const btn = document.getElementById('btn-step2');
+    document.getElementById('btn-step4').addEventListener('click', async function () {
+      if (answers.some(function (a) { return a === null; })) return;
+      const btn = document.getElementById('btn-step4');
       const errEl = document.getElementById('err-register');
       const banner = document.getElementById('error-banner');
       errEl.style.display = 'none';
       banner.classList.remove('show');
       btn.classList.add('loading');
-      btn.textContent = 'Creating account...';
+      const t = T();
+      btn.textContent = t.creating;
 
       try {
         const res = await fetch('/api/auth/register', {
@@ -320,19 +455,22 @@
           localStorage.setItem('knuut_token', data.token);
         }
         if (data.user) {
-          const u = { ...data.user, role: 'learner' };
+          const u = Object.assign({}, data.user, { role: 'learner' });
           localStorage.setItem('sb_user', JSON.stringify(u));
           localStorage.setItem('knuut_user', JSON.stringify(u));
         }
+        localStorage.setItem('onboarding_done', '1');
         location.replace('/oppipolku.html');
       } catch (e) {
         banner.textContent = e.message || 'Something went wrong. Check your connection and try again.';
         banner.classList.add('show');
       } finally {
         btn.classList.remove('loading');
-        btn.textContent = 'Start learning';
+        btn.textContent = T().btnStart;
       }
     });
+
+    applyStaticI18n();
   </script>
 </body>
 </html>

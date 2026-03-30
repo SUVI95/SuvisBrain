@@ -35,6 +35,7 @@ import { getLearnersHandler, nudgeHandler, nudgeBulkHandler } from './api/teache
 import { getLeadsHandler, patchLeadHandler } from './api/leads.js';
 import adminOrganisationsHandler from './api/admin-organisations.js';
 import lmsHandler from './api/lms.js';
+import teacherWorkflowRouter from './api/teacher-workflow.js';
 import { query } from './api/db.js';
 import { getSystemPrompt, langToIso } from './api/knuut-prompt.js';
 
@@ -106,9 +107,12 @@ async function handleVoice(pathname, req, res) {
       const reviewWords = Array.isArray(body.review_words) ? body.review_words : [];
       const focusTopics = Array.isArray(body.focusTopics) ? body.focusTopics : [];
       const writingSample = body.writing_sample ? String(body.writing_sample).slice(0, 2000) : null;
+      const ophModule = body.oph_module ? String(body.oph_module).slice(0, 8) : null;
+      const workplacePrep = body.workplace_prep ? String(body.workplace_prep).slice(0, 40) : null;
 
       let learnerCefr = null;
       let nativeLanguage = null;
+      let motherTongueName = null;
       let learnerName = null;
       let isFirstSession = false;
       let lastEpisode = null;
@@ -143,6 +147,7 @@ async function handleVoice(pathname, req, res) {
             const row = learnerResult.rows[0];
             learnerName = row.name || null;
             learnerCefr = row.cefr_level || null;
+            motherTongueName = row.mother_tongue || null;
             nativeLanguage = row.mother_tongue ? langToIso(row.mother_tongue) : null;
             isFirstSession = parseInt(row.session_count, 10) === 0;
           }
@@ -175,6 +180,9 @@ async function handleVoice(pathname, req, res) {
         lastEpisode,
         brainNodes,
         isFirstSession,
+        ophModule,
+        workplacePrep,
+        motherTongueName,
       });
 
       const createResp = await fetch('https://api.openai.com/v1/realtime/sessions', {
@@ -362,6 +370,10 @@ async function handleApi(pathname, req, res, body) {
     }
     if (route === 'teacher') {
       const pathSegs = path.split('/').filter(Boolean);
+      if (pathSegs[1] === 'workflow') {
+        await teacherWorkflowRouter(wrappedReq, res, pathSegs);
+        return true;
+      }
       if (pathSegs[1] === 'learners' && req.method === 'GET') {
         await getLearnersHandler(wrappedReq, res);
         return true;
