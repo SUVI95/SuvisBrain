@@ -67,7 +67,7 @@
  .sidebar {
    width: var(--sidebar-w); min-height: 100vh; background: var(--surface);
    box-shadow: var(--card-shadow); display: flex; flex-direction: column;
-   padding: 25px 16px 100px; position: fixed; left: 0; top: 0; z-index: 100;
+   padding: 25px 16px 32px; position: fixed; left: 0; top: 0; z-index: 100;
  }
  .sidebar-brand .logo { font-size: 22px; font-weight: 800; color: var(--navy-700); padding: 0 8px; align-self: flex-start; }
  .sidebar-brand .logo span { color: var(--brand-500); }
@@ -94,13 +94,13 @@
    margin-left: var(--sidebar-w); flex: 1; width: calc(100% - var(--sidebar-w)); min-height: 100vh; position: relative;
  }
  .hz-navbar {
-   position: fixed; z-index: 90; top: 20px; right: 30px; left: var(--sidebar-w); margin-left: 12px;
+   position: relative; z-index: 1; margin: 20px 30px 0 12px;
    min-height: 56px; padding: 8px 16px; display: flex; align-items: center;
    background: rgba(244, 247, 254, 0.35); backdrop-filter: blur(20px); border-radius: 16px;
  }
  .hz-breadcrumb { font-size: 14px; color: var(--chakra-gray-700); }
  .hz-breadcrumb .sep { margin: 0 6px; opacity: 0.5; }
- .main { padding: 88px 30px 120px 30px; width: 100%; max-width: 1400px; }
+ .main { padding: 16px 30px 48px 30px; width: 100%; max-width: 1400px; }
  .trust-top {
    background: var(--surface); border-radius: var(--radius); padding: 14px 18px; font-size: 14px; color: var(--secondary-900);
    margin-bottom: 20px; box-shadow: var(--card-shadow); font-weight: 500;
@@ -121,19 +121,15 @@
    padding: 20px;
    margin-bottom: 0;
  }
- .eu-banner {
-   position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: var(--navy-700); color: rgba(255,255,255,0.92);
-   padding: 10px 16px; font-size: 13px; text-align: center; font-weight: 600;
- }
  @media (max-width: 900px) {
    :root { --sidebar-w: 72px; }
-   .sidebar { padding: 16px 6px 100px; }
+   .sidebar { padding: 16px 6px 32px; }
    .sidebar .tagline, .sidebar .nav-section, .sidebar .role-pill span, .sidebar-links { display: none; }
    .nav-item { justify-content: center; padding: 10px; }
    .nav-item .icon { font-size: 20px; }
    .hz-shell { margin-left: 72px; width: calc(100% - 72px); }
-   .hz-navbar { left: 72px; }
-   .main { padding: 80px 16px 120px; }
+   .hz-navbar { margin: 12px 16px 0 8px; }
+   .main { padding: 12px 16px 40px; }
  }
 
  #logout-link { font-size: 13px; color: var(--secondary-500); text-decoration: none; margin-top: 8px; display: inline-block; }
@@ -584,8 +580,6 @@
 
   </main>
 </div>
-
-<div class="eu-banner" role="status">GDPR · EU-data · Koulutusportti-synkronointi suunnitteilla · Salassapito työvoima- ja sosiaalidatasta</div>
 
 <div class="panel-overlay" id="panel-overlay"></div>
 <div class="side-panel" id="side-panel">
@@ -1085,7 +1079,6 @@ async function loadTeacherShell() {
  const rule = d.attendance_rule || {};
  const yki = d.yki || {};
  const otp = d.otp || {};
- const gdpr = d.gdpr || {};
  const contacts = d.employer_contacts || [];
  const mods = d.modules || [];
  const hops = d.hops || {};
@@ -1139,7 +1132,7 @@ async function loadTeacherShell() {
 
  document.getElementById('shell-feedback').innerHTML = '<div class="insight-card"><div class="ilbl">' + esc((fb.interim && fb.interim.title) || 'Välipalaute') + '</div><p class="icopy">' + esc((fb.interim && fb.interim.fields && fb.interim.fields.join(', ')) || '') + '</p><p class="icopy">' + esc((fb.interim && fb.interim.format) || '') + '</p></div><div class="insight-card"><div class="ilbl">' + esc((fb.final && fb.final.title) || 'Loppupalaute') + '</div><p class="icopy">' + esc((fb.final && fb.final.fields && fb.final.fields.join(', ')) || '') + '</p><p class="icopy">' + esc((fb.final && fb.final.format) || '') + '</p></div>';
 
- document.getElementById('shell-reports').innerHTML = '<p class="icopy">' + esc(fr.export || '') + '</p><ul class="alku-list">' + (fr.forms || []).map(function (f) { return '<li><strong>' + esc(f.id) + '</strong> — ' + esc(f.name) + ' (' + esc(f.status || '') + ')</li>'; }).join('') + '</ul><p class="icopy" style="margin-top:12px">OTP kk ' + esc((otp && otp.month) || '') + ': ' + esc(String((otp && otp.total_otp) != null ? otp.total_otp : '—')) + ' opiskelijatyöpäivää (laskutus).</p><p class="icopy">GDPR: ' + esc(gdpr.data_region || '') + ' · Koulutusportti-kentät: ' + (gdpr.koulutusportti_fields || []).map(function (x) { return esc(x); }).join(', ') + '</p>';
+ document.getElementById('shell-reports').innerHTML = '<p class="icopy">' + esc(fr.export || '') + '</p><ul class="alku-list">' + (fr.forms || []).map(function (f) { return '<li><strong>' + esc(f.id) + '</strong> — ' + esc(f.name) + ' (' + esc(f.status || '') + ')</li>'; }).join('') + '</ul><p class="icopy" style="margin-top:12px">OTP kk ' + esc((otp && otp.month) || '') + ': ' + esc(String((otp && otp.total_otp) != null ? otp.total_otp : '—')) + ' opiskelijatyöpäivää (laskutus).</p>';
 
  document.getElementById('jatko-editor').value = (jatko.options || []).join('\n');
  document.getElementById('shell-jatko').innerHTML = '<p class="icopy"><strong>Opiskelijan kommentti:</strong> ' + esc(jatko.student_comment || '—') + '</p><p class="icopy">Tila: ' + esc(jatko.status || '') + '</p>';
