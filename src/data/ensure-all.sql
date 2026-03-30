@@ -38,6 +38,15 @@ CREATE TABLE IF NOT EXISTS teachers (
   created_at timestamptz DEFAULT now()
 );
 
+-- 4b. Default teacher login (bcrypt: demo123) — only sets password_hash when NULL
+INSERT INTO teachers (name, email, password_hash)
+VALUES ('Teacher Demo', 'teacher@knuut.fi', '$2b$10$PKR7aUdz6TWufDT2cpj40OeM.npDoRvCG.8qNrRdomTytZ7R3aoS6')
+ON CONFLICT (email) DO NOTHING;
+UPDATE teachers
+SET password_hash = '$2b$10$PKR7aUdz6TWufDT2cpj40OeM.npDoRvCG.8qNrRdomTytZ7R3aoS6'
+WHERE LOWER(email) = LOWER('teacher@knuut.fi')
+  AND password_hash IS NULL;
+
 -- 5. Learners: native_language (ISO 639-1)
 ALTER TABLE learners ADD COLUMN IF NOT EXISTS native_language varchar(10) DEFAULT NULL;
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Set password for demo teacher. Run once after setup.
+ * Set password for demo teacher (optional — DB migrations seed teacher@knuut.fi / demo123).
  * Usage: node scripts/set-demo-teacher-password.js [password]
  */
 import 'dotenv/config';
