@@ -1054,7 +1054,12 @@
           var pct = typeof prog[code] === 'number' ? prog[code] : 0;
           var slots = m.slots || {};
           var sk = Object.keys(slots).filter(function (k) { return slots[k]; }).slice(0, 6).join(' · ');
-          return '<div class="lms-mod-card"><h3>' + escapeHtml(code) + ' · ' + escapeHtml(m.level || '') + '</h3><div class="lms-mod-meta">' + escapeHtml(m.theme || '') + '</div><div class="lms-mod-bar"><span style="width:' + pct + '%"></span></div><div class="lms-slot-row">📹 ' + escapeHtml(sk) + '</div></div>';
+          var idx = typeof m.module_index === 'number' ? m.module_index : '';
+          var head = idx ? ('Moduuli ' + idx + ' · ' + escapeHtml(code) + ' · ' + escapeHtml(m.level || '')) : (escapeHtml(code) + ' · ' + escapeHtml(m.level || ''));
+          var metaFi = m.theme_fi ? escapeHtml(m.theme_fi) : '';
+          var metaEn = m.theme ? escapeHtml(m.theme) : '';
+          var meta = metaFi ? (metaFi + (metaEn ? '<br><span style="font-size:13px;color:var(--secondary-500)">' + metaEn + '</span>' : '')) : metaEn;
+          return '<div class="lms-mod-card"><h3>' + head + '</h3><div class="lms-mod-meta">' + meta + '</div><div class="lms-mod-bar"><span style="width:' + pct + '%"></span></div><div class="lms-slot-row">📹 ' + escapeHtml(sk) + '</div></div>';
         }).join('');
       }
 

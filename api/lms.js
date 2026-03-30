@@ -5,6 +5,212 @@
 import { query } from './db.js';
 import { sendJson } from '../src/lib/middleware.js';
 
+/**
+ * Finnish language modules — OPH curriculum 2022 (kotoutumiskoulutus) structure.
+ * Shells + mock content; teachers replace with real materials in lms_modules.content.
+ */
+const MODULES_OPH2022 = [
+  {
+    code: 'M1',
+    module_index: 1,
+    level: 'Pre-A1',
+    theme: 'Latin alphabet, basic sounds, numbers',
+    theme_fi: 'Latinalaiset aakkoset, perusäänteet, numerot',
+    sort: 1,
+    cross_cutting: false,
+    mock: {
+      video: 'Demo: äänteet ja kirjaimet A–Ö',
+      text: 'Tervetuloa moduuliin 1. Harjoitellaan aakkoset ja numerot 1–20.',
+      exercises: ['Yhdistä kirjain ja äänne', 'Kirjoita numero sanana'],
+      vocabulary: ['aakkoset', 'numero', 'vokaali', 'konsonantti'],
+      speaking: 'Lausu aakkoset ääneen hitaasti.',
+      quiz: 'Alkutasoitus: aakkoset ja numerot',
+    },
+  },
+  {
+    code: 'M2',
+    module_index: 2,
+    level: 'A1.1',
+    theme: 'Greetings, daily life, family',
+    theme_fi: 'Tervehdykset, arki, perhe',
+    sort: 2,
+    cross_cutting: false,
+    mock: {
+      video: 'Demo: tervehdykset ja esittäytyminen',
+      text: 'Minun nimi on… Minulla on perhe…',
+      exercises: ['Täytä dialogi', 'Kuka tämä on?'],
+      vocabulary: ['terve', 'hyvää päivää', 'perhe', 'lapset'],
+      speaking: 'Esittele itsesi ja perheesi lyhyesti.',
+      quiz: 'Tasoitus: arjen sanasto',
+    },
+  },
+  {
+    code: 'M3',
+    module_index: 3,
+    level: 'A1.2',
+    theme: 'Work vocabulary, asking for help',
+    theme_fi: 'Työsanasto, avun pyytäminen',
+    sort: 3,
+    cross_cutting: false,
+    mock: {
+      video: 'Demo: työpaikalla — pyydä apua kohteliaasti',
+      text: 'Voisitteko auttaa? En ymmärrä ohjetta.',
+      exercises: ['Muodollinen pyyntö', 'Kuuntele ja toista'],
+      vocabulary: ['vuoro', 'tauko', 'apu', 'ohje'],
+      speaking: 'Harjoittele pyytämään apua työtilanteessa.',
+      quiz: 'Työsanasto A1.2',
+    },
+  },
+  {
+    code: 'M4',
+    module_index: 4,
+    level: 'A1.3',
+    theme: 'Healthcare, services, transport',
+    theme_fi: 'Terveydenhuolto, palvelut, liikenne',
+    sort: 4,
+    cross_cutting: false,
+    mock: {
+      video: 'Demo: terveyskeskuksessa',
+      text: 'Minulla on aika. Missä on odotus? Tarvitsen reseptin.',
+      exercises: ['Ajanvaraus', 'Bussilippu'],
+      vocabulary: ['aika', 'sairas', 'bussi', 'lippu'],
+      speaking: 'Kuvitteellinen käynti terveysasemalla.',
+      quiz: 'Palvelutilanteet',
+    },
+  },
+  {
+    code: 'M5',
+    module_index: 5,
+    level: 'A2.1',
+    theme: 'Workplace Finnish, instructions',
+    theme_fi: 'Työelämän suomi, ohjeet',
+    sort: 5,
+    cross_cutting: false,
+    mock: {
+      video: 'Demo: työturvallisuus ja ohjeet',
+      text: 'Työvuoro alkaa kello… Käytä suojavarusteita.',
+      exercises: ['Ohjeen järjestys', 'Turvamerkit'],
+      vocabulary: ['vuorolista', 'suojat', 'varoitus'],
+      speaking: 'Toista ohje omin sanoin.',
+      quiz: 'Työpaikan peruskieli',
+    },
+  },
+  {
+    code: 'M6',
+    module_index: 6,
+    level: 'A2.2',
+    theme: 'Job seeking, interviews, YKI prep',
+    theme_fi: 'Työnhaku, haastattelu, YKI-valmennus',
+    sort: 6,
+    cross_cutting: false,
+    mock: {
+      video: 'Demo: työhaastattelu',
+      text: 'Kertokaa itsestänne. Miksi haette tätä työtä?',
+      exercises: ['CV sanasto', 'YKI-testin rakenne'],
+      vocabulary: ['kokemus', 'vahvuus', 'hakemus'],
+      speaking: 'Lyhyt haastatteluharjoitus.',
+      quiz: 'YKI-keskitaso — lähtötaso',
+    },
+  },
+  {
+    code: 'YX',
+    module_index: 7,
+    level: '+All',
+    theme: 'Finnish society & culture (yhteiskuntatietous)',
+    theme_fi: 'Yhteiskuntatietous ja suomalainen kulttuuri',
+    sort: 7,
+    cross_cutting: true,
+    mock: {
+      video: 'Demo: yhteiskunta ja palvelut Suomessa',
+      text: 'Oikeudet, velvollisuudet, äänestäminen — perusteet.',
+      exercises: ['Palvelut kartalla', 'Keskusteluaiheita'],
+      vocabulary: ['kunta', 'palvelu', 'laki'],
+      speaking: 'Keskustelu: arki Suomessa.',
+      quiz: 'Yhteiskuntatietous — mini',
+    },
+  },
+  {
+    code: 'EL',
+    module_index: 8,
+    level: '+All',
+    theme: 'Life management (elämänhallinta)',
+    theme_fi: 'Elämänhallinta ja hyvinvointi',
+    sort: 8,
+    cross_cutting: true,
+    mock: {
+      video: 'Demo: talous ja arjen suunnittelu',
+      text: 'Budjetti, tavoitteet, tuki — peruskäsitteet.',
+      exercises: ['Arjen tavoitteet', 'Apua mistä?'],
+      vocabulary: ['tavoite', 'aika', 'tuki'],
+      speaking: 'Pieni tavoite itselle — kerro suomeksi.',
+      quiz: 'Elämänhallinta — mini',
+    },
+  },
+];
+
+function parseContentJson(raw) {
+  if (raw == null) return {};
+  if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try {
+      const o = JSON.parse(raw);
+      return typeof o === 'object' && o && !Array.isArray(o) ? o : {};
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
+function shellContent(m) {
+  return {
+    title_fi: `Moduuli ${m.module_index}: ${m.theme_fi}`,
+    title_en: `Module ${m.module_index}: ${m.theme}`,
+    body: m.mock.text,
+    oph: 'OPH 2022 — kotoutumiskoulutus',
+    video: m.mock.video,
+    exercises: m.mock.exercises,
+    vocabulary: m.mock.vocabulary,
+    speaking: m.mock.speaking,
+    quiz: m.mock.quiz,
+  };
+}
+
+function modulesForApi(fromDbRows) {
+  if (fromDbRows && fromDbRows.length > 0) {
+    return fromDbRows.map((x) => {
+      const shell = MODULES_OPH2022.find((m) => m.code === x.code);
+      const base = shell || {};
+      const c = parseContentJson(x.content);
+      const merged = shell ? { ...shellContent(shell), ...c } : { ...c };
+      return {
+        code: x.code,
+        module_index: base.module_index ?? null,
+        level: x.level_label,
+        theme: x.theme,
+        theme_fi: base.theme_fi || null,
+        sort: x.sort_order,
+        cross_cutting: base.cross_cutting ?? false,
+        slots: { video: true, text: true, exercises: true, vocabulary: true, speaking: true, quiz: true },
+        mock: base.mock || {},
+        content: merged,
+      };
+    });
+  }
+  return MODULES_OPH2022.map((m) => ({
+    code: m.code,
+    module_index: m.module_index,
+    level: m.level,
+    theme: m.theme,
+    theme_fi: m.theme_fi,
+    sort: m.sort,
+    cross_cutting: m.cross_cutting,
+    slots: { video: true, text: true, exercises: true, vocabulary: true, speaking: true, quiz: true },
+    mock: m.mock,
+    content: shellContent(m),
+  }));
+}
+
 const MOCK = {
   tender: {
     client: 'Kuopion kaupunki / TyöNavigaattori',
@@ -14,16 +220,12 @@ const MOCK = {
     path_days: 120,
     otp_hours_per_unit: 7,
   },
-  modules: [
-    { code: 'M1', level: 'Pre-A1', theme: 'Latin alphabet, basic sounds, numbers', sort: 1 },
-    { code: 'M2', level: 'A1.1', theme: 'Greetings, daily life, family', sort: 2 },
-    { code: 'M3', level: 'A1.2', theme: 'Work vocabulary, asking for help', sort: 3 },
-    { code: 'M4', level: 'A1.3', theme: 'Healthcare, services, transport', sort: 4 },
-    { code: 'M5', level: 'A2.1', theme: 'Workplace Finnish, instructions', sort: 5 },
-    { code: 'M6', level: 'A2.2', theme: 'Job seeking, interviews, YKI prep', sort: 6 },
-    { code: 'YX', level: '+All', theme: 'Finnish society & culture (yhteiskuntatietous)', sort: 7 },
-    { code: 'EL', level: '+All', theme: 'Life management (elämänhallinta)', sort: 8 },
-  ],
+  modules: MODULES_OPH2022.map((m) => ({
+    code: m.code,
+    level: m.level,
+    theme: m.theme,
+    sort: m.sort,
+  })),
   teachers: [
     { id: 't-demo-1', name: 'Suvi Virtanen', email: 'suvi.v@knuut.fi', teacher_kind: 'vastuuopettaja', credentials: 'YTM, 60op suomi/S2, pedagogiset 60op' },
     { id: 't-demo-2', name: 'Matti Korhonen', email: 'matti.k@knuut.fi', teacher_kind: 'ohjaaja', credentials: 'AMK, 15op aikuiskasvatus' },
@@ -263,30 +465,21 @@ export default async function lmsHandler(req, res, pathSegs) {
   try {
     if (sub === 'modules' && method === 'GET') {
       const rows = await tryDbModules();
-      const modules = rows
-        ? rows.map((x) => ({
-            code: x.code,
-            level: x.level_label,
-            theme: x.theme,
-            sort: x.sort_order,
-            slots: { video: true, text: true, exercises: true, vocabulary: true, speaking: true, quiz: true },
-            content: x.content || {},
-          }))
-        : MOCK.modules.map((m) => ({
-            ...m,
-            level: m.level,
-            slots: { video: true, text: true, exercises: true, vocabulary: true, speaking: true, quiz: true },
-            content: { title: `Moduuli ${m.code}`, body: 'Sisältö täydennetään OPH 2022 -mukaisesti.' },
-          }));
-      return sendJson(res, 200, { modules, tender: MOCK.tender });
+      const modules = modulesForApi(rows);
+      return sendJson(res, 200, {
+        modules,
+        tender: MOCK.tender,
+        curriculum: { ref: 'OPH 2022', label_fi: 'Kotoutumiskoulutus — moduulirakenne' },
+      });
     }
 
     if (sub === 'me' && method === 'GET' && isLearner) {
       const st = MOCK.students.find((s) => s.email && user.email && s.email.toLowerCase() === String(user.email).toLowerCase()) ||
         MOCK.students[0];
+      const modRows = await tryDbModules();
       return sendJson(res, 200, {
         profile: st,
-        modules: MOCK.modules,
+        modules: modulesForApi(modRows),
         hops: MOCK.hops_sample,
         jatkosuunnitelma: MOCK.jatkosuunnitelma_sample,
         notifications: MOCK.notifications_demo,
@@ -323,6 +516,7 @@ export default async function lmsHandler(req, res, pathSegs) {
     }
 
     if (sub === 'overview' && method === 'GET' && isStaff) {
+      const modRows = await tryDbModules();
       return sendJson(res, 200, {
         tender: MOCK.tender,
         teachers: MOCK.teachers,
@@ -333,7 +527,8 @@ export default async function lmsHandler(req, res, pathSegs) {
         otp: MOCK.otp_report_sample,
         gdpr: MOCK.gdpr,
         employer_contacts: MOCK.employer_contacts,
-        modules: MOCK.modules,
+        modules: modulesForApi(modRows),
+        curriculum: { ref: 'OPH 2022', label_fi: 'Kotoutumiskoulutus — moduulirakenne' },
         hops: MOCK.hops_sample,
         jatkosuunnitelma: MOCK.jatkosuunnitelma_sample,
         placement: MOCK.placement_sample,
@@ -362,8 +557,10 @@ export default async function lmsHandler(req, res, pathSegs) {
     }
 
     if (sub === 'builder' && method === 'GET' && isStaff) {
+      const modRows = await tryDbModules();
       return sendJson(res, 200, {
-        modules: MOCK.modules,
+        modules: modulesForApi(modRows),
+        curriculum: { ref: 'OPH 2022', label_fi: 'Kotoutumiskoulutus — moduulirakenne' },
         hint: 'Moduulirakenteen tallennus tietokantaan: aja migrations/003-alkupolku-lms.sql',
       });
     }

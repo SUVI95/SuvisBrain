@@ -1098,7 +1098,11 @@ async function loadTeacherShell() {
  const tr = d.teacher_roles_help || {};
 
  const modHtml = mods.map(function (m) {
-  return '<div class="insight-card"><div class="ilbl">' + esc(m.code || '') + '</div><div class="ititle">' + esc(m.level || m.theme || '') + '</div><p class="icopy">' + esc(m.theme || '') + '</p><p class="icopy" style="margin-top:8px">Rakenne: video · teksti · tehtävät · sanasto · puhe · tasoitus</p></div>';
+  var n = typeof m.module_index === 'number' ? ('Moduuli ' + m.module_index + ' · ') : '';
+  var fi = m.theme_fi ? esc(m.theme_fi) : '';
+  var en = m.theme ? esc(m.theme) : '';
+  var lines = fi ? (fi + (en ? '<br><span style="opacity:.85;font-size:13px">' + en + '</span>' : '')) : en;
+  return '<div class="insight-card"><div class="ilbl">' + esc(m.code || '') + '</div><div class="ititle">' + n + esc(m.level || '') + '</div><p class="icopy">' + lines + '</p><p class="icopy" style="margin-top:8px">OPH 2022 · video · teksti · tehtävät · sanasto · puhe · tasoitus</p></div>';
  }).join('');
  document.getElementById('shell-mod-grid').innerHTML = modHtml ? '<div class="insights-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">' + modHtml + '</div>' : '<p class="shell-placeholder">Ei moduuleja</p>';
 
