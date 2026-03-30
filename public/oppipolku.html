@@ -1189,7 +1189,11 @@
     try {
       var mr = await fetch(API + '/api/lms/me', { headers: authHeaders() });
       var modr = await fetch(API + '/api/lms/modules', { headers: authHeaders() });
-      if (!mr.ok || !modr.ok) return;
+      if (!mr.ok || !modr.ok) {
+        var bsFail = typeof window.__oppBrainStreak === 'number' ? window.__oppBrainStreak : 0;
+        renderMicroPractice(bsFail, null);
+        return;
+      }
       var me = await mr.json();
       var modj = await modr.json();
       var p = me.profile || {};
