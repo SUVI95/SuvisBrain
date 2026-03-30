@@ -4,19 +4,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Knuut AI — Language Teacher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --brand-400: #7551FF;
+      --brand-500: #422AFB;
+      --brand-600: #3311DB;
+      --brand-tint: #E9E3FF;
+      --brand-soft: #F2EFFF;
+      --secondary-300: #F4F7FE;
+      --secondary-400: #E9EDF7;
+      --secondary-500: #8F9BBA;
+      --secondary-900: #1B2559;
+      --green-500: #01B574;
+      --orange-100: #FFF6DA;
+      --card-shadow: 14px 17px 40px 4px rgba(112, 144, 176, 0.08);
+      --btn-shadow: 45px 76px 113px 7px rgba(112, 144, 176, 0.08);
+      --font: 'DM Sans', system-ui, sans-serif;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Courier New', monospace;
-      background: #0d0d1a;
-      color: #e0e0f0;
+      font-family: var(--font);
+      background: var(--secondary-300);
+      color: var(--secondary-900);
       overflow-x: hidden;
       min-height: 100vh;
       transition: background 0.3s;
+      letter-spacing: -0.5px;
     }
-    body.yki-mode { background: #FFFBF0; color: #1a1a1a; }
-    body.yki-mode .nav-link, body.yki-mode .subtitle { color: rgba(0,0,0,0.7); }
-    body.yki-mode .nav-link:hover { color: #000; }
+    body.yki-mode { background: var(--orange-100); color: var(--secondary-900); }
+    body.yki-mode .nav-link, body.yki-mode .subtitle { color: var(--secondary-500); }
+    body.yki-mode .nav-link:hover { color: var(--brand-500); }
     .container {
       position: relative;
       width: 100vw;
@@ -56,54 +76,57 @@
       justify-content: flex-start;
     }
     .nav-link {
-      padding: 6px 14px;
-      border-radius: 6px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.05);
-      color: rgba(255,255,255,0.7);
-      font-size: 11px;
+      padding: 8px 16px;
+      border-radius: 16px;
+      border: none;
+      background: #fff;
+      color: var(--secondary-500);
+      font-size: 13px;
+      font-weight: 600;
       text-decoration: none;
-      transition: all 0.15s;
+      transition: all 0.2s;
       font-family: inherit;
+      box-shadow: var(--card-shadow);
     }
     .nav-link:hover {
-      background: rgba(167,139,250,0.2);
-      border-color: #a78bfa;
-      color: #fff;
+      background: var(--brand-soft);
+      color: var(--brand-500);
     }
     h1 {
       font-size: 3rem;
-      font-weight: 700;
+      font-weight: 800;
       margin-bottom: 0.5rem;
-      background: linear-gradient(135deg, #a78bfa, #1d9e75);
+      background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-400) 50%, var(--green-500) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      letter-spacing: 2px;
+      letter-spacing: -1px;
     }
     .subtitle {
       font-size: 1.1rem;
-      color: rgba(255,255,255,0.7);
+      color: var(--secondary-500);
       margin-bottom: 2.5rem;
       line-height: 1.6;
+      font-weight: 500;
     }
     .talk-button {
       padding: 18px 40px;
-      font-size: 1.3rem;
-      font-weight: bold;
-      background: linear-gradient(135deg, #a78bfa, #1d9e75);
-      color: white;
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: var(--brand-500);
+      color: #fff;
       border: none;
-      border-radius: 14px;
+      border-radius: 16px;
       cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 8px 32px rgba(167,139,250,0.3);
+      transition: all 0.25s ease;
+      box-shadow: var(--btn-shadow);
       font-family: inherit;
       z-index: 20;
     }
     .talk-button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 12px 40px rgba(167,139,250,0.4);
+      transform: translateY(-2px);
+      background: var(--brand-600);
+      box-shadow: 14px 17px 48px 4px rgba(112, 144, 176, 0.14);
     }
     .talk-button.active {
       background: linear-gradient(135deg, #ef4444, #dc2626);
@@ -125,58 +148,63 @@
     .vb {
       width: 5px;
       height: 18px;
-      background: #1d9e75;
+      background: var(--brand-500);
       border-radius: 3px;
       transition: transform 0.1s ease, opacity 0.1s ease;
     }
     .status-text {
       margin-top: 1rem;
       font-size: 0.95rem;
-      color: rgba(255,255,255,0.5);
+      color: var(--secondary-500);
       min-height: 24px;
     }
     .status-text.active {
-      color: #1d9e75;
+      color: var(--green-500);
+      font-weight: 600;
     }
     .mode-tabs {
       display: flex;
-      gap: 0;
-      background: rgba(255,255,255,0.08);
-      border-radius: 20px;
+      gap: 4px;
+      background: #fff;
+      border-radius: 16px;
       padding: 4px;
       margin-bottom: 16px;
+      box-shadow: var(--card-shadow);
+      border: 1px solid var(--secondary-400);
     }
-    body.yki-mode .mode-tabs { background: rgba(0,0,0,0.08); }
+    body.yki-mode .mode-tabs { background: #fff; }
     .mode-tab {
-      padding: 8px 20px;
-      border-radius: 16px;
+      padding: 10px 20px;
+      border-radius: 12px;
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
       border: none;
       background: transparent;
-      color: rgba(255,255,255,0.6);
+      color: var(--secondary-500);
       font-family: inherit;
     }
-    body.yki-mode .mode-tab { color: rgba(0,0,0,0.5); }
+    body.yki-mode .mode-tab { color: var(--secondary-500); }
     .mode-tab.active {
-      background: linear-gradient(135deg, #a78bfa, #1d9e75);
+      background: var(--brand-500);
       color: #fff;
+      box-shadow: var(--btn-shadow);
     }
-    body.yki-mode .mode-tab.active { background: #6C63FF; }
-    .mode-tab:not(.active):hover { color: #fff; }
-    body.yki-mode .mode-tab:not(.active):hover { color: #000; }
+    body.yki-mode .mode-tab.active { background: var(--brand-500); color: #fff; }
+    .mode-tab:not(.active):hover { color: var(--brand-500); }
+    body.yki-mode .mode-tab:not(.active):hover { color: var(--brand-600); }
     .yki-banner {
       display: none;
-      background: linear-gradient(135deg, #6C63FF, #5a52e0);
+      background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-400) 100%);
       color: #fff;
       padding: 12px 24px;
-      border-radius: 12px;
+      border-radius: 16px;
       margin-bottom: 16px;
       align-items: center;
       justify-content: center;
       gap: 16px;
+      box-shadow: var(--card-shadow);
     }
     .yki-banner.visible { display: flex; flex-wrap: wrap; }
     .yki-banner .timer { font-size: 20px; font-weight: bold; }
@@ -196,19 +224,20 @@
     .session-overlay.visible { display: flex; }
     .overlay-card {
       background: #fff;
-      border-radius: 16px;
+      border-radius: 20px;
       padding: 40px;
       max-width: 420px;
       text-align: center;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      box-shadow: var(--card-shadow);
+      border: none;
     }
-    .overlay-card h2 { font-size: 22px; margin-bottom: 8px; color: #1A1A2E; font-family: system-ui,sans-serif; }
-    .overlay-card .badge { font-size: 32px; font-weight: bold; color: #6C63FF; margin: 16px 0; }
+    .overlay-card h2 { font-size: 22px; margin-bottom: 8px; color: var(--secondary-900); font-family: var(--font); font-weight: 800; }
+    .overlay-card .badge { font-size: 32px; font-weight: bold; color: var(--brand-500); margin: 16px 0; }
     .overlay-check {
       width: 80px; height: 80px; margin: 0 auto 20px;
     }
     .overlay-check circle, .overlay-check path {
-      fill: none; stroke: #58CC02; stroke-width: 3;
+      fill: none; stroke: var(--green-500); stroke-width: 3;
       stroke-linecap: round; stroke-linejoin: round;
     }
     .overlay-check circle { stroke-dasharray: 283; stroke-dashoffset: 283; animation: drawCircle 0.6s ease forwards; }
@@ -216,26 +245,27 @@
     @keyframes drawCircle { to { stroke-dashoffset: 0; } }
     @keyframes drawCheck { to { stroke-dashoffset: 0; } }
     .overlay-stats { display: flex; gap: 20px; justify-content: center; margin: 16px 0; flex-wrap: wrap; }
-    .overlay-stat { font-size: 14px; color: #6B7280; }
-    .overlay-summary { font-style: italic; color: #6B7280; font-size: 14px; max-width: 360px; margin: 0 auto 24px; line-height: 1.5; }
+    .overlay-stat { font-size: 14px; color: var(--secondary-500); }
+    .overlay-summary { font-style: italic; color: var(--secondary-500); font-size: 14px; max-width: 360px; margin: 0 auto 24px; line-height: 1.5; }
     .overlay-card .btn {
       display: inline-block;
       padding: 14px 28px;
       margin: 8px;
-      border-radius: 12px;
+      border-radius: 16px;
       font-weight: 700;
       font-size: 16px;
       text-decoration: none;
       cursor: pointer;
       border: none;
       font-family: inherit;
-      box-shadow: 0 4px 0 #4B44CC;
-      transition: transform 0.15s;
+      box-shadow: var(--btn-shadow);
+      transition: transform 0.15s, background 0.2s;
     }
-    .overlay-card .btn:hover { transform: translateY(-1px); }
-    .overlay-card .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #4B44CC; }
-    .overlay-card .btn-primary { background: #6C63FF; color: #fff; }
-    .overlay-card .btn-success { background: #58CC02; color: #fff; box-shadow: 0 4px 0 #3da001; }
+    .overlay-card .btn:hover { transform: translateY(-2px); }
+    .overlay-card .btn:active { transform: translateY(0); }
+    .overlay-card .btn-primary { background: var(--brand-500); color: #fff; }
+    .overlay-card .btn-primary:hover { background: var(--brand-600); }
+    .overlay-card .btn-success { background: var(--green-500); color: #fff; }
     .learning-card {
       position: fixed;
       bottom: 24px;
@@ -243,32 +273,33 @@
       width: 320px;
       max-width: calc(100vw - 48px);
       background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+      border-radius: 20px;
+      box-shadow: var(--card-shadow);
       padding: 20px;
       z-index: 1000;
-      border: 1px solid rgba(0,0,0,0.08);
+      border: none;
       animation: cardSlide 0.3s ease;
     }
-    body.yki-mode .learning-card { box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
+    body.yki-mode .learning-card { box-shadow: var(--card-shadow); }
     @keyframes cardSlide {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .learning-card h3 { font-size: 14px; color: #6B7280; margin-bottom: 8px; font-weight: 600; }
-    .learning-card .card-word { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
-    .learning-card .card-hint { font-size: 13px; color: #6B7280; margin-bottom: 12px; }
+    .learning-card h3 { font-size: 14px; color: var(--secondary-500); margin-bottom: 8px; font-weight: 600; }
+    .learning-card .card-word { font-size: 22px; font-weight: 700; color: var(--secondary-900); margin-bottom: 8px; }
+    .learning-card .card-hint { font-size: 13px; color: var(--secondary-500); margin-bottom: 12px; }
     .learning-card .card-hint-wrap { margin-bottom: 8px; }
     .learning-card input {
       width: 100%;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
+      border: 1px solid var(--secondary-400);
+      border-radius: 16px;
       padding: 12px 14px;
       font-size: 14px;
       margin-bottom: 12px;
       font-family: inherit;
+      color: var(--secondary-900);
     }
-    .learning-card input:focus { outline: none; border-color: #a78bfa; box-shadow: 0 0 0 2px rgba(167,139,250,0.2); }
+    .learning-card input:focus { outline: none; border-color: var(--brand-500); box-shadow: 0 0 0 2px var(--brand-tint); }
     .learning-card .card-actions { display: flex; gap: 8px; }
     .learning-card button {
       flex: 1;
@@ -280,8 +311,9 @@
       border: none;
       font-family: inherit;
     }
-    .learning-card .btn-save { background: linear-gradient(135deg, #a78bfa, #1d9e75); color: #fff; }
-    .learning-card .btn-close { background: #f3f4f6; color: #4b5563; }
+    .learning-card .btn-save { background: var(--brand-500); color: #fff; box-shadow: var(--btn-shadow); }
+    .learning-card .btn-save:hover { background: var(--brand-600); }
+    .learning-card .btn-close { background: var(--secondary-300); color: var(--secondary-900); }
     .learning-card .btn-save:hover { opacity: 0.9; }
     .learning-card .btn-close:hover { background: #e5e7eb; }
     .learning-card.feedback-correct input { border-color: #22c55e; }
@@ -290,14 +322,14 @@
     .learning-card .btn-repeat {
       padding: 6px 10px;
       font-size: 12px;
-      background: rgba(167,139,250,0.2);
-      border: 1px solid #a78bfa;
-      border-radius: 8px;
-      color: #a78bfa;
+      background: var(--brand-soft);
+      border: 1px solid var(--brand-tint);
+      border-radius: 10px;
+      color: var(--brand-500);
       cursor: pointer;
       font-family: inherit;
     }
-    .learning-card .btn-repeat:hover { background: rgba(167,139,250,0.3); }
+    .learning-card .btn-repeat:hover { background: var(--brand-tint); }
     .learning-card .btn-reveal {
       padding: 6px 12px;
       font-size: 12px;
@@ -331,8 +363,8 @@
       height: min(48vw, 260px);
       border-radius: 50%;
       z-index: 1;
-      background: radial-gradient(circle at 38% 32%, rgba(167,139,250,0.9), rgba(29,158,117,0.45) 52%, rgba(13,13,26,0.2) 100%);
-      box-shadow: 0 0 60px rgba(167,139,250,0.35), inset 0 0 40px rgba(255,255,255,0.08);
+      background: radial-gradient(circle at 38% 32%, rgba(66, 42, 251, 0.45), rgba(1, 181, 116, 0.35) 52%, rgba(244, 247, 254, 0.9) 100%);
+      box-shadow: 0 0 60px rgba(66, 42, 251, 0.2), inset 0 0 40px rgba(255,255,255,0.5);
     }
     body.knuut-text-fallback .orb-static-fallback { display: block; }
     .text-fallback-banner {
@@ -342,10 +374,11 @@
       padding: 10px 16px;
       font-size: 12px;
       line-height: 1.45;
-      color: rgba(224,224,240,0.85);
-      background: rgba(167,139,250,0.12);
-      border: 1px solid rgba(167,139,250,0.25);
-      border-radius: 12px;
+      color: var(--secondary-900);
+      background: var(--brand-soft);
+      border: 1px solid var(--brand-tint);
+      border-radius: 16px;
+      font-weight: 500;
     }
     body.knuut-text-fallback .text-fallback-banner { display: block; }
     .text-fallback-chat {
@@ -357,13 +390,13 @@
       margin: 8px auto 12px;
       padding: 8px 4px;
       text-align: left;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: var(--font);
     }
     body.knuut-text-fallback .text-fallback-chat { display: block; }
     .chat-bubble {
       max-width: 88%;
       padding: 10px 14px;
-      border-radius: 14px;
+      border-radius: 16px;
       margin-bottom: 8px;
       font-size: 14px;
       line-height: 1.45;
@@ -371,15 +404,19 @@
     }
     .chat-bubble.user {
       margin-left: auto;
-      background: rgba(167,139,250,0.35);
-      color: #f0f0ff;
+      background: var(--brand-soft);
+      color: var(--secondary-900);
+      border: 1px solid var(--brand-tint);
       border-bottom-right-radius: 4px;
+      font-weight: 600;
     }
     .chat-bubble.knuut {
       margin-right: auto;
-      background: rgba(255,255,255,0.08);
-      color: rgba(224,224,240,0.95);
+      background: #fff;
+      color: var(--secondary-900);
       border-bottom-left-radius: 4px;
+      box-shadow: var(--card-shadow);
+      border: 1px solid var(--secondary-400);
     }
     .text-fallback-input-row {
       display: none;
@@ -388,29 +425,36 @@
       margin: 0 auto;
       gap: 8px;
       align-items: stretch;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: var(--font);
     }
     body.knuut-text-fallback .text-fallback-input-row { display: flex; }
     .text-fallback-input-row input {
       flex: 1;
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.06);
-      color: #e0e0f0;
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--secondary-400);
+      background: #fff;
+      color: var(--secondary-900);
       font-size: 15px;
     }
-    .text-fallback-input-row input::placeholder { color: rgba(224,224,240,0.4); }
+    .text-fallback-input-row input::placeholder { color: var(--secondary-500); }
+    .text-fallback-input-row input:focus {
+      outline: none;
+      border-color: var(--brand-500);
+      box-shadow: 0 0 0 2px var(--brand-tint);
+    }
     .text-fallback-input-row button {
-      padding: 12px 18px;
-      border-radius: 12px;
+      padding: 12px 20px;
+      border-radius: 16px;
       border: none;
       font-weight: 700;
       cursor: pointer;
-      background: linear-gradient(135deg, #a78bfa, #1d9e75);
+      background: var(--brand-500);
       color: #fff;
       font-family: inherit;
+      box-shadow: var(--btn-shadow);
     }
+    .text-fallback-input-row button:hover { background: var(--brand-600); }
     .text-fallback-input-row button:disabled { opacity: 0.6; cursor: not-allowed; }
     body.knuut-text-fallback .content-overlay {
       justify-content: flex-start;
