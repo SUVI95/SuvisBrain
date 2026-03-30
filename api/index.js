@@ -25,6 +25,7 @@ import teacherSupportHandler from './teacher-support.js';
 import { getLearnersHandler, nudgeHandler, nudgeBulkHandler } from './teacher-dashboard.js';
 import { getLeadsHandler, patchLeadHandler } from './leads.js';
 import adminOrganisationsHandler from './admin-organisations.js';
+import lmsHandler from './lms.js';
 import { query } from './db.js';
 
 function toNodeRes(res) {
@@ -282,6 +283,9 @@ export default async function handler(req, res) {
     wrappedReq.user = user;
 
     try {
+      if (route === 'lms') {
+        return lmsHandler(wrappedReq, nres, pathSegs);
+      }
       if (route === 'teacher') {
         if (pathSegs[1] === 'learners' && req.method === 'GET') return getLearnersHandler(wrappedReq, nres);
         if (pathSegs[1] === 'nudge' && pathSegs[2] && req.method === 'POST') {

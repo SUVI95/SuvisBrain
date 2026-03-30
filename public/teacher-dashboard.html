@@ -3,7 +3,7 @@
 <head>
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>Knuut — Teacher Dashboard</title>
+ <title>ALKUPOLKU — Opettaja (Knuut)</title>
  <link rel="preconnect" href="https://fonts.googleapis.com">
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
@@ -247,6 +247,19 @@
  .bp { margin-bottom: 9px; font-size: 13px; }
  .bp:last-child { margin-bottom: 0; }
 
+ /* ALKUPOLKU LMS strip */
+ .alku-lms-section { margin-top: 36px; padding-top: 28px; border-top: 2px solid var(--primary-light); }
+ .alku-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 14px; max-width: 720px; line-height: 1.5; }
+ .alku-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 18px; }
+ .alku-wide { grid-column: 1 / -1; }
+ .alku-table-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background: var(--surface2); }
+ .alku-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+ .alku-table th, .alku-table td { padding: 9px 11px; border-bottom: 1px solid var(--border-subtle); text-align: left; }
+ .alku-table th { font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
+ .alku-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: var(--primary-light); color: var(--primary); }
+ .alku-list { margin: 0; padding-left: 18px; font-size: 13px; color: var(--text-muted); line-height: 1.55; }
+ .alku-list li { margin-bottom: 6px; }
+
  /* RESPONSIVE */
  @media (max-width: 1100px) { .insights-grid { grid-template-columns: repeat(2, 1fr); } .grouping-grid { grid-template-columns: repeat(2, 1fr); } }
  @media (max-width: 900px) { .triage-board { grid-template-columns: 1fr; } .hero { flex-direction: column; } .side-panel { width: 100%; } }
@@ -352,6 +365,12 @@
  <div class="grouping-grid" id="grouping-grid"></div>
  </section>
 
+ <section class="alku-lms-section" id="alkupolku-lms" aria-labelledby="alku-lms-heading">
+ <h2 class="section-h2" id="alku-lms-heading">ALKUPOLKU — kotoutumiskoulutus (LMS)</h2>
+ <p class="alku-sub" id="alku-tender-line">Ladataan tarjouskontekstia ja demo-opiskelijoita…</p>
+ <div class="alku-grid" id="alku-grid"></div>
+ </section>
+
 </div>
 
 <div class="panel-overlay" id="panel-overlay"></div>
@@ -419,7 +438,7 @@
 // AUTH
 const token = localStorage.getItem('sb_token') || localStorage.getItem('knuut_token');
 const user = (() => { try { return JSON.parse(localStorage.getItem('sb_user') || localStorage.getItem('knuut_user') || '{}'); } catch { return {}; } })();
-if (!token || user?.role !== 'teacher') location.replace('/login.html?next=' + encodeURIComponent('/teacher-dashboard.html'));
+if (!token || !['teacher','admin'].includes(user?.role)) location.replace('/login.html?next=' + encodeURIComponent('/teacher-dashboard.html'));
 function authHeaders() { return { 'Authorization': 'Bearer ' + (localStorage.getItem('sb_token') || localStorage.getItem('knuut_token') || '') }; }
 document.getElementById('logout-link')?.addEventListener('click', (e) => { e.preventDefault(); ['knuut_token','knuut_user','sb_token','sb_user'].forEach(k => localStorage.removeItem(k)); location.replace('/login.html'); });
 
@@ -808,6 +827,38 @@ async function loadLearners() {
  renderAll();
 }
 loadLearners();
+
+async function loadAlkupolkuLms() {
+ const line = document.getElementById('alku-tender-line');
+ const grid = document.getElementById('alku-grid');
+ if (!line || !grid) return;
+ try {
+ const res = await fetch('/api/lms/overview', { headers: authHeaders() });
+ if (!res.ok) throw new Error('HTTP ' + res.status);
+ const d = await res.json();
+ const t = d.tender || {};
+ line.textContent = `${t.client || '—'} · ${t.case_ref || ''} · ${t.period || ''} · ryhmä ${t.group_size || '—'} · polku ${t.path_days || 120} pv`;
+ const students = d.students || [];
+ const rule = d.attendance_rule || {};
+ const yki = d.yki || {};
+ const otp = d.otp || {};
+ const gdpr = d.gdpr || {};
+ const contacts = d.employer_contacts || [];
+ const rows = students.map(s => `<tr><td>${esc(s.name)}</td><td>${esc(s.cefr_level)}</td><td>${s.day_n != null ? esc(String(s.day_n)) : '—'}</td><td>${s.consecutive_absences != null ? esc(String(s.consecutive_absences)) : '—'}</td><td>${s.alert_tyovoima ? '<span class="alku-badge">Hälytys</span>' : '—'}</td><td>${s.yki_ready ? 'Kyllä' : 'Ei'}</td></tr>`).join('');
+ grid.innerHTML = `
+  <div class="insight-card alku-wide"><div class="ilbl">Läsnäolo & keskeyttämisriski</div><div class="ititle">${rule.consecutive_absence_limit || 5} peräkkäistä poissaolopäivää</div><p class="icopy">Automaattinen hälytys vastuuopettajalle ja työvoimaviranomaiselle (demo).</p><p class="icopy" style="margin-top:8px">Ilmoituskanavat: ${esc((rule.notify || []).join(', '))}</p></div>
+  <div class="insight-card alku-wide"><div class="ilbl">Opiskelijat (demo)</div><div class="alku-table-wrap"><table class="alku-table" aria-label="Demo-opiskelijat"><thead><tr><th>Nimi</th><th>Taso</th><th>Päivä</th><th>Peräkkäiset poissaolot</th><th>TVI-hälytys</th><th>YKI-valmis</th></tr></thead><tbody>${rows}</tbody></table></div></div>
+  <div class="insight-card"><div class="ilbl">YKI-valmius (malli)</div><div class="ititle">${esc(yki.recommendation || '—')}</div><p class="icopy">Alatestit: ${esc(JSON.stringify(yki.subtests || {}))}</p></div>
+  <div class="insight-card"><div class="ilbl">OTP-kk (${esc(otp.month || '')})</div><div class="ititle">Yhteensä ${esc(String(otp.total_otp != null ? otp.total_otp : '—'))} opiskelijatyöpäivää</div><p class="icopy">1 OTP = 7 h (7×45 min). Laskutusdata demo.</p></div>
+  <div class="insight-card"><div class="ilbl">GDPR / Koulutusportti</div><div class="ititle">${esc(gdpr.data_region || 'EU')}</div><p class="icopy">Säilytys vähintään ${esc(String(gdpr.retention_years_min || 2))} vuotta. Audit-loki: ${gdpr.audit_log_enabled ? 'käytössä' : '—'}.</p><ul class="alku-list">${(gdpr.koulutusportti_fields || []).map(f => `<li>${esc(f)}</li>`).join('')}</ul></div>
+  <div class="insight-card alku-wide"><div class="ilbl">Työnantajakontaktit (Kuopio-alue, demo)</div><div class="alku-table-wrap"><table class="alku-table"><thead><tr><th>Nimi</th><th>Ala</th><th>Yhteys</th></tr></thead><tbody>${contacts.map(c => `<tr><td>${esc(c.name)}</td><td>${esc(c.sector)}</td><td>${esc(c.contact)}</td></tr>`).join('')}</tbody></table></div></div>
+ `;
+ } catch (e) {
+ line.textContent = 'LMS-yhteenveto ei latautunut. Tarkista että API /api/lms/overview on käytössä ja olet kirjautunut opettajana.';
+ grid.innerHTML = `<div class="insight-card"><p class="icopy">${esc(e.message || String(e))}</p></div>`;
+ }
+}
+loadAlkupolkuLms();
 </script>
 </body>
 </html>

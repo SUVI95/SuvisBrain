@@ -459,6 +459,13 @@
     .inline-note { background: var(--blue-50); padding: 16px; border-radius: 16px; border: 1px solid var(--secondary-400); }
     .inline-note-warm { background: var(--orange-100); padding: 16px; border-radius: 16px; border: 1px solid rgba(255, 181, 71, 0.35); }
     .yki-write-out { background: var(--green-100); border-radius: 12px; border: 1px solid rgba(1, 181, 116, 0.35); }
+    .lms-mod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+    .lms-mod-card { border-radius: var(--radius); padding: 18px; background: var(--surface); box-shadow: var(--card-shadow); border: 1px solid var(--secondary-400); }
+    .lms-mod-card h3 { font-size: 16px; margin-bottom: 8px; color: var(--secondary-900); }
+    .lms-mod-meta { font-size: 13px; color: var(--secondary-500); margin-bottom: 10px; }
+    .lms-mod-bar { height: 8px; border-radius: 4px; background: var(--secondary-400); overflow: hidden; margin-top: 8px; }
+    .lms-mod-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--brand-500), var(--brand-400)); border-radius: 4px; }
+    .lms-slot-row { font-size: 12px; color: var(--secondary-500); margin-top: 8px; }
   </style>
 </head>
 <body>
@@ -472,13 +479,16 @@
 
     <div class="nav-section">Oppiminen</div>
     <button type="button" class="nav-item active" data-sec="dashboard"><span class="icon">🏠</span> Etusivu</button>
+    <button type="button" class="nav-item" data-sec="modules"><span class="icon">📚</span> Moduulit</button>
     <button type="button" class="nav-item" data-sec="alphabet"><span class="icon">🔤</span> Kirjaimet</button>
     <button type="button" class="nav-item" data-sec="lesson"><span class="icon">💬</span> Päivän tunti</button>
     <button type="button" class="nav-item" data-sec="yki"><span class="icon">📝</span> YKI</button>
 
     <div class="nav-section">Työelämä</div>
     <button type="button" class="nav-item" data-sec="passports"><span class="icon">🪪</span> Passit</button>
-    <button type="button" class="nav-item" data-sec="hops"><span class="icon">🗺️</span> Opiskelupolku</button>
+    <button type="button" class="nav-item" data-sec="diary"><span class="icon">📓</span> Työpäiväkirja</button>
+    <button type="button" class="nav-item" data-sec="hops"><span class="icon">🗺️</span> Opiskelupolku (HOPS)</button>
+    <button type="button" class="nav-item" data-sec="jatko"><span class="icon">🔭</span> Jatkosuunnitelma</button>
 
     <div class="nav-section">Muu</div>
     <a class="nav-item" href="knuut.html"><span class="icon">🎙️</span> Harjoittele Knuutilla</a>
@@ -559,6 +569,18 @@
         </div>
       </div>
       <a class="knuut-banner" href="knuut.html">🎙️ <span style="margin-left:16px;text-align:left"><strong style="color:var(--brand-500)">Puhu suomea Knuutin kanssa</strong><br><span style="font-size:14px;color:var(--secondary-500)">Ääniharjoittelu — suomeksi</span></span><span style="font-size:22px;color:var(--brand-400)">→</span></a>
+    </div>
+
+    <!-- MODULES (ALKUPOLKU shell + API) -->
+    <div id="sec-modules" class="section">
+      <div class="page-header">
+        <div class="page-title">Suomen moduulit</div>
+        <div class="page-sub">OPH 2022 — runko. Sisältö täydennetään kurssilla. · EN: Modules · AR: وحدات</div>
+      </div>
+      <div class="card">
+        <p class="inline-note" style="margin-bottom:16px">Video · teksti · tehtävät · sanasto · puhe · tasoitus (demo)</p>
+        <div class="lms-mod-grid" id="lms-module-grid"><div class="loading-inline"><div class="spinner"></div> Ladataan moduuleja…</div></div>
+      </div>
     </div>
 
     <!-- ALPHABET -->
@@ -657,22 +679,47 @@
       </div>
     </div>
 
-    <!-- HOPS mock -->
-    <div id="sec-hops" class="section">
+    <!-- TYÖSSÄOPPIMISPÄIVÄKIRJA -->
+    <div id="sec-diary" class="section">
       <div class="page-header">
-        <div class="page-title">Henkilökohtainen opiskelupolku</div>
-        <div class="page-sub">120 päivää — demo</div>
+        <div class="page-title">Työssäoppimispäiväkirja</div>
+        <div class="page-sub">Kirjaa lyhyesti päivän tehtävät · EN: Work placement diary</div>
       </div>
       <div class="card">
-        <div class="hops-timeline">
+        <div class="card-title" style="margin-bottom:10px">Päivän kysymykset (opettaja)</div>
+        <ul id="lms-diary-prompts" style="font-size:16px;color:var(--secondary-600);padding-left:20px;line-height:1.6"></ul>
+        <textarea class="writing-area" id="lms-diary-text" placeholder="Kirjoita suomeksi tai omalla kielellä — opettaja lukee…" style="margin-top:16px"></textarea>
+        <p class="inline-note" style="margin-top:12px;font-size:14px">Tallennus palvelimelle: tulossa. Tämä on demo.</p>
+      </div>
+    </div>
+
+    <!-- HOPS -->
+    <div id="sec-hops" class="section">
+      <div class="page-header">
+        <div class="page-title">Henkilökohtainen opiskelupolku (HOPS)</div>
+        <div class="page-sub">120 päivää · 0→A2 · demo + API</div>
+      </div>
+      <div class="card">
+        <div class="hops-timeline" id="hops-timeline-dynamic">
           <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 1–3</strong><p style="color:var(--secondary-500);margin-top:6px">Aakkoset ja perussanat</p></div>
           <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 4–5</strong><p style="color:var(--secondary-500);margin-top:6px">Arjen suomi</p></div>
           <div class="hops-item"><div class="hops-dot active"></div><strong>Viikot 6–10 (nyt)</strong><p style="color:var(--secondary-500);margin-top:6px">Työelämän suomi + hygienia</p></div>
           <div class="hops-item"><div class="hops-dot"></div><strong>Viikot 11–16</strong><p style="color:var(--secondary-500);margin-top:6px">Työssäoppiminen</p></div>
         </div>
-        <div class="inline-note-warm" style="margin-top:24px;font-size:16px;line-height:1.7">
+        <div class="inline-note-warm" style="margin-top:24px;font-size:16px;line-height:1.7" id="hops-teacher-note">
           <strong>Opettajan kommentti (demo):</strong> Jatka päivittäistä Knuut-harjoittelua — suullinen kieli kehittyy parhaiten toistolla.
         </div>
+      </div>
+    </div>
+
+    <!-- JATKOSUUNNITELMA -->
+    <div id="sec-jatko" class="section">
+      <div class="page-header">
+        <div class="page-title">Jatkosuunnitelma</div>
+        <div class="page-sub">Näet suunnitelman ja voit kommentoida · EN: Continuation plan</div>
+      </div>
+      <div class="card" id="lms-jatko-content">
+        <p style="color:var(--secondary-500)">Ladataan…</p>
       </div>
     </div>
   </main>
@@ -734,11 +781,14 @@
 
   var SECTION_TITLES = {
     dashboard: 'Etusivu',
+    modules: 'Moduulit',
     alphabet: 'Kirjaimet',
     lesson: 'Päivän tunti',
     yki: 'YKI',
     passports: 'Passit',
-    hops: 'Opiskelupolku'
+    diary: 'Työpäiväkirja',
+    hops: 'Opiskelupolku',
+    jatko: 'Jatkosuunnitelma'
   };
 
   function showSection(id) {
@@ -814,6 +864,74 @@
     }
   }
   loadDashboard();
+
+  async function loadLms() {
+    try {
+      var mr = await fetch(API + '/api/lms/me', { headers: authHeaders() });
+      var modr = await fetch(API + '/api/lms/modules', { headers: authHeaders() });
+      if (!mr.ok || !modr.ok) return;
+      var me = await mr.json();
+      var modj = await modr.json();
+      var p = me.profile || {};
+      var dayN = typeof p.day_n === 'number' ? p.day_n : 1;
+      var pathPct = Math.min(100, Math.round((dayN / 120) * 100));
+      document.getElementById('level-fill').style.width = pathPct + '%';
+      document.getElementById('dash-cefr-sub').textContent = 'Polku: päivä ' + dayN + ' / 120 · Tavoite: A2 (ALKUPOLKU)';
+      if (p.cefr_level) {
+        var lv = String(p.cefr_level);
+        document.getElementById('dash-cefr').textContent = lv.toUpperCase();
+        document.getElementById('sb-level').textContent = lv.toUpperCase();
+      }
+
+      var mods = modj.modules || [];
+      var prog = p.module_progress || {};
+      var grid = document.getElementById('lms-module-grid');
+      if (grid) {
+        grid.innerHTML = mods.map(function (m) {
+          var code = m.code || '';
+          var pct = typeof prog[code] === 'number' ? prog[code] : 0;
+          var slots = m.slots || {};
+          var sk = Object.keys(slots).filter(function (k) { return slots[k]; }).slice(0, 6).join(' · ');
+          return '<div class="lms-mod-card"><h3>' + escapeHtml(code) + ' · ' + escapeHtml(m.level || '') + '</h3><div class="lms-mod-meta">' + escapeHtml(m.theme || '') + '</div><div class="lms-mod-bar"><span style="width:' + pct + '%"></span></div><div class="lms-slot-row">' + escapeHtml(sk) + '</div></div>';
+        }).join('');
+      }
+
+      var hops = me.hops || {};
+      var goals = hops.goals_120d || [];
+      var ht = document.getElementById('hops-timeline-dynamic');
+      if (ht && goals.length) {
+        ht.innerHTML = goals.map(function (g, i) {
+          var cls = i < 2 ? 'done' : (i === 2 ? 'active' : '');
+          return '<div class="hops-item"><div class="hops-dot ' + cls + '"></div><strong>Vaihe ' + (i + 1) + '</strong><p style="color:var(--secondary-500);margin-top:6px">' + escapeHtml(g) + '</p></div>';
+        }).join('');
+      }
+      var tn = document.getElementById('hops-teacher-note');
+      if (tn && hops.teacher_notes) {
+        tn.innerHTML = '<strong>Opettaja (HOPS):</strong> ' + escapeHtml(hops.teacher_notes);
+      }
+
+      var prompts = me.diary_prompts || [];
+      var ul = document.getElementById('lms-diary-prompts');
+      if (ul) {
+        ul.innerHTML = prompts.map(function (x) { return '<li>' + escapeHtml(x) + '</li>'; }).join('');
+      }
+
+      var jc = me.jatkosuunnitelma || {};
+      var jel = document.getElementById('lms-jatko-content');
+      if (jel) {
+        var opts = jc.options || [];
+        jel.innerHTML = '<ul style="font-size:16px;line-height:1.7;padding-left:20px;margin-bottom:16px">' + opts.map(function (o) { return '<li>' + escapeHtml(o) + '</li>'; }).join('') + '</ul>' +
+          '<p style="font-size:16px;color:var(--secondary-600)"><strong>Oma kommentti:</strong> ' + escapeHtml(jc.student_comment || '—') + '</p>' +
+          '<p class="inline-note" style="margin-top:16px">Tila: ' + escapeHtml(jc.status || 'draft') + ' · demo</p>';
+      }
+
+      var notes = me.notifications || [];
+      if (notes.length && document.getElementById('dash-today')) {
+        document.getElementById('dash-today').textContent = (notes[0].text || '') + ' — Päivä ' + dayN + ' / 120.';
+      }
+    } catch (e) { /* LMS optional */ }
+  }
+  loadLms();
 
   // Alphabet
   var letters = [

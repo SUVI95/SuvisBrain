@@ -34,6 +34,7 @@ import teacherOverrideHandler, { teacherCefrOverrideHandler } from './api/teache
 import { getLearnersHandler, nudgeHandler, nudgeBulkHandler } from './api/teacher-dashboard.js';
 import { getLeadsHandler, patchLeadHandler } from './api/leads.js';
 import adminOrganisationsHandler from './api/admin-organisations.js';
+import lmsHandler from './api/lms.js';
 import { query } from './api/db.js';
 import { getSystemPrompt, langToIso } from './api/knuut-prompt.js';
 
@@ -354,6 +355,11 @@ async function handleApi(pathname, req, res, body) {
   wrappedReq.user = user;
 
   try {
+    if (route === 'lms') {
+      const pathSegs = path.split('/').filter(Boolean);
+      await lmsHandler(wrappedReq, res, pathSegs);
+      return true;
+    }
     if (route === 'teacher') {
       const pathSegs = path.split('/').filter(Boolean);
       if (pathSegs[1] === 'learners' && req.method === 'GET') {

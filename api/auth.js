@@ -43,7 +43,8 @@ export default async function authHandler(req, res) {
     }
 
     const teacher = await query(
-      'SELECT id, name, email, password_hash, org_id, COALESCE(admin, false) as admin FROM teachers WHERE LOWER(email) = LOWER($1)',
+      `SELECT id, name, email, password_hash, org_id, COALESCE(admin, false) as admin,
+              teacher_kind FROM teachers WHERE LOWER(email) = LOWER($1)`,
       [email.trim()]
     );
     if (teacher.rows.length > 0) {
@@ -63,8 +64,13 @@ export default async function authHandler(req, res) {
         email: t.email,
         role,
         org_id: t.org_id || null,
+        teacher_kind: t.teacher_kind || null,
       });
-      sendJson(res, 200, { token, role, user: { id: t.id, name: t.name } });
+      sendJson(res, 200, {
+        token,
+        role,
+        user: { id: t.id, name: t.name, teacher_kind: t.teacher_kind || null },
+      });
       return;
     }
 
