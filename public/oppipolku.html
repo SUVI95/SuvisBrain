@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knuut — Oppipolku 0→A2</title>
+  <style>
+    :root {
+      --lake: #1E3A5F;
+      --lake-deep: #003399;
+      --cyan: #2A9D8F;
+      --success: #2E6B4E;
+      --bg: #F4F7FA;
+      --surface: #FFFFFF;
+      --ink: #1A1A1A;
+      --muted: #4A5568;
+      --border: rgba(30, 58, 95, 0.12);
+      --radius: 14px;
+      --shadow: 0 2px 14px rgba(30, 58, 95, 0.08);
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      font-size: 18px;
+      line-height: 1.5;
+    }
+    .eu-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      background: var(--lake);
+      color: rgba(255,255,255,0.95);
+      padding: 10px 16px;
+      font-size: 13px;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.15);
+    }
+    .sidebar {
+      width: 220px;
+      min-height: 100vh;
+      background: var(--lake);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 14px 100px;
+      position: fixed;
+      left: 0; top: 0;
+      z-index: 100;
+    }
+    .logo { font-size: 24px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+    .logo span { color: #7DD3C0; }
+    .tagline { color: rgba(255,255,255,0.55); font-size: 12px; margin: 4px 0 28px; }
+    .nav-section {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+      color: rgba(255,255,255,0.35); margin: 16px 0 8px; padding-left: 10px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 12px; border-radius: 10px; cursor: pointer;
+      color: rgba(255,255,255,0.75); font-size: 16px; font-weight: 500;
+      text-decoration: none; margin-bottom: 4px; border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .nav-item.active { background: rgba(255,255,255,0.15); color: #fff; font-weight: 600; }
+    .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-bottom { margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .student-info { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.7); font-size: 14px; }
+    .avatar {
+      width: 40px; height: 40px; border-radius: 50%; background: var(--cyan);
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #fff;
+    }
+    .main {
+      margin-left: 220px;
+      flex: 1;
+      padding: 32px 36px 120px;
+      max-width: calc(100vw - 220px);
+    }
+    .page-header { margin-bottom: 28px; }
+    .page-title { font-size: 30px; font-weight: 800; color: var(--lake); letter-spacing: -0.5px; }
+    .page-sub { color: var(--muted); font-size: 16px; margin-top: 6px; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      padding: 24px;
+    }
+    .card-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 16px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    @media (max-width: 900px) {
+      .sidebar { width: 72px; padding: 16px 8px 100px; }
+      .logo, .tagline, .nav-section, .student-info span { display: none; }
+      .nav-item { justify-content: center; padding: 14px 8px; }
+      .logo { display: none; }
+      .main { margin-left: 72px; padding: 16px; max-width: calc(100vw - 72px); }
+      .grid2, .grid4 { grid-template-columns: 1fr; }
+    }
+    .level-card {
+      background: linear-gradient(135deg, var(--lake) 0%, #2a4a6e 100%);
+      border-radius: var(--radius);
+      padding: 28px;
+      color: #fff;
+    }
+    .level-label { font-size: 12px; opacity: 0.65; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .level-value { font-size: 48px; font-weight: 800; line-height: 1; margin-bottom: 8px; }
+    .level-bar { background: rgba(255,255,255,0.2); border-radius: 8px; height: 8px; overflow: hidden; margin-top: 16px; }
+    .level-fill { height: 100%; background: #7DD3C0; border-radius: 8px; transition: width 1s ease; }
+    .stat-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .stat-num { font-size: 32px; font-weight: 800; color: var(--lake); line-height: 1; }
+    .stat-label { font-size: 15px; color: var(--muted); margin-top: 6px; }
+    .knuut-banner {
+      background: var(--lake);
+      border-radius: var(--radius);
+      padding: 22px 26px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 24px;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      width: 100%;
+      font: inherit;
+    }
+    .knuut-banner:hover { background: var(--lake-deep); }
+    .alphabet-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+      gap: 12px;
+    }
+    .letter-btn {
+      min-height: 76px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--lake);
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .letter-btn:hover { border-color: var(--cyan); transform: translateY(-2px); }
+    .letter-btn.mastered { background: #E8F5ED; border-color: var(--success); }
+    .letter-btn.practicing { background: #E6F7F5; border-color: var(--cyan); }
+    .letter-sub { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 500; }
+    .letter-detail {
+      background: var(--lake);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-top: 16px;
+      display: none;
+    }
+    .letter-detail.visible { display: block; }
+    .letter-big { font-size: 72px; font-weight: 800; color: #7DD3C0; line-height: 1; margin-bottom: 8px; }
+    .topic-chip {
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 2px solid var(--border);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--surface);
+      margin: 4px 4px 4px 0;
+    }
+    .topic-chip:hover, .topic-chip.active { border-color: var(--cyan); background: #E6F7F5; color: var(--lake); }
+    .lesson-area {
+      min-height: 280px;
+      background: #FAFAF8;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      font-size: 17px;
+      line-height: 1.7;
+      margin-bottom: 16px;
+      overflow-y: auto;
+      max-height: 420px;
+    }
+    .msg-user { background: var(--lake); color: #fff; border-radius: 12px; padding: 12px 16px; margin: 8px 0 8px auto; max-width: 85%; float: right; clear: both; }
+    .msg-ai { background: #E8F4F2; border-radius: 12px; padding: 12px 16px; margin: 8px auto 8px 0; max-width: 90%; clear: both; }
+    .clearfix { clear: both; }
+    .lesson-input-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .lesson-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      font-size: 18px;
+      font-family: inherit;
+    }
+    .lesson-input:focus { outline: none; border-color: var(--cyan); }
+    .btn {
+      padding: 14px 22px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    .btn-primary { background: var(--lake); color: #fff; }
+    .btn-primary:hover { background: var(--lake-deep); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-outline { background: #fff; border: 2px solid var(--border); color: var(--ink); }
+    .yki-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .yki-tab { padding: 12px 20px; border-radius: 10px; border: 2px solid var(--border); background: #fff; cursor: pointer; font-size: 15px; font-weight: 600; }
+    .yki-tab.active { background: var(--lake); color: #fff; border-color: var(--lake); }
+    .option { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 10px; border: 2px solid var(--border); cursor: pointer; margin-bottom: 10px; font-size: 17px; }
+    .option:hover { border-color: var(--cyan); }
+    .option.selected { border-color: var(--lake); background: #EEF4F8; }
+    .option.correct { border-color: var(--success); background: #E8F5ED; }
+    .option.wrong { border-color: #E05A4A; background: #FEF0EE; }
+    .writing-area { width: 100%; min-height: 140px; padding: 14px; border-radius: 10px; border: 2px solid var(--border); font-size: 18px; font-family: inherit; resize: vertical; }
+    .passport-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .passport-card { border-radius: 12px; border: 2px solid var(--border); padding: 20px; background: var(--surface); }
+    .passport-card.done { border-color: var(--success); background: #F0F9F4; }
+    .hops-timeline { position: relative; padding-left: 28px; }
+    .hops-timeline::before {
+      content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: var(--border);
+    }
+    .hops-item { margin-bottom: 20px; position: relative; }
+    .hops-dot { position: absolute; left: -24px; top: 4px; width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid var(--border); }
+    .hops-dot.done { background: var(--success); border-color: var(--success); }
+    .hops-dot.active { background: var(--cyan); border-color: var(--cyan); }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--cyan);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-inline { display: flex; align-items: center; gap: 12px; color: var(--muted); padding: 16px; }
+    .trust-top {
+      background: #EEF4F8;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: var(--lake);
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="sidebar" aria-label="Päänavigaatio">
+    <div class="logo">Knuut <span>AI</span></div>
+    <div class="tagline">Kotoutumiskoulu · 0→A2</div>
+
+    <div class="nav-section">Oppiminen</div>
+    <button type="button" class="nav-item active" data-sec="dashboard"><span class="icon">🏠</span> Etusivu</button>
+    <button type="button" class="nav-item" data-sec="alphabet"><span class="icon">🔤</span> Kirjaimet</button>
+    <button type="button" class="nav-item" data-sec="lesson"><span class="icon">💬</span> Päivän tunti</button>
+    <button type="button" class="nav-item" data-sec="yki"><span class="icon">📝</span> YKI</button>
+
+    <div class="nav-section">Työelämä</div>
+    <button type="button" class="nav-item" data-sec="passports"><span class="icon">🪪</span> Passit</button>
+    <button type="button" class="nav-item" data-sec="hops"><span class="icon">🗺️</span> Opiskelupolku</button>
+
+    <div class="nav-section">Muu</div>
+    <a class="nav-item" href="student-dashboard.html"><span class="icon">📊</span> Edistyminen</a>
+    <a class="nav-item" href="knuut.html"><span class="icon">🎙️</span> Knuut</a>
+
+    <div class="sidebar-bottom">
+      <div class="student-info">
+        <div class="avatar" id="sb-avatar">?</div>
+        <div>
+          <div style="color:#fff;font-weight:600" id="sb-name">Opiskelija</div>
+          <div style="font-size:12px;opacity:0.8">Taso: <span id="sb-level">A1</span></div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="trust-top">
+      <strong>Ihmisen päätös</strong> — tekoäly antaa ehdotuksia ja harjoituksia. Opettaja vastaa lopullisista arvioista ja suunnitelmista (EU AI Act).
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="sec-dashboard" class="section active">
+      <div class="page-header">
+        <div class="page-title" id="dash-greeting">Hei!</div>
+        <div class="page-sub" id="dash-sub">Ladataan…</div>
+      </div>
+      <div class="grid2" style="margin-bottom:20px">
+        <div class="level-card">
+          <div class="level-label">Nykyinen taso (CEFR)</div>
+          <div class="level-value" id="dash-cefr">A1</div>
+          <div style="opacity:0.9;font-size:16px" id="dash-cefr-sub">Tavoite: A2</div>
+          <div class="level-bar"><div class="level-fill" id="level-fill" style="width:35%"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Tänään</div>
+          <p style="font-size:17px;color:var(--muted);line-height:1.6" id="dash-today">Valitse kirjaimet ja harjoittele Knuutin kanssa.</p>
+        </div>
+      </div>
+      <div class="grid4" style="margin-bottom:20px">
+        <div class="stat-card"><div class="stat-num" id="stat-episodes">—</div><div class="stat-label">Harjoituskertoja</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-streak">—</div><div class="stat-label">Päivien putki</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-xp">—</div><div class="stat-label">XP (viikko)</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-goal">500</div><div class="stat-label">Viikkotavoite XP</div></div>
+      </div>
+      <a class="knuut-banner" href="knuut.html">🎙️ <span style="margin-left:16px;text-align:left"><strong>Puhu suomea Knuutin kanssa</strong><br><span style="font-size:14px;opacity:0.85">Ääniharjoittelu — suomeksi</span></span><span style="font-size:22px">→</span></a>
+    </div>
+
+    <!-- ALPHABET -->
+    <div id="sec-alphabet" class="section">
+      <div class="page-header">
+        <div class="page-title">Suomen aakkoset</div>
+        <div class="page-sub">Isot kirjaimet — napauta ja kuuntele (selainääni)</div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="alphabet-grid" id="alphabet-grid"></div>
+      </div>
+      <div class="letter-detail" id="letter-detail">
+        <div class="letter-big" id="letter-big">A</div>
+        <div style="font-size:18px;opacity:0.9;margin-bottom:8px" id="letter-sound"></div>
+        <div style="font-size:15px;opacity:0.75;margin-bottom:16px" id="letter-tip"></div>
+        <button type="button" class="btn btn-primary" id="btn-speak-letter">🔊 Kuuntele kirjain</button>
+      </div>
+    </div>
+
+    <!-- LESSON — AI via backend only -->
+    <div id="sec-lesson" class="section">
+      <div class="page-header">
+        <div class="page-title">Päivän tunti</div>
+        <div class="page-sub">Tekoäly vastaa palvelimella — ei API-avaimia selaimeen.</div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Aihe</div>
+        <div id="topic-chips"></div>
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+          <button type="button" class="btn btn-primary" id="btn-start-lesson">▶ Aloita tunti</button>
+          <button type="button" class="btn btn-outline" id="btn-clear-lesson">Tyhjennä</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="lesson-area" id="lesson-area">
+          <p style="color:var(--muted)">Valitse aihe ja paina <strong>Aloita tunti</strong>. Keskustelu käyttää Knuut/Nelli-agenttia palvelimella.</p>
+        </div>
+        <div class="lesson-input-row">
+          <input type="text" class="lesson-input" id="lesson-input" placeholder="Kirjoita suomeksi…" autocomplete="off">
+          <button type="button" class="btn btn-primary" id="btn-send-lesson" disabled>Lähetä</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- YKI -->
+    <div id="sec-yki" class="section">
+      <div class="page-header">
+        <div class="page-title">YKI-harjoitus</div>
+        <div class="page-sub">Lukeminen ja kuuntelu — paikallinen. Kirjoitus: palaute palvelimelta.</div>
+      </div>
+      <div class="yki-tabs">
+        <button type="button" class="yki-tab active" data-yki="read">Lukeminen</button>
+        <button type="button" class="yki-tab" data-yki="listen">Kuuntelu</button>
+        <button type="button" class="yki-tab" data-yki="write">Kirjoittaminen</button>
+        <button type="button" class="yki-tab" data-yki="speak">Puhuminen</button>
+      </div>
+      <div id="yki-read" class="card">
+        <p style="margin-bottom:16px;font-size:17px;line-height:1.8;background:#EEF4F8;padding:16px;border-radius:10px">
+          Minun nimeni on Maria. Minä olen 32 vuotta vanha. Minä tulen Somaliasta. Nyt minä asun Kuopiossa.
+        </p>
+        <p style="font-weight:700;margin-bottom:12px">Missä Maria asuu nyt?</p>
+        <div class="option" data-ok="n">Helsingissä</div>
+        <div class="option" data-ok="y">Kuopiossa</div>
+        <div class="option" data-ok="n">Tampereella</div>
+      </div>
+      <div id="yki-listen" class="card" style="display:none">
+        <p style="margin-bottom:12px">Kuuntele: paina alla, sitten vastaa.</p>
+        <button type="button" class="btn btn-primary" id="btn-yki-audio">▶ Toista teksti</button>
+        <p style="margin-top:16px;font-weight:700">Missä on maito?</p>
+        <div class="option" data-ok="n">Ensimmäisessä käytävässä</div>
+        <div class="option" data-ok="n">Toisessa käytävässä</div>
+        <div class="option" data-ok="y">Kolmannessa käytävässä</div>
+      </div>
+      <div id="yki-write" class="card" style="display:none">
+        <p style="margin-bottom:12px">Kirjoita lyhyt viesti työnantajalle: olet sairas, ja palaat töihin.</p>
+        <textarea class="writing-area" id="yki-write-text" placeholder="Kirjoita suomeksi…"></textarea>
+        <button type="button" class="btn btn-primary" id="btn-yki-write" style="margin-top:12px">Pyydä palaute (palvelin)</button>
+        <div id="yki-write-out" style="margin-top:16px;padding:16px;background:#E8F4F2;border-radius:10px;display:none;font-size:16px;line-height:1.7"></div>
+      </div>
+      <div id="yki-speak" class="card" style="display:none;text-align:center">
+        <p style="font-size:18px;margin-bottom:16px">Puhuminen: avaa Knuut ja harjoittele suullista kieltä.</p>
+        <a href="knuut.html" class="btn btn-primary" style="display:inline-block;text-decoration:none">Avaa Knuut →</a>
+      </div>
+    </div>
+
+    <!-- PASSPORTS mock -->
+    <div id="sec-passports" class="section">
+      <div class="page-header">
+        <div class="page-title">Passit ja kortit</div>
+        <div class="page-sub">Esimerkki — demo</div>
+      </div>
+      <div class="passport-grid">
+        <div class="passport-card done"><strong>Hygieniapassi</strong><p style="margin-top:8px;font-size:15px;color:var(--muted)">Ravintola-ala</p></div>
+        <div class="passport-card"><strong>EA1</strong><p style="margin-top:8px;font-size:15px;color:var(--muted)">Ensiapu</p></div>
+        <div class="passport-card"><strong>Työturvallisuus</strong><p style="margin-top:8px;font-size:15px;color:var(--muted)">Yleinen</p></div>
+      </div>
+    </div>
+
+    <!-- HOPS mock -->
+    <div id="sec-hops" class="section">
+      <div class="page-header">
+        <div class="page-title">Henkilökohtainen opiskelupolku</div>
+        <div class="page-sub">120 päivää — demo</div>
+      </div>
+      <div class="card">
+        <div class="hops-timeline">
+          <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 1–3</strong><p style="color:var(--muted);margin-top:6px">Aakkoset ja perussanat</p></div>
+          <div class="hops-item"><div class="hops-dot done"></div><strong>Viikot 4–5</strong><p style="color:var(--muted);margin-top:6px">Arjen suomi</p></div>
+          <div class="hops-item"><div class="hops-dot active"></div><strong>Viikot 6–10 (nyt)</strong><p style="color:var(--muted);margin-top:6px">Työelämän suomi + hygienia</p></div>
+          <div class="hops-item"><div class="hops-dot"></div><strong>Viikot 11–16</strong><p style="color:var(--muted);margin-top:6px">Työssäoppiminen</p></div>
+        </div>
+        <div style="margin-top:24px;padding:16px;background:#EEF4F8;border-radius:10px;font-size:16px;line-height:1.7">
+          <strong>Opettajan kommentti (demo):</strong> Jatka päivittäistä Knuut-harjoittelua — suullinen kieli kehittyy parhaiten toistolla.
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="eu-banner">Tekoäly tukee opettajaa ja opiskelijaa. Lopulliset päätökset tekee ihminen.</div>
+
+  <script>
+(function () {
+  const token = localStorage.getItem('sb_token') || localStorage.getItem('knuut_token');
+  const user = (() => { try { return JSON.parse(localStorage.getItem('sb_user') || localStorage.getItem('knuut_user') || '{}'); } catch (e) { return {}; } })();
+  if (!token || user.role !== 'learner') {
+    location.replace('/login.html?next=' + encodeURIComponent('/oppipolku.html'));
+    return;
+  }
+
+  const LEARNER_ID = user.id;
+  const API = window.location.origin;
+
+  function authHeaders() {
+    return { 'Authorization': 'Bearer ' + (localStorage.getItem('sb_token') || localStorage.getItem('knuut_token') || '') };
+  }
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function parseJwt() {
+    try {
+      const t = localStorage.getItem('sb_token') || localStorage.getItem('knuut_token');
+      const p = t.split('.')[1];
+      return JSON.parse(atob(p.replace(/-/g, '+').replace(/_/g, '/')));
+    } catch (e) { return {}; }
+  }
+
+  const jwt = parseJwt();
+  const cefr = (user.cefr_level || jwt.cefr_level || 'A1').toUpperCase();
+
+  document.getElementById('sb-name').textContent = user.name || 'Opiskelija';
+  document.getElementById('sb-level').textContent = cefr;
+  document.getElementById('sb-avatar').textContent = (user.name || '?').split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
+
+  document.querySelectorAll('.nav-item[data-sec]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var id = el.getAttribute('data-sec');
+      showSection(id);
+      document.querySelectorAll('.nav-item[data-sec]').forEach(function (n) { n.classList.remove('active'); });
+      el.classList.add('active');
+    });
+  });
+
+  function showSection(id) {
+    document.querySelectorAll('.section').forEach(function (s) { s.classList.remove('active'); });
+    var sec = document.getElementById('sec-' + id);
+    if (sec) sec.classList.add('active');
+  }
+
+  var nelliIdCache = null;
+  async function getNelliAgentId() {
+    if (nelliIdCache) return nelliIdCache;
+    var res = await fetch(API + '/api/agents', { headers: authHeaders() });
+    if (!res.ok) return null;
+    var data = await res.json();
+    var agents = data.agents || [];
+    var a = agents.find(function (x) { return x.name === 'Nelli'; }) ||
+      agents.find(function (x) { return /finnish/i.test(x.role || ''); });
+    nelliIdCache = a ? a.id : null;
+    return nelliIdCache;
+  }
+
+  async function aiPrompt(message, context) {
+    var id = await getNelliAgentId();
+    if (!id) throw new Error('Agenttia Nelli ei löytynyt. Tarkista tietokanta.');
+    var res = await fetch(API + '/api/agents/' + encodeURIComponent(id) + '/prompt', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+      body: JSON.stringify({ message: message, context: context || '' })
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error(data.error || 'Palvelinvirhe');
+    return data.reply || '';
+  }
+
+  // Dashboard data
+  async function loadDashboard() {
+    document.getElementById('dash-greeting').textContent = 'Hei, ' + (user.name ? user.name.split(' ')[0] : 'opiskelija') + '!';
+    document.getElementById('dash-cefr').textContent = cefr;
+    document.getElementById('dash-cefr-sub').textContent = 'Tavoite: A2 · EU AI Act: ehdotukset, ei automaattista lopullista arviota';
+
+    try {
+      var pr = await fetch(API + '/api/learners/' + encodeURIComponent(LEARNER_ID) + '/progress', { headers: authHeaders() });
+      var ep = await fetch(API + '/api/brain/stats', { headers: authHeaders() });
+      var epCount = 0;
+      var streak = 0;
+      var xp = 0;
+      var goal = 500;
+      if (pr.ok) {
+        var pj = await pr.json();
+        epCount = (pj.episodes || []).length;
+      }
+      if (ep.ok) {
+        var ej = await ep.json();
+        streak = ej.streak != null ? ej.streak : 0;
+        xp = ej.xp != null ? Math.round(ej.xp) : 0;
+        goal = ej.xp_goal || 500;
+      }
+      document.getElementById('stat-episodes').textContent = epCount;
+      document.getElementById('stat-streak').textContent = '🔥 ' + streak;
+      document.getElementById('stat-xp').textContent = xp;
+      document.getElementById('stat-goal').textContent = goal;
+      var pct = Math.min(100, Math.round((xp / goal) * 100));
+      document.getElementById('level-fill').style.width = pct + '%';
+      document.getElementById('dash-sub').textContent = new Date().toLocaleDateString('fi-FI', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+      var today = new Date();
+      var dayNum = Math.min(120, Math.max(1, epCount + 1));
+      document.getElementById('dash-today').textContent = 'Päivä ' + dayNum + ' / 120. Harjoittele tänään kirjaimia tai avaa Knuut.';
+    } catch (e) {
+      document.getElementById('dash-sub').textContent = 'Tietoja ei voitu ladata kokonaan.';
+    }
+  }
+  loadDashboard();
+
+  // Alphabet
+  var letters = [
+    { l: 'A', s: '/a/', tip: 'kuten "auto"' },
+    { l: 'B', s: '/b/', tip: 'vierassanoissa' },
+    { l: 'C', s: '/k/ tai /s/', tip: 'vierassanoissa' },
+    { l: 'D', s: '/d/', tip: '' },
+    { l: 'E', s: '/e/', tip: '' },
+    { l: 'F', s: '/f/', tip: '' },
+    { l: 'G', s: '/g/', tip: '' },
+    { l: 'H', s: '/h/', tip: '' },
+    { l: 'I', s: '/i/', tip: '' },
+    { l: 'J', s: '/j/', tip: '' },
+    { l: 'K', s: '/k/', tip: '' },
+    { l: 'L', s: '/l/', tip: '' },
+    { l: 'M', s: '/m/', tip: '' },
+    { l: 'N', s: '/n/', tip: '' },
+    { l: 'O', s: '/o/', tip: '' },
+    { l: 'P', s: '/p/', tip: '' },
+    { l: 'Q', s: '/kv/', tip: 'harvinainen' },
+    { l: 'R', s: '/r/', tip: 'r-kirjain' },
+    { l: 'S', s: '/s/', tip: '' },
+    { l: 'T', s: '/t/', tip: '' },
+    { l: 'U', s: '/u/', tip: '' },
+    { l: 'V', s: '/v/', tip: '' },
+    { l: 'W', s: '/v/', tip: '' },
+    { l: 'X', s: '/ks/', tip: '' },
+    { l: 'Y', s: '/y/', tip: '' },
+    { l: 'Z', s: '/ts/', tip: '' },
+    { l: 'Å', s: '/o/', tip: '' },
+    { l: 'Ä', s: '/æ/', tip: 'tärkeä' },
+    { l: 'Ö', s: '/ø/', tip: 'tärkeä' }
+  ];
+  var currentLetter = null;
+  var grid = document.getElementById('alphabet-grid');
+  letters.forEach(function (item, i) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'letter-btn' + (i < 20 ? ' mastered' : ' practicing');
+    btn.setAttribute('aria-label', 'Kirjain ' + item.l);
+    btn.innerHTML = item.l + '<span class="letter-sub">' + item.s + '</span>';
+    btn.addEventListener('click', function () {
+      currentLetter = item;
+      document.getElementById('letter-big').textContent = item.l;
+      document.getElementById('letter-sound').textContent = 'Äänne: ' + item.s;
+      document.getElementById('letter-tip').textContent = item.tip || '';
+      document.getElementById('letter-detail').classList.add('visible');
+    });
+    grid.appendChild(btn);
+  });
+  document.getElementById('btn-speak-letter').addEventListener('click', function () {
+    if (!currentLetter) return;
+    if ('speechSynthesis' in window) {
+      var u = new SpeechSynthesisUtterance(currentLetter.l);
+      u.lang = 'fi-FI';
+      u.rate = 0.85;
+      speechSynthesis.speak(u);
+    }
+  });
+
+  // Lesson
+  var topics = ['Tervehdykset ja esittäytyminen', 'Kaupassa asiointi', 'Lääkärissä', 'Numerot ja hinnat', 'Perhe ja koti'];
+  var topicEl = document.getElementById('topic-chips');
+  var currentTopic = topics[0];
+  topics.forEach(function (t, i) {
+    var c = document.createElement('button');
+    c.type = 'button';
+    c.className = 'topic-chip' + (i === 0 ? ' active' : '');
+    c.textContent = t;
+    c.addEventListener('click', function () {
+      topicEl.querySelectorAll('.topic-chip').forEach(function (x) { x.classList.remove('active'); });
+      c.classList.add('active');
+      currentTopic = t;
+    });
+    topicEl.appendChild(c);
+  });
+
+  var lessonStarted = false;
+  var lessonArea = document.getElementById('lesson-area');
+  function appendLesson(role, html) {
+    var d = document.createElement('div');
+    d.className = role === 'user' ? 'msg-user' : 'msg-ai';
+    d.innerHTML = html;
+    lessonArea.appendChild(d);
+    lessonArea.appendChild(document.createElement('div')).className = 'clearfix';
+    lessonArea.scrollTop = lessonArea.scrollHeight;
+  }
+
+  document.getElementById('btn-start-lesson').addEventListener('click', async function () {
+    var btn = document.getElementById('btn-start-lesson');
+    btn.disabled = true;
+    document.getElementById('btn-send-lesson').disabled = true;
+    lessonArea.innerHTML = '<div class="loading-inline"><div class="spinner"></div> Ladataan oppituntia palvelimelta…</div>';
+    try {
+      var ctx = 'CEFR level ' + cefr + ' student. Finnish integration course. Human teacher has final say on assessment.';
+      var msg = 'Aloita lyhyt oppitunti aiheesta: ' + currentTopic + '. Kirjoita suomeksi: 1) lyhyt tervehdys 2) 3 esimerkkilausetta aiheesta 3) yksi helppo kysymys opiskelijalle. Pidä vastaus selkeänä ja lyhyenä.';
+      var reply = await aiPrompt(msg, ctx);
+      lessonArea.innerHTML = '';
+      appendLesson('ai', escapeHtml(reply).replace(/\n/g, '<br>'));
+      lessonStarted = true;
+    } catch (e) {
+      lessonArea.innerHTML = '<p style="color:#b91c1c">' + escapeHtml(e.message) + '</p>';
+      lessonStarted = false;
+    }
+    btn.disabled = false;
+    document.getElementById('btn-send-lesson').disabled = !lessonStarted;
+  });
+
+  document.getElementById('btn-clear-lesson').addEventListener('click', function () {
+    lessonStarted = false;
+    lessonArea.innerHTML = '<p style="color:var(--muted)">Valitse aihe ja aloita uudelleen.</p>';
+    document.getElementById('btn-send-lesson').disabled = true;
+  });
+
+  document.getElementById('btn-send-lesson').addEventListener('click', async function () {
+    var input = document.getElementById('lesson-input');
+    var text = (input.value || '').trim();
+    if (!text) return;
+    if (!lessonStarted) return;
+    input.value = '';
+    appendLesson('user', escapeHtml(text));
+    var loading = document.createElement('div');
+    loading.className = 'loading-inline';
+    loading.innerHTML = '<div class="spinner"></div> Vastataan…';
+    lessonArea.appendChild(loading);
+    try {
+      var ctx = 'CEFR ' + cefr + '. Topic: ' + currentTopic + '. Correct Finnish gently. Short reply.';
+      var reply = await aiPrompt(text, ctx);
+      lessonArea.removeChild(loading);
+      appendLesson('ai', escapeHtml(reply).replace(/\n/g, '<br>'));
+    } catch (e) {
+      lessonArea.removeChild(loading);
+      appendLesson('ai', escapeHtml(e.message));
+    }
+  });
+
+  document.getElementById('lesson-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') document.getElementById('btn-send-lesson').click();
+  });
+
+  // YKI tabs
+  document.querySelectorAll('.yki-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.yki-tab').forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      var y = tab.getAttribute('data-yki');
+      document.getElementById('yki-read').style.display = y === 'read' ? 'block' : 'none';
+      document.getElementById('yki-listen').style.display = y === 'listen' ? 'block' : 'none';
+      document.getElementById('yki-write').style.display = y === 'write' ? 'block' : 'none';
+      document.getElementById('yki-speak').style.display = y === 'speak' ? 'block' : 'none';
+    });
+  });
+  document.querySelectorAll('#yki-read .option, #yki-listen .option').forEach(function (o) {
+    o.addEventListener('click', function () {
+      o.parentElement.querySelectorAll('.option').forEach(function (x) { x.classList.remove('selected', 'correct', 'wrong'); });
+      o.classList.add('selected');
+      o.classList.add(o.getAttribute('data-ok') === 'y' ? 'correct' : 'wrong');
+    });
+  });
+  document.getElementById('btn-yki-audio').addEventListener('click', function () {
+    var lines = ['Hyvää päivää!', 'Missä on maito?', 'Maito on kolmannessa käytävässä.', 'Kiitos!', 'Ole hyvä!'];
+    if (!('speechSynthesis' in window)) return;
+    var i = 0;
+    function next() {
+      if (i >= lines.length) return;
+      var u = new SpeechSynthesisUtterance(lines[i]);
+      u.lang = 'fi-FI';
+      u.onend = function () { i++; next(); };
+      speechSynthesis.speak(u);
+    }
+    next();
+  });
+  document.getElementById('btn-yki-write').addEventListener('click', async function () {
+    var t = document.getElementById('yki-write-text').value.trim();
+    var out = document.getElementById('yki-write-out');
+    if (t.length < 10) {
+      out.style.display = 'block';
+      out.textContent = 'Kirjoita vähintään 10 merkkiä.';
+      return;
+    }
+    out.style.display = 'block';
+    out.innerHTML = '<div class="spinner"></div> Arvioidaan palvelimella…';
+    try {
+      var ctx = 'CEFR ' + cefr + '. Task: sick leave message to employer. Feedback is assistive.';
+      var reply = await aiPrompt('Arvioi lyhyt teksti (A1). Anna: 1) mikä on hyvin 2) yksi korjaus 3) kannustus. Teksti:\n' + t, ctx);
+      out.innerHTML = escapeHtml(reply).replace(/\n/g, '<br>');
+    } catch (e) {
+      out.textContent = e.message;
+    }
+  });
+})();
+  </script>
+</body>
+</html>

@@ -37,7 +37,7 @@
     }
     .topnav a:hover { background: #f0effe; border-color: #6C63FF; color: #6C63FF; }
     @media(max-width:600px) {
-      .topnav a { display: none; }
+      .topnav a:not(.nav-oppipolku) { display: none; }
       .topnav-logo { margin-right: 0; }
       .mobile-menu-btn { display: flex !important; }
     }
@@ -227,6 +227,7 @@
 
   <nav class="topnav">
     <span class="topnav-logo">KNUUT</span>
+    <a href="oppipolku.html" class="nav-oppipolku">Oppipolku</a>
     <a href="knuut.html">Practice with Knuut</a>
     <a href="teacher-dashboard.html">Teacher view</a>
     <a href="privacy-ai.html">Privacy & AI</a>
