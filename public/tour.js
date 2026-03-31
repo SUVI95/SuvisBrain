@@ -526,7 +526,7 @@
       boot('oppipolku', buildOppipolkuTour);
     },
     initTeacher: function () {
-      boot('teacher_dashboard', buildTeacherTour);
+      boot('teacher', buildTeacherTour);
     },
     initKnuut: function () {
       boot('knuut', buildKnuutTour);
