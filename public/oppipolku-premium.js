@@ -41,65 +41,30 @@
     logout: '<svg class="pi" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>'
   };
 
-  const EMOJI_ICON_MAP = {
-    '📅': ICONS.calendar,
-    '🔥': ICONS.flame,
-    '⭐': ICONS.star,
-    '📚': ICONS.book,
-    '✅': ICONS.check,
-    '🎙️': ICONS.mic,
-    '🔊': ICONS.speaker,
-    '📍': ICONS.mapPin,
-    '🔤': ICONS.type,
-    '🏠': ICONS.home,
-    '💼': ICONS.briefcase,
-    '🏆': ICONS.award,
-    '👥': ICONS.users,
-    '☕': ICONS.coffee,
-    '🍽️': ICONS.lunch,
-    '📝': ICONS.edit,
-    '🎯': ICONS.target,
-    '💡': ICONS.spark,
-    '🔔': ICONS.bell,
-    '👩‍🏫': ICONS.teacher,
-    '📓': ICONS.file,
-    '📨': ICONS.send,
-    '💭': ICONS.quote,
-    '📎': ICONS.paperclip,
-    '📖': ICONS.glossary,
-    '📐': ICONS.compass,
-    '🪪': ICONS.idcard,
-    '🗺️': ICONS.mapPin,
-    '🔭': ICONS.compass,
-    '💬': ICONS.chat,
-    '🔒': ICONS.lock,
-    '🚪': ICONS.logout,
-    '👋': ICONS.chat,
-    '🏥': ICONS.briefcase,
-    '🛒': ICONS.briefcase,
-    '🚌': ICONS.calendar,
-    '🔢': ICONS.edit,
-    '👨‍👩‍👧': ICONS.users,
-    '📤': ICONS.send
-  };
-
-  function iconify(container) {
-    if (!container) return;
-    let html = container.innerHTML;
-    Object.keys(EMOJI_ICON_MAP).forEach(function (k) {
-      html = html.split(k).join(EMOJI_ICON_MAP[k]);
-    });
-    container.innerHTML = html;
-  }
-
-  function stripRemainingEmoji(container) {
-    if (!container) return;
-    const emojiRe = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/gu;
-    container.querySelectorAll('*').forEach(function (el) {
-      if (el.children.length) return;
-      if (typeof el.textContent === 'string' && el.textContent) {
-        el.textContent = el.textContent.replace(emojiRe, '').replace(/\s{2,}/g, ' ').trim();
-      }
+  function applyOppipolkuSidebarIcons() {
+    const map = {
+      '🏠': ICONS.home,
+      '📅': ICONS.calendar,
+      '📚': ICONS.book,
+      '🔤': ICONS.type,
+      '✅': ICONS.check,
+      '📎': ICONS.paperclip,
+      '📖': ICONS.glossary,
+      '📐': ICONS.compass,
+      '💬': ICONS.chat,
+      '📝': ICONS.edit,
+      '🪪': ICONS.idcard,
+      '📓': ICONS.file,
+      '🗺️': ICONS.mapPin,
+      '🔭': ICONS.compass,
+      '🔔': ICONS.bell,
+      '🎙️': ICONS.mic,
+      '🔒': ICONS.lock,
+      '🚪': ICONS.logout
+    };
+    document.querySelectorAll('.sidebar .nav-item .icon').forEach(function (el) {
+      const key = (el.textContent || '').trim();
+      if (map[key]) el.innerHTML = map[key];
     });
   }
 
@@ -683,8 +648,7 @@
     renderHops();
     renderJatko();
     renderNotifications();
-    iconify(document.body);
-    stripRemainingEmoji(document.body);
+    applyOppipolkuSidebarIcons();
   }
 
   attachGlobalNav();
