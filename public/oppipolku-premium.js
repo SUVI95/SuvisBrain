@@ -8,6 +8,67 @@
       .replace(/'/g, '&#39;');
   }
 
+  const ICONS = {
+    calendar: '<svg class="pi" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="11" x2="21" y2="11"/></svg>',
+    flame: '<svg class="pi" viewBox="0 0 24 24"><path d="M12 3c2 3 5 5 5 9a5 5 0 1 1-10 0c0-2 1-4 3-6 0 2 1 3 2 4 0-2 0-4 0-7z"/></svg>',
+    star: '<svg class="pi" viewBox="0 0 24 24"><polygon points="12 3 15 9 22 10 17 15 18 22 12 19 6 22 7 15 2 10 9 9 12 3"/></svg>',
+    book: '<svg class="pi" viewBox="0 0 24 24"><path d="M4 5a3 3 0 0 1 3-3h13v18H7a3 3 0 0 0-3 3z"/><path d="M7 2v21"/></svg>',
+    check: '<svg class="pi" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+    mic: '<svg class="pi" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/></svg>',
+    speaker: '<svg class="pi" viewBox="0 0 24 24"><polygon points="11 5 6 9 3 9 3 15 6 15 11 19 11 5"/><path d="M15 9a4 4 0 0 1 0 6"/><path d="M17.5 6.5a8 8 0 0 1 0 11"/></svg>',
+    mapPin: '<svg class="pi" viewBox="0 0 24 24"><path d="M12 22s7-6 7-12a7 7 0 1 0-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+    type: '<svg class="pi" viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="8" y1="20" x2="16" y2="20"/></svg>',
+    home: '<svg class="pi" viewBox="0 0 24 24"><path d="M3 10 12 3l9 7"/><path d="M5 10v11h14V10"/><path d="M10 21v-6h4v6"/></svg>',
+    briefcase: '<svg class="pi" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>',
+    award: '<svg class="pi" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M8 13l-2 8 6-3 6 3-2-8"/></svg>',
+    users: '<svg class="pi" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M14 20a5 5 0 0 1 7 0"/></svg>',
+    coffee: '<svg class="pi" viewBox="0 0 24 24"><path d="M3 8h14v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M17 10h2a3 3 0 1 1 0 6h-2"/></svg>',
+    lunch: '<svg class="pi" viewBox="0 0 24 24"><path d="M3 2v7"/><path d="M7 2v7"/><path d="M3 6h4"/><path d="M5 9v13"/><path d="M14 2v20"/><path d="M18 2c2 2 2 6 0 8h-4V2z"/></svg>',
+    edit: '<svg class="pi" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+    target: '<svg class="pi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="2"/></svg>',
+    spark: '<svg class="pi" viewBox="0 0 24 24"><path d="M12 3v5"/><path d="M12 16v5"/><path d="M3 12h5"/><path d="M16 12h5"/><path d="m5 5 3 3"/><path d="m16 16 3 3"/><path d="m19 5-3 3"/><path d="m8 16-3 3"/></svg>',
+    bell: '<svg class="pi" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>',
+    teacher: '<svg class="pi" viewBox="0 0 24 24"><path d="M3 6l9-4 9 4-9 4-9-4z"/><path d="M6 8v5c0 2 3 4 6 4s6-2 6-4V8"/><circle cx="19" cy="13" r="1.5"/></svg>',
+    file: '<svg class="pi" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+    send: '<svg class="pi" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+    quote: '<svg class="pi" viewBox="0 0 24 24"><path d="M9 8H5v6h4V8z"/><path d="M19 8h-4v6h4V8z"/></svg>'
+  };
+
+  const EMOJI_ICON_MAP = {
+    '📅': ICONS.calendar,
+    '🔥': ICONS.flame,
+    '⭐': ICONS.star,
+    '📚': ICONS.book,
+    '✅': ICONS.check,
+    '🎙️': ICONS.mic,
+    '🔊': ICONS.speaker,
+    '📍': ICONS.mapPin,
+    '🔤': ICONS.type,
+    '🏠': ICONS.home,
+    '💼': ICONS.briefcase,
+    '🏆': ICONS.award,
+    '👥': ICONS.users,
+    '☕': ICONS.coffee,
+    '🍽️': ICONS.lunch,
+    '📝': ICONS.edit,
+    '🎯': ICONS.target,
+    '💡': ICONS.spark,
+    '🔔': ICONS.bell,
+    '👩‍🏫': ICONS.teacher,
+    '📓': ICONS.file,
+    '📨': ICONS.send,
+    '💭': ICONS.quote
+  };
+
+  function iconify(container) {
+    if (!container) return;
+    let html = container.innerHTML;
+    Object.keys(EMOJI_ICON_MAP).forEach(function (k) {
+      html = html.split(k).join(EMOJI_ICON_MAP[k]);
+    });
+    container.innerHTML = html;
+  }
+
   const user = {
     id: 'pavel-profile',
     name: 'Pavel Sorokin',
@@ -588,6 +649,7 @@
     renderHops();
     renderJatko();
     renderNotifications();
+    iconify(document.body);
   }
 
   attachGlobalNav();
