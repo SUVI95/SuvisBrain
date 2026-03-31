@@ -191,10 +191,8 @@
       scrollTo: false,
       canClickTarget: true,
       beforeShowPromise: function () {
-        var step = this;
-        if (step.options.attachTo) {
-          step.options.attachTo.on = sideFor(desktopSide);
-        }
+        // Do not read this.options.attachTo — Shepherd may not set options on `this` here (throws).
+        // Placement is already set via attachTo.on when the step was added.
         try {
           el.scrollIntoView({ block: 'center', behavior: 'smooth' });
         } catch (e) {}
