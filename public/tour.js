@@ -1,12 +1,21 @@
 /**
  * ALKUPOLKU — Shepherd.js v11 product tours (shared).
- * Pages load shepherd.min.js + shepherd.css from CDN, then this file, then AlkuTour.init*().
+ * Load vendor/shepherd.min.js + vendor/shepherd.css (or CDN), then tour.js, then AlkuTour.init*().
  */
 (function (global) {
   'use strict';
 
   var STORAGE_PREFIX = 'alkupolku_tour_done_';
   var MOBILE_MAX = 900;
+
+  /** UMD exposes Shepherd.Tour; some builds use default.Tour */
+  function getShepherdTourClass() {
+    var S = global.Shepherd;
+    if (!S) return null;
+    if (typeof S.Tour === 'function') return S.Tour;
+    if (S.default && typeof S.default.Tour === 'function') return S.default.Tour;
+    return null;
+  }
 
   function isMobile() {
     try {
@@ -93,7 +102,7 @@
       'display:flex;align-items:center;justify-content:center;font-family:inherit;' +
       '}' +
       '#alku-tour-replay:hover{filter:brightness(0.98);}' +
-      'body.shepherd-active #alku-tour-replay{z-index:1001;}';
+      'body.shepherd-active #alku-tour-replay{z-index:10052;}';
     document.head.appendChild(s);
   }
 
@@ -240,7 +249,8 @@
     }
 
     var totalSteps = resolved.length + 1;
-    var tour = new global.Shepherd.Tour({
+    var Tour = global.__AlkuShepherdTour;
+    var tour = new Tour({
       useModalOverlay: true,
       defaultStepOptions: {
         classes: 'shepherd-theme-alkupolku',
@@ -320,7 +330,8 @@
     }
 
     var totalSteps = resolved.length + 1;
-    var tour = new global.Shepherd.Tour({
+    var Tour = global.__AlkuShepherdTour;
+    var tour = new Tour({
       useModalOverlay: true,
       defaultStepOptions: {
         classes: 'shepherd-theme-alkupolku',
@@ -425,7 +436,8 @@
     }
 
     var totalSteps = resolved.length + 1;
-    var tour = new global.Shepherd.Tour({
+    var Tour = global.__AlkuShepherdTour;
+    var tour = new Tour({
       useModalOverlay: true,
       defaultStepOptions: {
         classes: 'shepherd-theme-alkupolku',
@@ -500,16 +512,42 @@
     document.body.appendChild(btn);
   }
 
+  function wireReplayFallback() {
+    var existing = document.getElementById('alku-tour-replay');
+    if (existing) existing.remove();
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'alku-tour-replay';
+    btn.setAttribute('aria-label', 'Tour unavailable');
+    btn.title = 'Tour library did not load — try hard refresh (Ctrl+Shift+R)';
+    btn.textContent = '?';
+    btn.addEventListener('click', function () {
+      window.alert(
+        'Guided tour could not load (Shepherd.js missing). Check your network, disable blockers, or hard-refresh the page.'
+      );
+    });
+    document.body.appendChild(btn);
+  }
+
   function boot(pageKey, factory) {
-    if (!global.Shepherd) {
-      console.warn('Shepherd.js not loaded; tour disabled.');
+    injectStyles();
+    var TourClass = getShepherdTourClass();
+    if (!TourClass) {
+      console.warn('[AlkuTour] Shepherd.Tour not found — is vendor/shepherd.min.js loaded?');
+      wireReplayFallback();
       return;
     }
-    injectStyles();
+    global.__AlkuShepherdTour = TourClass;
 
     function run() {
-      var t = factory();
-      t.start();
+      try {
+        var t = factory();
+        if (t && typeof t.start === 'function') {
+          t.start();
+        }
+      } catch (e) {
+        console.error('[AlkuTour] start failed:', e);
+      }
     }
 
     wireReplay(pageKey, run);
