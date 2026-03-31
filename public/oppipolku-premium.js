@@ -69,6 +69,17 @@
     container.innerHTML = html;
   }
 
+  function stripRemainingEmoji(container) {
+    if (!container) return;
+    const emojiRe = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/gu;
+    container.querySelectorAll('*').forEach(function (el) {
+      if (el.children.length) return;
+      if (typeof el.textContent === 'string' && el.textContent) {
+        el.textContent = el.textContent.replace(emojiRe, '').replace(/\s{2,}/g, ' ').trim();
+      }
+    });
+  }
+
   const user = {
     id: 'pavel-profile',
     name: 'Pavel Sorokin',
@@ -94,7 +105,7 @@
     alphaQuizTarget: null,
     alphaStreak: 4,
     selfScores: [3, 4, 3, 2],
-    selfMood: '🙂',
+    selfMood: '3',
     vocabTheme: 'tyovuoro',
     vocabMode: 'table',
     flashIndex: 2,
@@ -409,9 +420,9 @@
         });
       });
     });
-    const emojis = ['😔', '😐', '🙂', '😊', '😄'];
+    const emojis = ['1', '2', '3', '4', '5'];
     const mr = document.getElementById('mood-row');
-    mr.innerHTML = emojis.map(function (e) { return '<button class="' + (e === state.selfMood ? 'on' : '') + '">' + e + '</button>'; }).join('');
+    mr.innerHTML = emojis.map(function (e) { return '<button class="' + (e === state.selfMood ? 'on' : '') + '" title="Mood ' + e + '">' + e + '</button>'; }).join('');
     mr.querySelectorAll('button').forEach(function (b) { b.addEventListener('click', function () { state.selfMood = b.textContent; mr.querySelectorAll('button').forEach(function (x) { x.classList.remove('on'); }); b.classList.add('on'); }); });
     document.getElementById('btn-self-submit').addEventListener('click', function () { toast('Hienoa! Opettajasi näkee vastauksesi. +10 XP'); });
   }
@@ -650,6 +661,7 @@
     renderJatko();
     renderNotifications();
     iconify(document.body);
+    stripRemainingEmoji(document.body);
   }
 
   attachGlobalNav();
