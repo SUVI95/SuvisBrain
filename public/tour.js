@@ -31,6 +31,39 @@
     } catch (e) {}
   }
 
+  /** Shepherd sometimes leaves overlay / target classes (see Tour._done short-circuit when modal ref missing). */
+  function forceShepherdCleanup() {
+    try {
+      document.querySelectorAll('.shepherd-modal-overlay-container').forEach(function (el) {
+        el.remove();
+      });
+      document.querySelectorAll('.shepherd-element').forEach(function (el) {
+        el.remove();
+      });
+      document.body.classList.remove('shepherd-active');
+      document.querySelectorAll('.shepherd-target').forEach(function (el) {
+        el.classList.remove('shepherd-target');
+      });
+      document.querySelectorAll('.shepherd-enabled').forEach(function (el) {
+        el.classList.remove('shepherd-enabled');
+      });
+    } catch (e) {}
+  }
+
+  function attachTourCleanupHooks(tour, pageKey) {
+    function onEnd() {
+      markDone(pageKey);
+      forceShepherdCleanup();
+    }
+    tour.on('cancel', onEnd);
+    tour.on('complete', onEnd);
+    try {
+      tour.on('inactive', function () {
+        forceShepherdCleanup();
+      });
+    } catch (e) {}
+  }
+
   function isDone(pageKey) {
     try {
       return !!localStorage.getItem(STORAGE_PREFIX + pageKey);
@@ -294,12 +327,7 @@
       }
     });
 
-    tour.on('cancel', function () {
-      markDone(pageKey);
-    });
-    tour.on('complete', function () {
-      markDone(pageKey);
-    });
+    attachTourCleanupHooks(tour, pageKey);
 
     return tour;
   }
@@ -365,12 +393,7 @@
       finalAction: null
     });
 
-    tour.on('cancel', function () {
-      markDone(pageKey);
-    });
-    tour.on('complete', function () {
-      markDone(pageKey);
-    });
+    attachTourCleanupHooks(tour, pageKey);
 
     return tour;
   }
@@ -485,12 +508,7 @@
       finalAction: null
     });
 
-    tour.on('cancel', function () {
-      markDone(pageKey);
-    });
-    tour.on('complete', function () {
-      markDone(pageKey);
-    });
+    attachTourCleanupHooks(tour, pageKey);
 
     return tour;
   }

@@ -355,6 +355,13 @@
  .alku-table th, .alku-table td { padding: 9px 11px; border-bottom: 1px solid var(--border-subtle); text-align: left; }
  .alku-table th { font-weight: 800; color: var(--text-body-muted); text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; }
  .alku-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: var(--brand-soft); color: var(--brand-600); }
+ .mod-cohort-badge { display: inline-block; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 6px; margin-left: 8px; letter-spacing: 0.02em; }
+ .mod-cohort-badge.green { background: rgba(45, 106, 79, 0.15); color: #1B4332; }
+ .mod-cohort-badge.amber { background: rgba(217, 119, 6, 0.15); color: #92400E; }
+ .mod-cohort-badge.gray { background: rgba(0, 0, 0, 0.06); color: var(--text-body-muted); }
+ .mod-cohort-count { font-size: 13px; font-weight: 600; color: var(--text-body-muted); margin-top: 6px; }
+ .lcard-thrive { border-left: 3px solid #2D6A4F; }
+
  .alku-list { margin: 0; padding-left: 18px; font-size: 14px; color: var(--text-body-muted); line-height: 1.55; font-weight: 500; }
  .alku-list li { margin-bottom: 6px; }
 
@@ -385,6 +392,79 @@
  .wf-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
  .wf-pl-inp { font-size: 12px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); width: 100%; min-width: 0; box-sizing: border-box; }
  @media (max-width: 900px) { .wf-grid2 { grid-template-columns: 1fr; } }
+
+ /* —— Rich teacher sub-pages (demo UI) —— */
+ .toast-teal { position: fixed; bottom: 24px; right: 24px; z-index: 10001; padding: 12px 18px; background: #0d9488; color: #fff; font-size: 14px; font-weight: 600; border-radius: 12px; box-shadow: var(--shadow-lg); opacity: 0; transform: translateY(12px); transition: opacity 0.25s, transform 0.25s; pointer-events: none; }
+ .toast-teal.visible { opacity: 1; transform: translateY(0); }
+ .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px; }
+ .modal-overlay.open { display: flex; }
+ .modal-box { background: var(--surface); border-radius: var(--radius); max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 22px; box-shadow: var(--shadow-lg); }
+ .modal-box h3 { font-size: 18px; margin-bottom: 12px; }
+ .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+ .btn-teal { padding: 10px 16px; background: #0d9488; color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; font-family: inherit; }
+ .btn-muted { padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; font-family: inherit; }
+ .stars-row { display: flex; gap: 6px; margin: 8px 0; }
+ .star-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 18px; }
+ .star-btn.on { background: #fef3c7; border-color: #f59e0b; }
+ .hops-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-top: 14px; }
+ .hops-field { background: var(--surface2); border-radius: 12px; padding: 12px 14px; border: 1px solid var(--border-subtle); }
+ .hops-field .hf-lbl { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-body-muted); margin-bottom: 4px; }
+ .hops-field .hf-val { font-size: 14px; line-height: 1.5; font-weight: 500; }
+ .timeline-120 { margin-top: 18px; padding: 14px; background: var(--surface2); border-radius: 12px; border: 1px solid var(--border-subtle); }
+ .timeline-track { position: relative; height: 14px; background: var(--border); border-radius: 8px; margin: 24px 8px 8px; }
+ .timeline-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 8px; background: linear-gradient(90deg, #0d9488, #7c3aed); width: 39%; }
+ .timeline-cur { position: absolute; top: -6px; width: 4px; margin-left: -2px; height: 26px; background: #7c3aed; border-radius: 2px; left: 39%; }
+ .timeline-mile { position: absolute; top: 0; width: 2px; height: 14px; background: #94a3b8; border-radius: 1px; }
+ .timeline-mile.done { background: #0d9488; }
+ .timeline-mile.cur { background: #7c3aed; width: 3px; }
+ .timeline-lbls { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-body-muted); margin-top: 4px; }
+ .att-stats { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+ .att-stat-pill { background: var(--surface); padding: 10px 14px; border-radius: 12px; box-shadow: var(--shadow); font-size: 13px; font-weight: 600; }
+ .att-alert { background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 16px; font-size: 14px; line-height: 1.5; }
+ .att-grid-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border-subtle); }
+ .att-grid { border-collapse: collapse; font-size: 12px; min-width: 720px; }
+ .att-grid th, .att-grid td { border: 1px solid var(--border-subtle); padding: 6px 8px; text-align: center; }
+ .att-grid th:first-child, .att-grid td:first-child { text-align: left; min-width: 140px; font-weight: 700; }
+ .att-cell { min-width: 44px; height: 40px; border-radius: 8px; border: 1px dashed var(--border); background: var(--surface2); cursor: pointer; font-size: 16px; }
+ .att-cell.present { background: #ecfdf5; border-color: #34d399; color: #047857; }
+ .att-cell.absent { background: #fef2f2; border-color: #f87171; color: #b91c1c; }
+ .att-cell.locked { opacity: 0.45; cursor: not-allowed; background: #f1f5f9; }
+ .att-note { display: none; width: 100%; margin-top: 4px; font-size: 11px; padding: 4px; border: 1px solid var(--border); border-radius: 6px; }
+ .att-note.show { display: block; }
+ .kanban-wrap { overflow-x: auto; padding-bottom: 8px; }
+ .kanban-row { display: flex; gap: 12px; min-width: max-content; align-items: flex-start; }
+ .kanban-col { width: 200px; flex-shrink: 0; background: var(--surface2); border-radius: 12px; padding: 10px; border: 1px solid var(--border-subtle); }
+ .kanban-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-body-muted); margin-bottom: 10px; }
+ .plc-card { background: var(--surface); border-radius: 10px; padding: 10px; margin-bottom: 8px; border: 1px solid var(--border-subtle); cursor: pointer; font-size: 12px; }
+ .plc-card.expanded { border-color: var(--brand-500); box-shadow: 0 0 0 2px var(--brand-tint); }
+ .plc-card .plc-name { font-weight: 700; margin-bottom: 4px; }
+ .plc-detail { display: none; margin-top: 10px; font-size: 12px; }
+ .plc-card.expanded .plc-detail { display: block; }
+ .yki-cell { cursor: pointer; padding: 6px; border-radius: 6px; font-size: 12px; }
+ .yki-cell:hover { background: var(--surface2); }
+ .pass-grid { font-size: 12px; }
+ .pass-grid td { text-align: center; padding: 8px; cursor: pointer; }
+ .pass-dot { display: inline-block; width: 22px; height: 22px; border-radius: 50%; line-height: 22px; font-size: 12px; }
+ .pass-dot.done { background: #0d9488; color: #fff; }
+ .pass-dot.prog { background: #fbbf24; color: #78350f; }
+ .pass-dot.plan { background: #e2e8f0; color: #475569; }
+ .pass-dot.na { background: #f1f5f9; color: #94a3b8; }
+ .assess-dots { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 11px; }
+ .assess-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; }
+ .assess-dot.on { background: #0d9488; }
+ .assess-arrow { color: #7c3aed; font-weight: 800; }
+ .crm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+ .crm-card { background: var(--surface); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); border-top: 4px solid var(--brand-500); }
+ .crm-card .crm-kunto { font-size: 12px; margin: 8px 0; }
+ .mun-filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+ .mun-filter button { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 12px; font-weight: 600; }
+ .mun-filter button.active { background: var(--brand-500); color: #fff; border-color: var(--brand-500); }
+ @media print {
+   .sidebar, .trust-top, .hz-navbar, .btn-teal, .btn-muted, .btn-save-cefr, .btn-gen, #logout-link { display: none !important; }
+   .hz-shell { margin-left: 0 !important; width: 100% !important; }
+   .main { padding: 12mm !important; max-width: none !important; }
+   #print-report-root { font-size: 11pt; }
+ }
  </style>
 </head>
 <body>
@@ -555,104 +635,85 @@
  <div id="sec-hops" class="section">
    <div class="page-header">
      <div class="page-title">HOPS — henkilökohtainen opiskelupolku</div>
-     <div class="page-sub">Muokkaa opiskelijakohtaista polkua 120 päivälle. Yhteistyö opiskelijan kanssa.</div>
+     <div class="page-sub">120 päivän polku — tavoitteet, vahvuudet ja seuraavat askeleet yhdessä näkymässä.</div>
    </div>
-   <div class="card" style="margin-bottom:16px">
-     <label class="plbl" for="hops-student-select">Opiskelija</label>
-     <select id="hops-student-select" class="pselect" style="max-width:360px;margin-bottom:16px"></select>
-     <div class="plbl">Tavoitteet (demo)</div>
-     <textarea id="hops-editor" class="notes-area" style="min-height:160px" placeholder="Kirjoita HOPS-luonnos..."></textarea>
-     <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-       <button type="button" class="btn-gen" id="btn-hops-gen" title="Generoi luonnos tasosta, sessioista ja aivograafista">
-         <span class="bico">✦</span><span class="blbl">Generoi HOPS datasta</span>
-       </button>
-       <button type="button" class="btn-save-cefr" id="btn-hops-save">Tallenna luonnos (demo)</button>
-     </div>
-   </div>
-   <div id="shell-hops-preview" class="card shell-placeholder">Ladataan…</div>
+   <div id="shell-hops-app" class="shell-placeholder">Ladataan…</div>
  </div>
 
  <div id="sec-attendance" class="section">
    <div class="page-header">
      <div class="page-title">Läsnäolo</div>
-     <div class="page-sub">Päiväkirja · 5 peräkkäistä poissaoloa → hälytys vastuuopettajalle ja työvoimaviranomaiselle</div>
+     <div class="page-sub">Viikkonäkymä · merkinnät · hälytykset</div>
    </div>
-   <div id="shell-attendance-rule" class="card" style="margin-bottom:16px"></div>
-   <div class="card">
-     <div class="card-title">Viimeisimmät merkinnät (demo)</div>
-     <div id="shell-attendance-log" class="alku-table-wrap"></div>
-   </div>
-   <button type="button" class="btn-save-cefr" id="btn-att-demo" style="margin-top:14px">Merkitse läsnä (demo)</button>
+   <div id="shell-attendance-app" class="shell-placeholder">Ladataan…</div>
  </div>
 
  <div id="sec-assessment" class="section">
    <div class="page-header">
      <div class="page-title">Kielitasoarviointi</div>
-     <div class="page-sub">A1 → B2 (OPH-pohjainen asteikko) — sisään, väli, päätös</div>
+     <div class="page-sub">Sisääntulo, väli ja päätös — OPH-asteikko</div>
    </div>
-   <div id="shell-assessment" class="card shell-placeholder">Ladataan…</div>
+   <div id="shell-assessment" class="shell-placeholder">Ladataan…</div>
  </div>
 
  <div id="sec-placement" class="section">
    <div class="page-header">
      <div class="page-title">Työssäoppiminen</div>
-     <div class="page-sub">2–3 viikkoa · vähintään 8 op · työpaikka ja ohjaaja · kolmikantasopimus (demo)</div>
+     <div class="page-sub">Ei aloitettu → palaute kirjattu</div>
    </div>
-   <div id="shell-placement" class="card shell-placeholder">Ladataan…</div>
+   <div id="shell-placement" class="shell-placeholder">Ladataan…</div>
  </div>
 
  <div id="sec-yki" class="section">
    <div class="page-header">
      <div class="page-title">YKI-valmius</div>
-     <div class="page-sub">Merkitse kun opiskelija on valmis keskitason YKI:ään (4 alikoetta)</div>
+     <div class="page-sub">Alatestit ja kokonaisvalmius</div>
    </div>
-   <div id="shell-yki" class="card shell-placeholder">Ladataan…</div>
+   <div id="shell-yki" class="shell-placeholder">Ladataan…</div>
  </div>
 
  <div id="sec-passit" class="section">
    <div class="page-header">
      <div class="page-title">Passit &amp; kortit</div>
-     <div class="page-sub">Hygieniapassi, ensiapu jne. — hinnoittelu päiväkohtaisesti (tender)</div>
+     <div class="page-sub">Seuranta ja kustannukset</div>
    </div>
-   <div id="shell-passit" class="card shell-placeholder">Ladataan…</div>
+   <div id="shell-passit" class="shell-placeholder">Ladataan…</div>
  </div>
 
  <div id="sec-feedback" class="section">
    <div class="page-header">
      <div class="page-title">Palaute — väli &amp; loppu</div>
-     <div class="page-sub">Tilaajan lomakeformaatti (demo)</div>
+     <div class="page-sub">Väli- ja loppupalaute tilaajalle</div>
    </div>
-   <div id="shell-feedback" class="shell-grid"></div>
+   <div id="shell-feedback" class="shell-placeholder">Ladataan…</div>
  </div>
 
  <div id="sec-reports" class="section">
    <div class="page-header">
      <div class="page-title">Loppuraportti &amp; Kuopio e-lomake</div>
-     <div class="page-sub">Lomakkeet 5182 / 5183 — vienti PDF + Koulutusportti-kentät</div>
+     <div class="page-sub">Toteuma ja loppu — lomakkeet 5182 / 5183</div>
    </div>
-   <div id="shell-reports" class="card shell-placeholder">Ladataan…</div>
+   <div id="shell-reports" class="shell-placeholder">Ladataan…</div>
  </div>
 
  <div id="sec-jatko" class="section">
    <div class="page-header">
      <div class="page-title">Jatkosuunnitelma</div>
-     <div class="page-sub">Konkreettinen, yhteisesti luotu suunnitelma</div>
+     <div class="page-sub">Jatkopolku ja hyväksyntä</div>
    </div>
-   <div class="card" style="margin-bottom:16px">
-     <div class="card-title">Rakenne (demo)</div>
-     <textarea id="jatko-editor" class="notes-area" style="min-height:120px" placeholder="Kirjaa jatkokoulutus-, työ- ja tukipolut..."></textarea>
-     <p class="inline-note">Opiskelijan kommentti näkyy Oppipolussa (kun synkronoitu).</p>
-   </div>
-   <div id="shell-jatko" class="card shell-placeholder">Ladataan…</div>
+   <div id="shell-jatko" class="shell-placeholder">Ladataan…</div>
  </div>
 
  <div id="sec-contacts" class="section">
    <div class="page-header">
-     <div class="page-title">Työnantajakontaktit (Kuopio)</div>
-     <div class="page-sub">Työssäoppiminen ja työelämäyhteistyö</div>
+     <div class="page-title">Työnantajakontaktit</div>
+     <div class="page-sub">Kumppanit ja yhteystiedot</div>
    </div>
-   <div id="shell-contacts" class="card shell-placeholder">Ladataan…</div>
+   <div id="shell-contacts" class="shell-placeholder">Ladataan…</div>
  </div>
+
+ <div id="modal-root" class="modal-overlay" aria-hidden="true"></div>
+ <div id="toast-root" class="toast-teal" role="status"></div>
 
   </main>
 </div>
@@ -718,6 +779,7 @@
  </div>
 </div>
 
+<script src="teacher-subpages.js"></script>
 <script>
 // AUTH
 const token = localStorage.getItem('sb_token') || localStorage.getItem('knuut_token');
@@ -751,7 +813,7 @@ let notesStore = {}, notesTmr = null;
 // HELPERS
 function esc(s) { if (s == null) return ''; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 function reltime(ds) {
- if (!ds) return 'never';
+ if (!ds) return '—';
  const d = new Date(ds), days = Math.floor((now - d) / 86400000);
  if (days < 1) return 'today'; if (days === 1) return 'yesterday';
  if (days < 7) return days + ' days ago'; if (days < 30) return Math.floor(days/7) + ' weeks ago';
@@ -782,29 +844,151 @@ function mkDots(learner, idx) {
  return dots;
 }
 
-// MOCK DATA
+// MOCK DATA — fixed cohort (10 learners, unique names) for evaluator-ready demo
+function mockDaysAgo(d) {
+ return new Date(now.getTime() - d * 86400000).toISOString();
+}
+function daysSinceSessionMock(l) {
+ const ref = l.last_session_at || l.last_session;
+ if (!ref) return 0;
+ return Math.floor((now - new Date(ref)) / 86400000);
+}
 function buildMockLearners() {
- const da = d => { const x=new Date(now); x.setDate(x.getDate()-d); return x.toISOString(); };
+ const da = mockDaysAgo;
  return [
- {id:'demo-1',name:'Amina Hassan', email:'amina@example.com', cefr_level:'A1',mother_tongue:'Arabic', sessions_this_week:0,sessions_total:6, last_session_at:da(11),last_session:da(11),last_session_title:'Everyday errands: shop and pharmacy', streak:0,xp:300, at_risk:true, teacher_reviewed_at:null, teacher_followup_flag:false},
- {id:'demo-2',name:'Mohamed Ali', email:'mohamed@example.com',cefr_level:'A2',mother_tongue:'Somali', sessions_this_week:3,sessions_total:14,last_session_at:da(1), last_session:da(1), last_session_title:'Workplace Finnish: asking for help', streak:4,xp:700, at_risk:false,teacher_reviewed_at:null, teacher_followup_flag:false},
- {id:'demo-3',name:'Olena Petrenko',email:'olena@example.com', cefr_level:'B1',mother_tongue:'Ukrainian',sessions_this_week:5,sessions_total:22,last_session_at:da(0), last_session:da(0), last_session_title:'Doctor appointment roleplay', streak:9,xp:1100,at_risk:false,teacher_reviewed_at:da(2), teacher_followup_flag:false},
- {id:'demo-4',name:'Ahmed Noor', email:'ahmed@example.com', cefr_level:'A2',mother_tongue:'Arabic', sessions_this_week:1,sessions_total:9, last_session_at:da(3), last_session:da(3), last_session_title:'Past tense in family life', streak:1,xp:450, at_risk:false,teacher_reviewed_at:null, teacher_followup_flag:true},
- {id:'demo-5',name:'Sara Ivanova', email:'sara@example.com', cefr_level:'A1',mother_tongue:'Russian', sessions_this_week:2,sessions_total:5, last_session_at:da(2), last_session:da(2), last_session_title:'School-home communication basics', streak:2,xp:250, at_risk:false,teacher_reviewed_at:null, teacher_followup_flag:false},
- {id:'demo-6',name:'Bilal Khan', email:'bilal@example.com', cefr_level:'A2',mother_tongue:'Urdu', sessions_this_week:0,sessions_total:11,last_session_at:da(8), last_session:da(8), last_session_title:'Housing and neighbour communication', streak:0,xp:550, at_risk:true, teacher_reviewed_at:null, teacher_followup_flag:false},
- {id:'demo-7',name:'Fatima Malik', email:'fatima@example.com', cefr_level:'B1',mother_tongue:'Punjabi', sessions_this_week:4,sessions_total:19,last_session_at:da(0), last_session:da(0), last_session_title:'Public transport and directions', streak:7,xp:950, at_risk:false,teacher_reviewed_at:null, teacher_followup_flag:false},
- {id:'demo-8',name:'Yusuf Osman', email:'yusuf@example.com', cefr_level:'A1',mother_tongue:'Somali', sessions_this_week:0,sessions_total:3, last_session_at:da(14),last_session:da(14),last_session_title:'Greetings and introductions', streak:0,xp:150, at_risk:true, teacher_reviewed_at:null, teacher_followup_flag:false},
+ { id: 'demo-1', name: 'Fatuma Warsame', email: 'fatuma.w@example.com', cefr_level: 'A1', mother_tongue: 'Somali', sessions_this_week: 0, sessions_total: 14, last_session_at: da(8), last_session: da(8), last_session_title: 'Arjen asiointi — kauppa', streak: 0, xp: 320, at_risk: true, teacher_reviewed_at: null, teacher_followup_flag: false },
+ { id: 'demo-2', name: 'Leila Ahmadi', email: 'leila.a@example.com', cefr_level: 'A1', mother_tongue: 'Dari', sessions_this_week: 9, sessions_total: 28, last_session_at: da(6), last_session: da(6), last_session_title: 'Tervehdykset ja perhe', streak: 0, xp: 540, at_risk: false, teacher_reviewed_at: null, teacher_followup_flag: false },
+ { id: 'demo-3', name: 'Amira Hassan', email: 'amira.h@example.com', cefr_level: 'A1', mother_tongue: 'Arabic', sessions_this_week: 6, sessions_total: 22, last_session_at: da(3), last_session: da(3), last_session_title: 'Palvelut ja numerot', streak: 0, xp: 410, at_risk: false, teacher_reviewed_at: null, teacher_followup_flag: false },
+ { id: 'demo-4', name: 'Hodan Farah', email: 'hodan.f@example.com', cefr_level: 'A2', mother_tongue: 'Somali', sessions_this_week: 8, sessions_total: 36, last_session_at: da(5), last_session: da(5), last_session_title: 'Työvuoro ja tauko', streak: 4, xp: 780, at_risk: false, teacher_reviewed_at: da(2), teacher_followup_flag: false },
+ { id: 'demo-5', name: 'Dmytro Kovalenko', email: 'dmytro.k@example.com', cefr_level: 'A2', mother_tongue: 'Ukrainian', sessions_this_week: 4, sessions_total: 24, last_session_at: da(2), last_session: da(2), last_session_title: 'Ohjeet työpaikalla', streak: 1, xp: 620, at_risk: false, teacher_reviewed_at: null, teacher_followup_flag: false },
+ { id: 'demo-6', name: 'Li Wei', email: 'li.wei@example.com', cefr_level: 'A2', mother_tongue: 'Mandarin', sessions_this_week: 0, sessions_total: 40, last_session_at: da(12), last_session: da(12), last_session_title: 'Liikenne ja reitti', streak: 0, xp: 880, at_risk: true, teacher_reviewed_at: null, teacher_followup_flag: false },
+ { id: 'demo-7', name: 'Pavel Sorokin', email: 'pavel.s@example.com', cefr_level: 'B1', mother_tongue: 'Russian', sessions_this_week: 7, sessions_total: 48, last_session_at: da(0), last_session: da(0), last_session_title: 'YKI-keskusteluharjoitus', streak: 5, xp: 1180, at_risk: false, teacher_reviewed_at: da(1), teacher_followup_flag: false },
+ { id: 'demo-8', name: 'Mariam Diallo', email: 'mariam.d@example.com', cefr_level: 'A1', mother_tongue: 'French (Guinea)', sessions_this_week: 6, sessions_total: 18, last_session_at: da(7), last_session: da(7), last_session_title: 'Perhesanasto', streak: 0, xp: 360, at_risk: false, teacher_reviewed_at: null, teacher_followup_flag: false },
+ { id: 'demo-9', name: 'Yusuf Ibrahim', email: 'yusuf.i@example.com', cefr_level: 'A1', mother_tongue: 'Somali', sessions_this_week: 0, sessions_total: 3, last_session_at: da(0.5), last_session: da(0.5), last_session_title: 'Ensimmäiset tervehdykset', streak: 0, xp: 120, at_risk: true, teacher_reviewed_at: null, teacher_followup_flag: true },
+ { id: 'demo-10', name: 'Oksana Petrenko', email: 'oksana.p@example.com', cefr_level: 'A2', mother_tongue: 'Ukrainian', sessions_this_week: 7, sessions_total: 34, last_session_at: da(2), last_session: da(2), last_session_title: 'Terveysasema — ajanvaraus', streak: 2, xp: 720, at_risk: false, teacher_reviewed_at: null, teacher_followup_flag: false },
  ];
 }
 function buildMockSummary(ls) {
- return { total_learners:ls.length, active_this_week:ls.filter(l=>(l.sessions_this_week||0)>0).length, at_risk_count:ls.filter(l=>l.at_risk).length, total_sessions_this_week:ls.reduce((s,l)=>s+(l.sessions_this_week||0),0) };
+ const active = ls.filter((l) => (l.sessions_this_week || 0) > 0).length;
+ const away7 = ls.filter((l) => daysSinceSessionMock(l) >= 7).length;
+ return {
+  total_learners: ls.length,
+  active_this_week: active,
+  at_risk_count: away7,
+  total_sessions_this_week: 47,
+ };
+}
+window.__alkuTeacher = {
+ esc,
+ roster: function () {
+  return learnersData && learnersData.length ? learnersData : buildMockLearners();
+ },
+ teacherName: teacherName,
+ showToast: function (m) {
+  const el = document.getElementById('toast-root');
+  if (!el) return;
+  el.textContent = m;
+  el.classList.add('visible');
+  setTimeout(function () {
+   el.classList.remove('visible');
+  }, 2200);
+ },
+};
+function wfPick(names) {
+ const byName = new Map(learnersData.map((l) => [l.name, l]));
+ return names.map((n) => byName.get(n)).filter(Boolean);
+}
+function nextMondayIsoFromNow() {
+ const t = new Date(now);
+ const d = t.getDay();
+ let add = (8 - d) % 7;
+ if (add === 0) add = 7;
+ t.setDate(t.getDate() + add);
+ return t.toISOString().slice(0, 10);
+}
+function buildMockWorkflow() {
+ const nextMon = nextMondayIsoFromNow();
+ const activeToday = wfPick(['Pavel Sorokin', 'Dmytro Kovalenko', 'Oksana Petrenko']);
+ const notToday = wfPick(['Fatuma Warsame', 'Leila Ahmadi', 'Amira Hassan', 'Hodan Farah', 'Li Wei', 'Mariam Diallo', 'Yusuf Ibrahim']);
+ const noLogin24 = wfPick(['Fatuma Warsame', 'Leila Ahmadi', 'Li Wei', 'Mariam Diallo']);
+ const inactive3 = wfPick(['Fatuma Warsame', 'Li Wei', 'Mariam Diallo']);
+ const streakBroken = wfPick(['Leila Ahmadi', 'Hodan Farah', 'Amira Hassan', 'Mariam Diallo']);
+ const ykiReady = wfPick(['Pavel Sorokin', 'Oksana Petrenko']);
+ const plMon = wfPick(['Hodan Farah', 'Dmytro Kovalenko']).map((l) => ({ ...l, start_date: nextMon }));
+ const hops = wfPick(['Fatuma Warsame', 'Li Wei', 'Yusuf Ibrahim']);
+ const alerts = [
+  { type: 'inactive_3d', severity: 'warning', learner_id: 'demo-1', learner_name: 'Fatuma Warsame', message: 'Ei harjoitusta 8 päivään' },
+  { type: 'inactive_3d', severity: 'warning', learner_id: 'demo-6', learner_name: 'Li Wei', message: 'Ei harjoitusta 12 päivään' },
+  { type: 'streak_broken', severity: 'info', learner_id: 'demo-2', learner_name: 'Leila Ahmadi', message: 'Putki katkennut — viimeksi aktiivinen 6 pv sitten' },
+  { type: 'inactive_3d', severity: 'warning', learner_id: 'demo-3', learner_name: 'Amira Hassan', message: 'Ei harjoitusta 3 päivään' },
+  { type: 'yki_suggest', severity: 'success', learner_id: 'demo-7', learner_name: 'Pavel Sorokin', message: 'Taso B1 — harkitse YKI-keskustelua' },
+  { type: 'streak_broken', severity: 'info', learner_id: 'demo-4', learner_name: 'Hodan Farah', message: 'Putki katkennut — viimeksi aktiivinen 5 pv sitten' },
+  { type: 'progress_slow', severity: 'warning', learner_id: 'demo-5', learner_name: 'Dmytro Kovalenko', message: 'Edistyminen hidasta — tuki suositeltava' },
+  { type: 'onboarding', severity: 'info', learner_id: 'demo-9', learner_name: 'Yusuf Ibrahim', message: 'Ensimmäinen viikko — seuraa sopeutumista' },
+ ];
+ const placements = [
+  { learner_id: 'demo-7', status: 'active', employer_name: 'S-market Kuopio', employer_contact: 'Vuoropäällikkö', start_date: '2026-03-10', end_date: '2026-03-28', feedback_at: null },
+  { learner_id: 'demo-4', status: 'briefing_done', employer_name: 'Niiralan Kulma ry', employer_contact: 'Koordinaattori', start_date: null, end_date: null, feedback_at: null },
+  { learner_id: 'demo-5', status: 'employer_found', employer_name: 'ISS Palvelut', employer_contact: 'HR', start_date: null, end_date: null, feedback_at: null },
+  { learner_id: 'demo-10', status: 'feedback_given', employer_name: 'Kuopion kaupunki', employer_contact: 'Ohjaaja', start_date: '2026-02-17', end_date: '2026-03-07', feedback_at: '2026-03-08' },
+ ];
+ const enriched = learnersData.map((l) => ({
+  id: l.id,
+  name: l.name,
+  email: l.email,
+  cefr_level: l.cefr_level,
+  mother_tongue: l.mother_tongue,
+  teacher_reviewed_at: l.teacher_reviewed_at,
+  sessions_total: l.sessions_total,
+  sessions_today: activeToday.some((x) => x.id === l.id) ? 1 : 0,
+  last_session_at: l.last_session_at,
+  streak: l.streak,
+  days_since_session: daysSinceSessionMock(l),
+ }));
+ return {
+  generated_at: new Date().toISOString(),
+  timezone: 'Europe/Helsinki',
+  daily: {
+   active_today: activeToday,
+   not_practiced_today: notToday,
+   no_recent_login_24h: noLogin24,
+   inactive_3_days: inactive3,
+   streak_broken: streakBroken,
+   yki_ready_candidates: ykiReady,
+   placement_starts_next_monday: plMon,
+   hops_review_suggested: hops,
+  },
+  alerts,
+  cohort: {
+   total: 10,
+   cefr_distribution: { A1: 5, A2: 4, B1: 1 },
+  },
+  placements,
+  reports_preview: {
+   month: '2026-03',
+   learner_count: 10,
+   total_sessions_month_estimate: 127,
+   otp_days_mock: 43,
+   toteumaraportti_lines: [
+    'Kuukausi: 2026-03',
+    'Opiskelijoita: 10',
+    'Harjoituskertoja (yhteensä): 127',
+    'OTP-päivät (laskenta): 43',
+    'Keskeyttäneitä: 0',
+    'YKI-testiin ohjattu: 1',
+   ],
+   loppuraportti_lines: ['Loppuraportti — luonnos (Kuopio 5182/5183)', 'Ryhmä: kotoutumiskoulutus — Kuopio', 'Täydennä opiskelijakohtaiset kentät ennen lähetystä.'],
+  },
+  learners: enriched,
+ };
 }
 
 // INSIGHTS ENGINE
 function deriveInsights(learner, idx) {
  const level = (learner.cefr_level||'A1').toUpperCase();
  const sw = learner.sessions_this_week||0, st = learner.sessions_total||0, sk = learner.streak||0;
- const stale = isStale(learner.last_session), reviewed = !!learner.teacher_reviewed_at;
+ const lastRef = learner.last_session_at || learner.last_session;
+ const stale = isStale(lastRef), reviewed = !!learner.teacher_reviewed_at;
  const confScore = clamp((sw*18)+(sk*8)+(reviewed?10:0)-(stale?18:0), 100);
  const compScore = clamp((st*8)+((level.charCodeAt(0)-64)*12)+((level[1]||'1').charCodeAt(0)-48)*6, 100);
  const confSig = learner.teacher_confidence_note||(confScore+15<compScore?'Knows more than they currently dare to show':compScore+15<confScore?'Participates willingly but still needs structure':'Confidence and performance look balanced');
@@ -821,11 +1005,11 @@ function deriveInsights(learner, idx) {
  else if (sw===0) barrier='no recent momentum to build on';
  let nat = learner.teacher_next_action||'Give a small speaking task with clear sentence support';
  let nar = `Focus: ${fa}. Support: ${st2}.`, nab = 'Keeps learner engaged and moving forward.';
- if (learner.at_risk) { nat='Send warm re-engagement + offer easy restart task'; nar=`Away ${reltime(learner.last_session)}. Low-pressure restart beats hard push.`; nab='Reduces dropout risk.'; }
+ if (learner.at_risk) { nat='Send warm re-engagement + offer easy restart task'; nar=`Away ${reltime(lastRef)}. Low-pressure restart beats hard push.`; nab='Reduces dropout risk.'; }
  else if ((level==='A1'||level==='A2') && st>5) { nat='Test readiness for more independent production'; nar=`${st} total sessions — may be outgrowing tightly scaffolded routines.`; nab='Spots who can move toward flexible Finnish use.'; }
  else if (!reviewed && st>0) { nat='Quick teacher review to confirm the current path'; nar='Activity present, but no teacher review signal yet.'; nab='Keeps human oversight visible.'; }
  const te = {
- observed:`${learner.name||'Learner'} — ${sw} sessions this week, ${st} total, last practiced ${reltime(learner.last_session)}.`,
+ observed:`${learner.name||'Learner'} — ${sw} sessions this week, ${st} total, last practiced ${reltime(lastRef)}.`,
  interpretation:`Main need: ${fa}. Barrier: learner ${barrier}.`,
  nextStep:`${nat}. Use ${st2} in a ${lc} context.`,
  };
@@ -845,6 +1029,7 @@ function smartAct(learner, ins) {
 
 // MOMENTUM
 function computeMom() {
+ if (usingDemoData) return 67;
  if (!learnersData.length) return 0;
  const n = learnersData.length;
  const ac = summaryData.active_this_week||0, ar = summaryData.at_risk_count||0;
@@ -859,6 +1044,7 @@ function renderMom(score) {
  fill.style.stroke = score>=65?'#2D6A4F':score>=40?'#D97706':'#991B1B';
  const tv = Math.round(score*0.11);
  const tr = document.getElementById('mtrend');
+ if (usingDemoData && score === 67) { tr.textContent='→ steady this week'; tr.className='momentum-trend mtr-flat'; return; }
  if (score>=60) { tr.textContent=`↑ +${tv} from last week`; tr.className='momentum-trend mtr-up'; }
  else if (score>=40) { tr.textContent='→ steady this week'; tr.className='momentum-trend mtr-flat'; }
  else { tr.textContent=`↓ ${tv} below target`; tr.className='momentum-trend mtr-down'; }
@@ -866,6 +1052,10 @@ function renderMom(score) {
 
 // BRIEFING
 function renderBriefing() {
+ if (usingDemoData) {
+  document.getElementById('briefing-text').textContent = 'Vakaa viikko — 7/10 harjoitteli tällä viikolla; kolme tarvitsee tarkemman seurannan (7+ pv tauko).';
+  return;
+ }
  const ar = summaryData.at_risk_count||0, ac = summaryData.active_this_week||0, tot = summaryData.total_learners||learnersData.length;
  const hs = learnersData.filter(l=>(l.streak||0)>=5);
  let t = '';
@@ -885,12 +1075,13 @@ function renderCard(learner, idx) {
  const dotsH = dots.map((on,i) => `<div class="adot${on?(i>=21?' on recent':' on'):''}"></div>`).join('');
  const streakS = (learner.streak||0)>0 ? ` · 🔥 ${learner.streak}` : '';
  const flagH = learner.teacher_followup_flag ? '<span class="fflag" title="Follow-up flagged"></span>' : '';
- return `<div class="lcard" data-id="${learner.id}">
+ const thriveH = usingDemoData && learner.id === 'demo-7' ? '<div class="lmeta" style="color:#1B4332;font-weight:700;margin-top:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2D6A4F;margin-right:6px;vertical-align:middle"></span>Taso B1, YKI-valmis, säännöllinen harjoittelu</div>' : '';
+ return `<div class="lcard${usingDemoData && learner.id === 'demo-7' ? ' lcard-thrive' : ''}" data-id="${learner.id}">
  <div class="lcard-top">
  <div class="lavatar" style="background:${avcol(learner.id)}">${inits(learner.name)}</div>
  <div class="linfo">
  <div class="lname-row"><span class="lname">${esc(learner.name||'Learner')}</span><span class="${cbadge(learner.cefr_level)}">${esc((learner.cefr_level||'A1').toUpperCase())}</span>${flagH}</div>
- <div class="lmeta">${esc(learner.mother_tongue||'—')} · ${reltime(learner.last_session_at)}${streakS}</div>
+ <div class="lmeta">${esc(learner.mother_tongue||'—')} · ${reltime(learner.last_session_at)}${streakS}</div>${thriveH}
  </div>
  </div>
  <div class="adots">${dotsH}</div>
@@ -919,7 +1110,7 @@ function renderTriage() {
  };
  fill(document.getElementById('col-risk'), risk, 'No learners need immediate attention 🎉');
  fill(document.getElementById('col-active'), active, 'No learners in this category');
- fill(document.getElementById('col-thrive'), thrive, 'Keep pushing — thriving learners appear here');
+ fill(document.getElementById('col-thrive'), thrive, usingDemoData ? 'Ei vielä vahvoja signaaleja' : 'Keep pushing — thriving learners appear here');
  document.getElementById('ct-risk').textContent = risk.length;
  document.getElementById('ct-active').textContent = active.length;
  document.getElementById('ct-thrive').textContent = thrive.length;
@@ -932,6 +1123,16 @@ function renderTriage() {
 function renderInsights() {
  const el = document.getElementById('insights-grid');
  if (!learnersData.length) { el.innerHTML=''; return; }
+ if (usingDemoData) {
+  const cards = [
+   { lbl: 'Yhteinen opetuspainotus', title: 'arjen suomi ja työsanasto (M2→M3 siirtymä)', copy: 'Rakenna viikon tehtävät tästä siirtymästä: lyhyet roolileikit, tarkat fraasit, työpaikan ohjeet.' },
+   { lbl: 'Luottamus vs. suoritus', title: '3 opiskelijaa tarvitsee turvallisemman tuotannon', copy: 'Käytä kehyksiä ja parikeskustelua — ei kiirettä vapaaseen tuotokseen ennen kuin rutiini kantaa.' },
+   { lbl: 'Elämäntilanne', title: 'työpaikan vuorovaikutus', copy: 'Pidä esimerkit työtilanteissa — tämä ryhmä sitoutuu, kun harjoitus näyttää oikealta työpäivältä.' },
+   { lbl: 'Ryhmän rytmi', title: 'Keskim. putki vakaa · kolme seurannassa', copy: 'Kaksi pitkää taukoa (8–12 pv) ja yksi uusi aloittaja — lämmin check-in + helppo uudelleenkäynnistys.' },
+  ];
+  el.innerHTML = cards.map((c) => `<div class="insight-card"><div class="ilbl">${esc(c.lbl)}</div><div class="ititle">${esc(c.title)}</div><div class="icopy">${esc(c.copy)}</div></div>`).join('');
+  return;
+ }
  const drv = learnersData.map((l,i)=>({l,ins:deriveInsights(l,i)}));
  const ar = drv.filter(x=>x.l.at_risk).length;
  const lc = drv.filter(x=>x.ins.confScore+15<x.ins.compScore).length;
@@ -951,6 +1152,15 @@ function renderInsights() {
 function renderGroupings() {
  const el = document.getElementById('grouping-grid');
  if (!learnersData.length) { el.innerHTML=''; return; }
+ if (usingDemoData) {
+  const cards = [
+   { title: 'Puheen rohkaisu (kehykset)', members: 'Amira Hassan, Mariam Diallo, Yusuf Ibrahim', reason: 'Lyhyet mallilauseet ja toisto ennen vapaata tuotosta.' },
+   { title: 'Työsanasto — M2→M3', members: 'Hodan Farah, Dmytro Kovalenko, Oksana Petrenko', reason: 'Yhteinen fokus: ohjeet, vuoro, palvelutilanteet.' },
+   { title: 'YKI-suunta (keskitaso)', members: 'Pavel Sorokin, Oksana Petrenko', reason: 'Keskustelun rakenne + palautteen kierto ennen ilmoittautumista.' },
+  ];
+  el.innerHTML = cards.map((b) => `<div class="grouping-card"><div class="gtitle">${esc(b.title)}</div><div class="gmembers">${esc(b.members)}</div><div class="greason">${esc(b.reason)}</div></div>`).join('');
+  return;
+ }
  const drv = learnersData.map((l,i)=>({l,ins:deriveInsights(l,i)}));
  const buckets = [
  {title:'Speaking confidence support', filt:x=>x.ins.confScore+15<x.ins.compScore, reason:'These learners understand more than they produce. Use sentence frames, pair speaking, and low-stakes tasks.'},
@@ -1173,6 +1383,12 @@ function renderWorkflow(w) {
 async function loadTeacherWorkflow() {
  var loadEl = document.getElementById('wf-loading');
  var contentEl = document.getElementById('wf-content');
+ if (usingDemoData) {
+  loadEl.style.display = 'none';
+  contentEl.style.display = 'block';
+  renderWorkflow(buildMockWorkflow());
+  return;
+ }
  try {
   var res = await fetch('/api/teacher/workflow', { headers: authHeaders() });
   if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -1223,31 +1439,6 @@ document.getElementById('wf-copy-loppu').addEventListener('click', function () {
  if (wfReportLoppuText) navigator.clipboard.writeText(wfReportLoppuText);
 });
 
-document.getElementById('btn-hops-gen').addEventListener('click', async function () {
- var sel = document.getElementById('hops-student-select');
- var id = sel && sel.value;
- if (!id) { alert('Valitse opiskelija'); return; }
- var btn = this;
- btn.disabled = true;
- btn.classList.add('loading');
- try {
-  var r = await fetch('/api/teacher/workflow/hops-draft', {
-   method: 'POST',
-   headers: Object.assign({}, authHeaders(), { 'Content-Type': 'application/json' }),
-   body: JSON.stringify({ learner_id: id }),
-  });
-  var j = await r.json();
-  if (!r.ok) throw new Error(j.error || 'Virhe');
-  var he = document.getElementById('hops-editor');
-  if (he && j.draft) he.value = j.draft;
- } catch (e) {
-  alert(e.message || 'HOPS-luonnos epäonnistui');
- } finally {
-  btn.disabled = false;
-  btn.classList.remove('loading');
- }
-});
-
 // RENDER ALL
 function renderAll() {
  const tot = summaryData.total_learners||learnersData.length;
@@ -1284,9 +1475,10 @@ async function loadLearners() {
  usingDemoData = true;
  }
  renderAll();
+ await loadTeacherWorkflow();
+ await loadTeacherShell();
 }
 loadLearners();
-loadTeacherWorkflow();
 
 const SECTION_LABELS = {
  dashboard: 'Etusivu',
@@ -1317,97 +1509,47 @@ document.querySelectorAll('.nav-item[data-sec]').forEach(function (el) {
 
 async function loadTeacherShell() {
  try {
- const res = await fetch('/api/lms/overview', { headers: authHeaders() });
- if (!res.ok) throw new Error('HTTP ' + res.status);
- const d = await res.json();
- const students = d.students || [];
- const rule = d.attendance_rule || {};
- const yki = d.yki || {};
- const otp = d.otp || {};
- const contacts = d.employer_contacts || [];
- const mods = d.modules || [];
- const hops = d.hops || {};
- const placement = d.placement_sample || d.placement || {};
- const la = d.language_assessment || {};
- const passi = d.passi_tracking || [];
- const fb = d.feedback_tilaaja || {};
- const fr = d.final_report_kuopio || {};
- const jatko = d.jatkosuunnitelma || {};
- const tr = d.teacher_roles_help || {};
-
- const modHtml = mods.map(function (m) {
-  var n = typeof m.module_index === 'number' ? ('Moduuli ' + m.module_index + ' · ') : '';
-  var fi = m.theme_fi ? esc(m.theme_fi) : '';
-  var en = m.theme ? esc(m.theme) : '';
-  var lines = fi ? (fi + (en ? '<br><span style="font-size:14px;color:var(--text-body-soft);font-weight:500">' + en + '</span>' : '')) : en;
-  return '<div class="insight-card"><div class="ilbl">' + esc(m.code || '') + '</div><div class="ititle">' + n + esc(m.level || '') + '</div><p class="icopy">' + lines + '</p><p class="icopy" style="margin-top:8px">OPH 2022 · video · teksti · tehtävät · sanasto · puhe · tasoitus</p></div>';
- }).join('');
- document.getElementById('shell-mod-grid').innerHTML = modHtml ? '<div class="insights-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">' + modHtml + '</div>' : '<p class="shell-placeholder">Ei moduuleja</p>';
-
- const sel = document.getElementById('hops-student-select');
- if (sel) {
-  sel.innerHTML = students.map(function (s) { return '<option value="' + String(s.id).replace(/"/g, '') + '">' + esc(s.name) + '</option>'; }).join('');
-  const goals = (hops.goals_120d || []).join('\n');
-  const he = document.getElementById('hops-editor');
-  if (he) he.value = goals;
- }
- document.getElementById('shell-hops-preview').innerHTML = '<p class="icopy"><strong>Opettajan muistiinnot:</strong> ' + esc(hops.teacher_notes || '—') + '</p><p class="icopy" style="margin-top:10px"><strong>Roolit:</strong> ' + esc(tr.vastuuopettaja || '') + ' / ' + esc(tr.ohjaaja || '') + '</p>';
-
- document.getElementById('shell-attendance-rule').innerHTML = '<p class="icopy"><strong>' + (rule.consecutive_absence_limit || 5) + ' peräkkäistä poissaolopäivää</strong> → hälytys: ' + esc((rule.notify || []).join(', ')) + '.</p>';
- const log = d.attendance_log || [];
- document.getElementById('shell-attendance-log').innerHTML = '<table class="alku-table"><thead><tr><th>Päivä</th><th>Opiskelija</th><th>Läsnä</th><th>Huom</th></tr></thead><tbody>' + log.map(function (r) { return '<tr><td>' + esc(r.date) + '</td><td>' + esc(r.student) + '</td><td>' + (r.present ? 'Kyllä' : 'Ei') + '</td><td>' + esc(r.note || '—') + '</td></tr>'; }).join('') + '</tbody></table>';
-
- document.getElementById('shell-assessment').innerHTML = '<p class="icopy">' + esc(la.framework || '') + '</p><p class="icopy" style="margin-top:10px"><strong>Asteikko:</strong> ' + esc((la.scale || []).join(' → ')) + '</p><p class="icopy" style="margin-top:10px">' + esc(la.notes || '') + '</p><p class="icopy" style="margin-top:12px"><strong>Esimerkki:</strong> ' + esc((la.sample_entry && la.sample_entry.student) || '') + ' — sisään ' + esc((la.sample_entry && la.sample_entry.entry) || '') + ' — väli ' + esc((la.sample_entry && la.sample_entry.midpoint) || '') + ' — tavoite ' + esc((la.sample_entry && la.sample_entry.exit_target) || '') + '</p>';
-
- const plRows = students.map(function (s) {
-  const p = s.placement;
-  if (!p) return '<tr><td>' + esc(s.name) + '</td><td>' + esc(s.cefr_level) + '</td><td>—</td><td>—</td><td>—</td></tr>';
-  return '<tr><td>' + esc(s.name) + '</td><td>' + esc(s.cefr_level) + '</td><td>' + esc(p.employer || '-') + '</td><td>' + esc(String(p.weeks || '')) + ' vk</td><td>' + esc(String(p.credits || '')) + ' op</td></tr>';
- }).join('');
- document.getElementById('shell-placement').innerHTML = '<div class="alku-table-wrap"><table class="alku-table"><thead><tr><th>Opiskelija</th><th>Taso</th><th>Työpaikka</th><th>Kesto</th><th>Op</th></tr></thead><tbody>' + plRows + '</tbody></table></div><p class="icopy" style="margin-top:14px"><strong>Mallisopimus (3 osapuolta):</strong> ' + esc(JSON.stringify((placement.agreement || {}))) + '</p><p class="icopy">' + esc(placement.feedback_final || '') + '</p>';
-
- document.getElementById('shell-yki').innerHTML = '<p class="ititle">' + esc(yki.recommendation || '') + '</p><p class="icopy">Alatestit: ' + esc(JSON.stringify(yki.subtests || {})) + '</p><p class="icopy" style="margin-top:10px">Merkitse opiskelijakohtaisesti valmis keskitason YKI:ään (tietokanta tulossa).</p>';
-
- const nameById = {};
- students.forEach(function (s) { nameById[s.id] = s.name; });
- document.getElementById('shell-passit').innerHTML = passi.map(function (p) {
-  const nm = nameById[p.student_id] || p.student_id;
-  return '<div style="margin-bottom:14px;border-bottom:1px solid var(--border-subtle);padding-bottom:12px"><strong>' + esc(nm) + '</strong><ul class="alku-list">' + (p.items || []).map(function (i) { return '<li>' + esc(i.name) + ': ' + esc(i.status) + '</li>'; }).join('') + '</ul></div>';
- }).join('') || '<p class="shell-placeholder">Ei rivejä</p>';
-
- document.getElementById('shell-feedback').innerHTML = '<div class="insight-card"><div class="ilbl">' + esc((fb.interim && fb.interim.title) || 'Välipalaute') + '</div><p class="icopy">' + esc((fb.interim && fb.interim.fields && fb.interim.fields.join(', ')) || '') + '</p><p class="icopy">' + esc((fb.interim && fb.interim.format) || '') + '</p></div><div class="insight-card"><div class="ilbl">' + esc((fb.final && fb.final.title) || 'Loppupalaute') + '</div><p class="icopy">' + esc((fb.final && fb.final.fields && fb.final.fields.join(', ')) || '') + '</p><p class="icopy">' + esc((fb.final && fb.final.format) || '') + '</p></div>';
-
- document.getElementById('shell-reports').innerHTML = '<p class="icopy">' + esc(fr.export || '') + '</p><ul class="alku-list">' + (fr.forms || []).map(function (f) { return '<li><strong>' + esc(f.id) + '</strong> — ' + esc(f.name) + ' (' + esc(f.status || '') + ')</li>'; }).join('') + '</ul><p class="icopy" style="margin-top:12px">OTP kk ' + esc((otp && otp.month) || '') + ': ' + esc(String((otp && otp.total_otp) != null ? otp.total_otp : '—')) + ' opiskelijatyöpäivää (laskutus).</p>';
-
- document.getElementById('jatko-editor').value = (jatko.options || []).join('\n');
- document.getElementById('shell-jatko').innerHTML = '<p class="icopy"><strong>Opiskelijan kommentti:</strong> ' + esc(jatko.student_comment || '—') + '</p><p class="icopy">Tila: ' + esc(jatko.status || '') + '</p>';
-
- document.getElementById('shell-contacts').innerHTML = '<div class="alku-table-wrap"><table class="alku-table"><thead><tr><th>Nimi</th><th>Ala</th><th>Yhteys</th></tr></thead><tbody>' + contacts.map(function (c) { return '<tr><td>' + esc(c.name) + '</td><td>' + esc(c.sector) + '</td><td>' + esc(c.contact) + '</td></tr>'; }).join('') + '</tbody></table></div><p class="icopy" style="margin-top:12px">' + esc((d.tender && d.tender.client) || '') + ' · ' + esc((d.tender && d.tender.case_ref) || '') + '</p>';
-
+  const res = await fetch('/api/lms/overview', { headers: authHeaders() });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const d = await res.json();
+  const mods = d.modules || [];
+  const modHtml = mods
+   .map(function (m) {
+    var n = typeof m.module_index === 'number' ? 'Moduuli ' + m.module_index + ' · ' : '';
+    var fi = m.theme_fi ? esc(m.theme_fi) : '';
+    var en = m.theme ? esc(m.theme) : '';
+    var lines = fi ? fi + (en ? '<br><span style="font-size:14px;color:var(--text-body-soft);font-weight:500">' + en + '</span>' : '') : en;
+    var cnt = typeof m.cohort_student_count === 'number' ? m.cohort_student_count : null;
+    var cntLine = cnt === null ? '' : '<p class="mod-cohort-count">' + cnt + ' ' + (cnt === 1 ? 'opiskelija' : 'opiskelijaa') + '</p>';
+    var bf = m.cohort_badge_fi ? esc(m.cohort_badge_fi) : '';
+    var bv = m.cohort_badge_variant === 'amber' ? 'amber' : m.cohort_badge_variant === 'gray' ? 'gray' : 'green';
+    var badge = bf ? '<span class="mod-cohort-badge ' + bv + '">' + bf + '</span>' : '';
+    return (
+     '<div class="insight-card"><div class="ilbl">' +
+     esc(m.code || '') +
+     badge +
+     '</div><div class="ititle">' +
+     n +
+     esc(m.level || '') +
+     '</div><p class="icopy">' +
+     lines +
+     '</p>' +
+     cntLine +
+     '<p class="icopy" style="margin-top:8px">OPH 2022 · video · teksti · tehtävät · sanasto · puhe · tasoitus</p></div>'
+    );
+   })
+   .join('');
+  document.getElementById('shell-mod-grid').innerHTML = modHtml
+   ? '<div class="insights-grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">' + modHtml + '</div>'
+   : '<p class="shell-placeholder">Ei moduuleja</p>';
+  if (window.AlkuTeacherSubpages) window.AlkuTeacherSubpages.renderAll();
  } catch (e) {
   const msg = esc(e.message || String(e));
-  ['shell-mod-grid','shell-hops-preview','shell-assessment','shell-placement','shell-yki','shell-passit','shell-reports','shell-jatko','shell-contacts'].forEach(function (id) {
-   const n = document.getElementById(id);
-   if (n) n.innerHTML = '<p class="shell-placeholder">Virhe: ' + msg + '</p>';
-  });
+  const el = document.getElementById('shell-mod-grid');
+  if (el) el.innerHTML = '<p class="shell-placeholder">Moduulit: ' + msg + '</p>';
+  if (window.AlkuTeacherSubpages) window.AlkuTeacherSubpages.renderAll();
  }
 }
-loadTeacherShell();
-
-document.getElementById('btn-hops-save')?.addEventListener('click', async function () {
- try {
-  const r = await fetch('/api/lms/hops', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
-  const j = await r.json();
-  alert(j.message || 'OK');
- } catch (e) { alert('Virhe'); }
-});
-document.getElementById('btn-att-demo')?.addEventListener('click', async function () {
- try {
-  const r = await fetch('/api/lms/attendance', { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
-  const j = await r.json();
-  alert(j.message || 'OK');
- } catch (e) { alert('Virhe'); }
-});
 </script>
 <script src="vendor/shepherd.min.js"></script>
 <script src="tour.js"></script>
