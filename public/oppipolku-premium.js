@@ -31,7 +31,14 @@
     teacher: '<svg class="pi" viewBox="0 0 24 24"><path d="M3 6l9-4 9 4-9 4-9-4z"/><path d="M6 8v5c0 2 3 4 6 4s6-2 6-4V8"/><circle cx="19" cy="13" r="1.5"/></svg>',
     file: '<svg class="pi" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
     send: '<svg class="pi" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
-    quote: '<svg class="pi" viewBox="0 0 24 24"><path d="M9 8H5v6h4V8z"/><path d="M19 8h-4v6h4V8z"/></svg>'
+    quote: '<svg class="pi" viewBox="0 0 24 24"><path d="M9 8H5v6h4V8z"/><path d="M19 8h-4v6h4V8z"/></svg>',
+    paperclip: '<svg class="pi" viewBox="0 0 24 24"><path d="M21 12.5l-8.5 8.5a5 5 0 0 1-7-7L15 4.5a3.5 3.5 0 0 1 5 5L9.5 20a2 2 0 0 1-3-3L16 7.5"/></svg>',
+    glossary: '<svg class="pi" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+    compass: '<svg class="pi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="14 10 10 14 11 11 14 10"/></svg>',
+    idcard: '<svg class="pi" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M13 10h6"/><path d="M13 14h6"/></svg>',
+    chat: '<svg class="pi" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H7l-4 3v-5.5A8.5 8.5 0 1 1 21 11.5z"/></svg>',
+    lock: '<svg class="pi" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 1 1 8 0v4"/></svg>',
+    logout: '<svg class="pi" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>'
   };
 
   const EMOJI_ICON_MAP = {
@@ -57,7 +64,23 @@
     '👩‍🏫': ICONS.teacher,
     '📓': ICONS.file,
     '📨': ICONS.send,
-    '💭': ICONS.quote
+    '💭': ICONS.quote,
+    '📎': ICONS.paperclip,
+    '📖': ICONS.glossary,
+    '📐': ICONS.compass,
+    '🪪': ICONS.idcard,
+    '🗺️': ICONS.mapPin,
+    '🔭': ICONS.compass,
+    '💬': ICONS.chat,
+    '🔒': ICONS.lock,
+    '🚪': ICONS.logout,
+    '👋': ICONS.chat,
+    '🏥': ICONS.briefcase,
+    '🛒': ICONS.briefcase,
+    '🚌': ICONS.calendar,
+    '🔢': ICONS.edit,
+    '👨‍👩‍👧': ICONS.users,
+    '📤': ICONS.send
   };
 
   function iconify(container) {
