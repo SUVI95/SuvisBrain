@@ -69,11 +69,23 @@ async function collectBody(req) {
 }
 
 function getPathParam(req) {
-  if (req.query && req.query.path != null) return req.query.path;
+  let p = req.query && req.query.path;
+  if (Array.isArray(p)) p = p[0];
+  if (p != null && String(p).trim() !== '') return String(p).trim();
+
   const url = req.url || req.originalUrl || '';
-  const q = url.includes('?') ? url.split('?')[1] : '';
-  const params = new URLSearchParams(q);
-  return params.get('path') || '';
+  if (url.includes('?')) {
+    const q = url.split('?')[1].split('#')[0];
+    const fromQuery = new URLSearchParams(q).get('path');
+    if (fromQuery) return fromQuery.trim();
+  }
+
+  // If rewrites are bypassed and the function sees a path-style URL: /api/session → session
+  const pathOnly = (url.split('?')[0] || '').replace(/\/$/, '');
+  const m = pathOnly.match(/^\/api\/(.+)$/);
+  if (m && m[1] && m[1] !== 'index.js') return m[1];
+
+  return '';
 }
 
 export default async function handler(req, res) {
@@ -114,7 +126,8 @@ export default async function handler(req, res) {
       const user = token ? verifyToken(token) : null;
       if (!user) return res.status(401).json({ error: 'Unauthorized', code: 'AUTH_REQUIRED' });
       wrappedReq.user = user;
-      const sessionBody = req.method === 'POST' ? await collectBody(req) : {};
+      // Body was already read into `body` above — do not call collectBody again (stream is empty on Vercel).
+      const sessionBody = req.method === 'POST' ? body : {};
       await sessionHandler(wrappedReq, res, sessionBody);
       return;
     }

@@ -606,6 +606,11 @@
         return { 'Authorization': 'Bearer ' + (localStorage.getItem('sb_token') || localStorage.getItem('knuut_token') || '') };
       }
 
+      function clearAuthAndRedirectToLogin() {
+        ['knuut_token', 'knuut_user', 'sb_token', 'sb_user'].forEach(function (k) { localStorage.removeItem(k); });
+        location.replace('/login.html?next=' + encodeURIComponent('/knuut.html' + location.search));
+      }
+
       let pc, micStream, remoteAudioEl, isActive = false, isStarting = false;
       var sessionInstructions = '';
       var baseSessionInstructions = '';
@@ -975,6 +980,10 @@
         try {
           const url = learnerId ? '/api/session-focus?learner_id=' + encodeURIComponent(learnerId) : '/api/session-focus';
           const res = await fetch(url, { headers: authHeaders() });
+          if (res.status === 401) {
+            clearAuthAndRedirectToLogin();
+            return { fragment: '', focusTopics: [] };
+          }
           const data = await res.json();
           return {
             fragment: data.system_prompt_fragment || '',
@@ -1265,6 +1274,17 @@
             });
 
             if (!resp.ok) {
+              if (resp.status === 401) {
+                try { if (pc) pc.close(); } catch (e401) {}
+                pc = null;
+                oaiChannel = null;
+                if (micStream) {
+                  micStream.getTracks().forEach(function(t) { t.stop(); });
+                  micStream = null;
+                }
+                clearAuthAndRedirectToLogin();
+                return;
+              }
               const errRaw = await resp.text();
               var errMsg = errRaw;
               try {
