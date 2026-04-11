@@ -1,6 +1,8 @@
-// POST /api/session — OpenAI Realtime voice (Knuut AI). Requires auth.
+// POST /api/session — OpenAI / Azure Realtime voice (Knuut AI). Requires auth.
 import { getSystemPrompt, langToIso } from './knuut-prompt.js';
 import { query } from './db.js';
+import { exchangeRealtimeWebRtc, isVoiceProviderConfigured } from '../src/lib/realtime-voice.js';
+import { assertVoiceSessionAllowed, getDailyCapSeconds } from '../src/lib/voice-daily-quota.js';
 
 export default async function handler(req, res, body) {
   if (req.method !== 'POST') {
@@ -14,7 +16,7 @@ export default async function handler(req, res, body) {
   }
 
   try {
-    if (!process.env.OPENAI_API_KEY) {
+    if (!isVoiceProviderConfigured()) {
       res.status(500).json({ error: 'Something went wrong' });
       return;
     }
@@ -98,6 +100,30 @@ export default async function handler(req, res, body) {
       }
     }
 
+    let voiceQuotaSnapshot = {
+      applies: false,
+      remainingSeconds: getDailyCapSeconds(),
+      secondsUsed: 0,
+      usageDate: null,
+    };
+    if (learnerId) {
+      try {
+        voiceQuotaSnapshot = await assertVoiceSessionAllowed(learnerId);
+      } catch (quotaErr) {
+        if (quotaErr.code === 'VOICE_DAILY_QUOTA_EXCEEDED') {
+          res.status(403).json({
+            error: quotaErr.message || 'Daily voice limit reached',
+            code: quotaErr.code,
+            quota: quotaErr.quota || null,
+          });
+          return;
+        }
+        console.error('[voice-quota]', quotaErr.message);
+        res.status(500).json({ error: 'Something went wrong' });
+        return;
+      }
+    }
+
     const systemPrompt = getSystemPrompt({
       mode,
       dashboardMode,
@@ -116,52 +142,28 @@ export default async function handler(req, res, body) {
       motherTongueName,
     });
 
-    const createResp = await fetch('https://api.openai.com/v1/realtime/sessions', {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + process.env.OPENAI_API_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-realtime-1.5',
-        voice: 'verse',
-        input_audio_format: 'pcm16',
-        output_audio_format: 'pcm16',
-        instructions: systemPrompt,
-      }),
-    });
-
-    if (!createResp.ok) {
-      const err = await createResp.text();
-      console.error('[voice] Session create failed:', err.slice(0, 200));
-      res.status(createResp.status).json({ error: 'Something went wrong' });
+    let realtimeResult;
+    try {
+      realtimeResult = await exchangeRealtimeWebRtc({ sdpOffer: offerSdp, systemPrompt });
+    } catch (voiceErr) {
+      console.error('[voice]', voiceErr.message || voiceErr);
+      const code = voiceErr.statusCode && voiceErr.statusCode >= 400 && voiceErr.statusCode < 600 ? voiceErr.statusCode : 500;
+      res.status(code).json({ error: 'Something went wrong' });
       return;
     }
 
-    const sessData = await createResp.json();
-    const sessionId = sessData.id;
-    const apiUrl = 'https://api.openai.com/v1/realtime?model=gpt-realtime-1.5&session=' + encodeURIComponent(sessionId);
-    const oaiResp = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + process.env.OPENAI_API_KEY,
-        'Content-Type': 'application/sdp',
-        'OpenAI-Beta': 'realtime=v1',
-      },
-      body: offerSdp,
-    });
-
-    if (!oaiResp.ok) {
-      const err = await oaiResp.text();
-      console.error('[voice] SDP exchange failed:', err.slice(0, 200));
-      res.status(oaiResp.status).json({ error: 'Something went wrong' });
-      return;
-    }
-
-    const answerSdp = await oaiResp.text();
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('X-Session-Id', sessionId);
-    res.status(200).end(JSON.stringify({ answer: answerSdp, instructions: systemPrompt }));
+    if (realtimeResult.sessionId) res.setHeader('X-Session-Id', realtimeResult.sessionId);
+    res.status(200).end(JSON.stringify({
+      answer: realtimeResult.answerSdp,
+      instructions: realtimeResult.instructions,
+      dataChannelLabel: realtimeResult.dataChannelLabel,
+      remaining_seconds: voiceQuotaSnapshot.applies
+        ? voiceQuotaSnapshot.remainingSeconds
+        : getDailyCapSeconds(),
+      seconds_used_today: voiceQuotaSnapshot.applies ? voiceQuotaSnapshot.secondsUsed : 0,
+      voice_quota_date: voiceQuotaSnapshot.usageDate || undefined,
+    }));
   } catch (err) {
     console.error('[voice]', err);
     res.status(500).json({ error: 'Something went wrong' });

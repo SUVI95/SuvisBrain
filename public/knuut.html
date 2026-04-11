@@ -928,7 +928,19 @@
       }
       let ykiTimeLeft = 15 * 60;
       let ykiTimerInterval = null;
+      let voiceSessionCapSec = 30 * 60;
+      let voiceCapCheckInterval = null;
       const SERVER_URL = window.location.origin;
+      var rtcHints = { dataChannelLabel: 'oai-events' };
+      async function ensureRtcHints() {
+        if (ensureRtcHints._done) return;
+        try {
+          var r = await fetch(SERVER_URL + '/api/realtime-client-hints');
+          var j = await r.json();
+          if (j && j.dataChannelLabel) rtcHints.dataChannelLabel = j.dataChannelLabel;
+        } catch (e) {}
+        ensureRtcHints._done = true;
+      }
 
       document.querySelectorAll('.mode-tab').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -1086,6 +1098,7 @@
         updateStatus(examMode ? 'Connecting (YKI exam mode)...' : 'Connecting...');
 
         try {
+          await ensureRtcHints();
           micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
           updateStatus('Microphone connected');
 
@@ -1170,7 +1183,7 @@
 
           sessionInstructions = '';
           baseSessionInstructions = '';
-          oaiChannel = pc.createDataChannel('oai-events');
+          oaiChannel = pc.createDataChannel(rtcHints.dataChannelLabel);
           const channel = oaiChannel;
           channel.onopen = function() {
             if (sessionInstructions) {
@@ -1252,11 +1265,19 @@
             });
 
             if (!resp.ok) {
-              const errText = await resp.text();
-              throw new Error('Session failed: ' + errText);
+              const errRaw = await resp.text();
+              var errMsg = errRaw;
+              try {
+                var ej = JSON.parse(errRaw);
+                errMsg = ej.error || ej.code || errRaw;
+              } catch (e1) {}
+              throw new Error(errMsg);
             }
 
             const data = await resp.json();
+            voiceSessionCapSec = (typeof data.remaining_seconds === 'number' && data.remaining_seconds >= 0)
+              ? data.remaining_seconds
+              : (30 * 60);
             const answerSdp = typeof data.answer === 'string' ? data.answer : (data.sdp || '');
             baseSessionInstructions = data.instructions || '';
             sessionInstructions = baseSessionInstructions;
@@ -1290,13 +1311,33 @@
           if (pbtn) pbtn.style.display = 'inline-block';
           updateStatus('Ready to talk', true);
 
+          if (voiceCapCheckInterval) {
+            clearInterval(voiceCapCheckInterval);
+            voiceCapCheckInterval = null;
+          }
+          voiceCapCheckInterval = setInterval(function() {
+            if (!isActive) return;
+            var elapsed = Math.round((Date.now() - sessionStartTime) / 1000);
+            if (elapsed >= voiceSessionCapSec) {
+              if (voiceCapCheckInterval) {
+                clearInterval(voiceCapCheckInterval);
+                voiceCapCheckInterval = null;
+              }
+              showToast('Päivän puheajan enimmäisaika täynnä · Daily voice limit reached', 'warning');
+              stopKnuut();
+            }
+          }, 3000);
+
           if (examMode) {
+            ykiTimeLeft = Math.min(15 * 60, voiceSessionCapSec);
+            updateTimerDisplay(ykiTimeLeft);
             ykiTimerInterval = setInterval(() => {
               ykiTimeLeft--;
               updateTimerDisplay(ykiTimeLeft);
               if (ykiTimeLeft === 120) showToast('2 minutes remaining', 'warning');
               if (ykiTimeLeft <= 0) {
                 clearInterval(ykiTimerInterval);
+                ykiTimerInterval = null;
                 stopKnuut();
               }
             }, 1000);
@@ -1313,6 +1354,7 @@
       }
 
       function stopKnuut(){
+        if (voiceCapCheckInterval) { clearInterval(voiceCapCheckInterval); voiceCapCheckInterval = null; }
         if (ykiTimerInterval) { clearInterval(ykiTimerInterval); ykiTimerInterval = null; }
         document.getElementById('yki-banner').classList.remove('visible');
         document.body.classList.remove('yki-mode');

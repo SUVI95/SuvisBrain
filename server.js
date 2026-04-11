@@ -38,6 +38,13 @@ import lmsHandler from './api/lms.js';
 import teacherWorkflowRouter from './api/teacher-workflow.js';
 import { query, isDatabaseConfigured } from './api/db.js';
 import { getSystemPrompt, langToIso } from './api/knuut-prompt.js';
+import {
+  exchangeRealtimeWebRtc,
+  getWebRtcClientHints,
+  isVoiceProviderConfigured,
+  checkVoiceProviderReachable,
+} from './src/lib/realtime-voice.js';
+import { assertVoiceSessionAllowed, getDailyCapSeconds } from './src/lib/voice-daily-quota.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PORT = 3000;
@@ -70,7 +77,7 @@ function serveStatic(pathname, res) {
 async function handleVoice(pathname, req, res) {
   if (pathname === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ ok: true, voice: !!process.env.OPENAI_API_KEY }));
+    res.end(JSON.stringify({ ok: true, voice: isVoiceProviderConfigured() }));
     return true;
   }
 
@@ -82,7 +89,7 @@ async function handleVoice(pathname, req, res) {
         res.writeHead(401, { 'Content-Type': 'application/json' });
         return res.end(JSON.stringify({ error: 'Unauthorized', code: 'AUTH_REQUIRED' }));
       }
-      if (!process.env.OPENAI_API_KEY) {
+      if (!isVoiceProviderConfigured()) {
         sendError(res, 500);
         return;
       }
@@ -167,6 +174,31 @@ async function handleVoice(pathname, req, res) {
         }
       }
 
+      let voiceQuotaSnapshot = {
+        applies: false,
+        remainingSeconds: getDailyCapSeconds(),
+        secondsUsed: 0,
+        usageDate: null,
+      };
+      if (learnerId) {
+        try {
+          voiceQuotaSnapshot = await assertVoiceSessionAllowed(learnerId);
+        } catch (quotaErr) {
+          if (quotaErr.code === 'VOICE_DAILY_QUOTA_EXCEEDED') {
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              error: quotaErr.message || 'Daily voice limit reached',
+              code: quotaErr.code,
+              quota: quotaErr.quota || null,
+            }));
+            return true;
+          }
+          console.error('[voice-quota]', quotaErr.message);
+          sendError(res, 500);
+          return true;
+        }
+      }
+
       const systemPrompt = getSystemPrompt({
         mode,
         dashboardMode,
@@ -185,51 +217,28 @@ async function handleVoice(pathname, req, res) {
         motherTongueName,
       });
 
-      const createResp = await fetch('https://api.openai.com/v1/realtime/sessions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-realtime-1.5',
-          voice: 'verse',
-          input_audio_format: 'pcm16',
-          output_audio_format: 'pcm16',
-          instructions: systemPrompt,
-        }),
-      });
-
-      if (!createResp.ok) {
-        console.error('[voice] Session create failed');
+      let realtimeResult;
+      try {
+        realtimeResult = await exchangeRealtimeWebRtc({ sdpOffer: offerSdp, systemPrompt });
+      } catch (voiceErr) {
+        console.error('[voice]', voiceErr.message || voiceErr);
         sendError(res, 500);
         return;
       }
 
-      const { id: sessionId } = await createResp.json();
-      const apiUrl = `https://api.openai.com/v1/realtime?model=gpt-realtime-1.5&session=${encodeURIComponent(sessionId)}`;
-      const oaiResp = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/sdp',
-          'OpenAI-Beta': 'realtime=v1',
-        },
-        body: offerSdp,
-      });
-
-      if (!oaiResp.ok) {
-        console.error('[voice] SDP exchange failed');
-        sendError(res, 500);
-        return;
-      }
-
-      const answerSdp = await oaiResp.text();
-      res.writeHead(200, {
-        'Content-Type': 'application/json',
-        'X-Session-Id': sessionId,
-      });
-      res.end(JSON.stringify({ answer: answerSdp, instructions: systemPrompt }));
+      const headers = { 'Content-Type': 'application/json' };
+      if (realtimeResult.sessionId) headers['X-Session-Id'] = realtimeResult.sessionId;
+      res.writeHead(200, headers);
+      res.end(JSON.stringify({
+        answer: realtimeResult.answerSdp,
+        instructions: realtimeResult.instructions,
+        dataChannelLabel: realtimeResult.dataChannelLabel,
+        remaining_seconds: voiceQuotaSnapshot.applies
+          ? voiceQuotaSnapshot.remainingSeconds
+          : getDailyCapSeconds(),
+        seconds_used_today: voiceQuotaSnapshot.applies ? voiceQuotaSnapshot.secondsUsed : 0,
+        voice_quota_date: voiceQuotaSnapshot.usageDate || undefined,
+      }));
     } catch (err) {
       console.error('[voice]', err);
       sendError(res, 500);
@@ -254,6 +263,15 @@ async function handleApi(pathname, req, res, body) {
     user: null,
     url: req.url || '',
   };
+
+  if (route === 'realtime-client-hints' && req.method === 'GET') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=60',
+    });
+    res.end(JSON.stringify(getWebRtcClientHints()));
+    return true;
+  }
 
   if (route === 'auth') {
     const authLimit = checkLimit(getClientIp(req), 'auth', LIMITS.auth);
@@ -304,17 +322,13 @@ async function handleApi(pathname, req, res, body) {
         checks.database = 'not_configured';
       }
 
-      if (process.env.OPENAI_API_KEY) {
-        try {
-          const oaiRes = await fetch('https://api.openai.com/v1/models', {
-            headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-          });
-          checks.openai = oaiRes.ok ? 'ok' : `fail:${oaiRes.status}`;
-        } catch (e) {
-          checks.openai = 'fail:' + (e.message || 'error');
-        }
-      } else {
-        checks.openai = 'skipped';
+      try {
+        const voiceCheck = await checkVoiceProviderReachable();
+        checks.voice = voiceCheck;
+        checks.openai = voiceCheck;
+      } catch (e) {
+        checks.voice = 'fail:' + (e.message || 'error');
+        checks.openai = checks.voice;
       }
       if (process.env.RESEND_API_KEY) {
         try {
@@ -540,6 +554,9 @@ server.listen(PORT, () => {
   console.log('  ALKUPOLKU:  /oppipolku.html   /teacher-dashboard.html   /onboarding.html   /knuut.html');
   console.log('  Short URLs: /oppipolku   /teacher   /onboarding   /login   /student\n');
   if (!process.env.DATABASE_URL) console.log('  ⚠ DATABASE_URL not set — Brain/Agents API will fail.\n');
-  if (!process.env.OPENAI_API_KEY) console.log('  ⚠ OPENAI_API_KEY not set — Voice (Knuut) will fail.\n');
-  if (!process.env.OPENROUTER_API_KEY) console.log('  ⚠ OPENROUTER_API_KEY not set — session-complete will fail.\n');
+  if (!isVoiceProviderConfigured()) console.log('  ⚠ Voice not configured — set Azure OpenAI (AZURE_OPENAI_*) or OPENAI_API_KEY for Knuut.\n');
+  const azureChatReady = process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_API_KEY && process.env.AZURE_OPENAI_CHAT_DEPLOYMENT;
+  if (!azureChatReady && !process.env.OPENROUTER_API_KEY) {
+    console.log('  ⚠ No session-complete LLM: set Azure chat vars or OPENROUTER_API_KEY.\n');
+  }
 });

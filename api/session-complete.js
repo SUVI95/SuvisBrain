@@ -1,5 +1,6 @@
-// api/session-complete.js — post-session brain update via OpenRouter
+// api/session-complete.js — post-session brain update (Azure OpenAI chat first, else OpenRouter)
 import { query } from './db.js';
+import { addVoiceSecondsForLearner } from '../src/lib/voice-daily-quota.js';
 import { removePersonalData } from '../src/lib/safe-ai.js';
 import { getEmbedding } from '../src/lib/embeddings.js';
 
@@ -19,6 +20,58 @@ async function setNodeEmbedding(nodeId, label) {
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const CEFR_ORDER = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
+
+function trimEnv(name) {
+  const v = process.env[name];
+  if (v == null || typeof v !== 'string') return '';
+  return v.trim();
+}
+
+function normalizeAzureEndpoint(raw) {
+  if (!raw) return '';
+  let u = String(raw).trim().replace(/\/$/, '');
+  if (!u.startsWith('http')) u = `https://${u}`;
+  return u;
+}
+
+function isAzureChatConfigured() {
+  const endpoint = normalizeAzureEndpoint(trimEnv('AZURE_OPENAI_ENDPOINT'));
+  const key = trimEnv('AZURE_OPENAI_API_KEY');
+  const deployment = trimEnv('AZURE_OPENAI_CHAT_DEPLOYMENT');
+  return !!(endpoint && key && deployment);
+}
+
+/**
+ * Azure OpenAI chat completions (deployment name = model slot).
+ * URL: {endpoint}/openai/deployments/{deployment}/chat/completions?api-version=...
+ */
+async function azureChatCompletion(messages, maxTokens) {
+  const endpoint = normalizeAzureEndpoint(trimEnv('AZURE_OPENAI_ENDPOINT'));
+  const key = trimEnv('AZURE_OPENAI_API_KEY');
+  const deployment = trimEnv('AZURE_OPENAI_CHAT_DEPLOYMENT');
+  const apiVersion = trimEnv('AZURE_OPENAI_API_VERSION') || '2025-01-01-preview';
+  const url = `${endpoint}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'api-key': key,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages,
+      max_tokens: maxTokens,
+    }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    const msg = data?.error?.message || JSON.stringify(data).slice(0, 200);
+    throw new Error(`Azure chat ${response.status}: ${msg}`);
+  }
+  if (data.error) {
+    throw new Error(data.error.message || 'Azure chat error');
+  }
+  return data.choices?.[0]?.message?.content || '';
+}
 
 function isNoiseTopic(label) {
   if (!label || typeof label !== 'string') return true;
@@ -70,6 +123,24 @@ Rules:
 - confidence_delta is always negative for struggled (-0.05 to -0.1)
 - type for new_topics must be one of: Skill, Memory, Conversation
 - cefr_level_demonstrated must be one of: A1, A2, B1, B2, C1`;
+
+  if (isAzureChatConfigured()) {
+    try {
+      const text = await azureChatCompletion([{ role: 'user', content: prompt }], 1000);
+      if (text) {
+        const clean = text.replace(/```json|```/g, '').trim();
+        try {
+          const parsed = JSON.parse(clean);
+          console.log('session-complete: transcript analysis via Azure OpenAI');
+          return parsed;
+        } catch (parseErr) {
+          console.log('session-complete: Azure JSON parse failed, falling back to OpenRouter:', parseErr.message);
+        }
+      }
+    } catch (err) {
+      console.log('session-complete: Azure analyseTranscript failed:', err.message);
+    }
+  }
 
   for (const model of MODELS) {
     for (const key of KEYS) {
@@ -128,6 +199,24 @@ Return ONLY valid JSON:
 
 Apply CEFR criteria: range, accuracy, fluency, interaction. Be strict but fair.`;
 
+  if (isAzureChatConfigured()) {
+    try {
+      const text = await azureChatCompletion([{ role: 'user', content: prompt }], 300);
+      if (text) {
+        const clean = text.replace(/```json|```/g, '').trim();
+        try {
+          const parsed = JSON.parse(clean);
+          console.log('session-complete: CEFR rubric via Azure OpenAI');
+          return parsed;
+        } catch (parseErr) {
+          console.log('session-complete: Azure CEFR JSON parse failed, falling back to OpenRouter:', parseErr.message);
+        }
+      }
+    } catch (err) {
+      console.log('session-complete: Azure scoreCefrRubric failed:', err.message);
+    }
+  }
+
   for (const model of MODELS) {
     for (const key of KEYS) {
       try {
@@ -184,9 +273,11 @@ export default async function sessionCompleteHandler(req, res) {
   }
 
   try {
-    if (KEYS.length === 0) {
+    if (!isAzureChatConfigured() && KEYS.length === 0) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'OPENROUTER_API_KEY not set' }));
+      res.end(JSON.stringify({
+        error: 'No LLM configured: set Azure OpenAI (endpoint, key, AZURE_OPENAI_CHAT_DEPLOYMENT) or OPENROUTER_API_KEY',
+      }));
       return;
     }
 
@@ -219,6 +310,12 @@ export default async function sessionCompleteHandler(req, res) {
       episodeParams
     );
     const episodeId = episodeResult.rows[0].id;
+
+    const quotaLearnerId = req.user?.role === 'learner' ? req.user.id : learner_id;
+    const dur = duration_s != null ? Number(duration_s) : 0;
+    if (quotaLearnerId && dur > 0) {
+      await addVoiceSecondsForLearner(quotaLearnerId, dur);
+    }
 
     if (!analysis) {
       res.writeHead(200, { 'Content-Type': 'application/json' });

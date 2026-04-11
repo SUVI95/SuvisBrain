@@ -28,6 +28,7 @@ import adminOrganisationsHandler from './admin-organisations.js';
 import lmsHandler from './lms.js';
 import teacherWorkflowRouter from './teacher-workflow.js';
 import { query } from './db.js';
+import { getWebRtcClientHints, checkVoiceProviderReachable } from '../src/lib/realtime-voice.js';
 
 function toNodeRes(res) {
   return {
@@ -91,6 +92,11 @@ export default async function handler(req, res) {
       return res.status(429).json({ error: 'Too many requests' });
     }
 
+    if (route === 'realtime-client-hints' && req.method === 'GET') {
+      res.setHeader('Cache-Control', 'public, max-age=60');
+      return res.status(200).json(getWebRtcClientHints());
+    }
+
     const body = (req.method === 'POST' || req.method === 'PATCH') ? await collectBody(req) : {};
     const wrappedReq = { method: req.method, headers: req.headers || {}, body, user: null, url: req.url || req.originalUrl || '' };
     const nres = toNodeRes(res);
@@ -127,17 +133,13 @@ export default async function handler(req, res) {
           learners: parseInt((learners.rows[0] && learners.rows[0].count) || 0),
         };
         const checks = { database: 'ok' };
-        if (process.env.OPENAI_API_KEY) {
-          try {
-            const oaiRes = await fetch('https://api.openai.com/v1/models', {
-              headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-            });
-            checks.openai = oaiRes.ok ? 'ok' : `fail:${oaiRes.status}`;
-          } catch (e) {
-            checks.openai = 'fail:' + (e.message || 'error');
-          }
-        } else {
-          checks.openai = 'skipped';
+        try {
+          const voiceCheck = await checkVoiceProviderReachable();
+          checks.voice = voiceCheck;
+          checks.openai = voiceCheck;
+        } catch (e) {
+          checks.voice = 'fail:' + (e.message || 'error');
+          checks.openai = checks.voice;
         }
         if (process.env.RESEND_API_KEY) {
           try {
