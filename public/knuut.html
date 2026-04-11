@@ -612,6 +612,8 @@
       }
 
       let pc, micStream, remoteAudioEl, isActive = false, isStarting = false;
+      var micAnalyserCtx = null;
+      var remoteAnalyserCtx = null;
       var sessionInstructions = '';
       var baseSessionInstructions = '';
       let sessionTranscript = '';
@@ -1107,6 +1109,16 @@
         updateStatus(examMode ? 'Connecting (YKI exam mode)...' : 'Connecting...');
 
         try {
+          // Unlock AudioContext while still in the click gesture (Safari / strict autoplay).
+          try {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (AC) {
+              const u = new AC();
+              if (u.state === 'suspended') await u.resume();
+              u.close();
+            }
+          } catch (eUnlock) {}
+
           await ensureRtcHints();
           micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
           updateStatus('Microphone connected');
@@ -1119,39 +1131,49 @@
             remoteAudioEl = document.createElement('audio');
             remoteAudioEl.autoplay = true;
             remoteAudioEl.playsInline = true;
+            remoteAudioEl.setAttribute('playsinline', '');
+            remoteAudioEl.setAttribute('webkit-playsinline', '');
+            remoteAudioEl.muted = false;
+            remoteAudioEl.volume = 1;
             document.body.appendChild(remoteAudioEl);
           }
 
-          pc.ontrack = (event) => {
-            const audioEl = document.createElement('audio');
-            audioEl.autoplay = true;
-            audioEl.playsInline = true;
-            audioEl.srcObject = event.streams[0];
-            document.body.appendChild(audioEl);
-            audioEl.play()
-              .then(() => updateStatus('Listening...', true))
-              .catch(() => {});
+          pc.ontrack = async function (event) {
+            const stream = event.streams && event.streams[0];
+            if (!stream) return;
+            remoteAudioEl.srcObject = stream;
+            remoteAudioEl.muted = false;
+            remoteAudioEl.volume = 1;
+            try {
+              await remoteAudioEl.play();
+              updateStatus('Listening...', true);
+            } catch (ePlay) {
+              console.warn('[Knuut] Remote audio play():', ePlay && ePlay.message);
+              showToast('If you hear nothing: unmute the tab and allow sound for this site.');
+            }
             try {
               const bars = document.querySelectorAll('#voice-bars .vb');
-              const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
-              const src2 = ctx2.createMediaStreamSource(event.streams[0]);
-              const analyser2 = ctx2.createAnalyser();
+              const AC = window.AudioContext || window.webkitAudioContext;
+              if (!remoteAnalyserCtx) remoteAnalyserCtx = new AC();
+              if (remoteAnalyserCtx.state === 'suspended') await remoteAnalyserCtx.resume();
+              const src2 = remoteAnalyserCtx.createMediaStreamSource(stream);
+              const analyser2 = remoteAnalyserCtx.createAnalyser();
               analyser2.fftSize = 256;
               src2.connect(analyser2);
               const buf2 = new Uint8Array(analyser2.frequencyBinCount);
               const tick2 = () => {
                 analyser2.getByteFrequencyData(buf2);
-                const level2 = buf2.reduce((a,b)=>a+b,0) / (buf2.length*255);
+                const level2 = buf2.reduce((a, b) => a + b, 0) / (buf2.length * 255);
                 bars.forEach((el, i) => {
-                  const scale = 0.5 + Math.min(1, level2*5) * (0.9 + 0.5*Math.cos((Date.now()/100)+i));
+                  const scale = 0.5 + Math.min(1, level2 * 5) * (0.9 + 0.5 * Math.cos((Date.now() / 100) + i));
                   el.style.transform = 'scaleY(' + scale.toFixed(2) + ')';
                   el.style.transformOrigin = 'bottom';
-                  el.style.opacity = (0.8 + level2*0.2).toFixed(2);
+                  el.style.opacity = (0.8 + level2 * 0.2).toFixed(2);
                 });
                 requestAnimationFrame(tick2);
               };
               tick2();
-            } catch {}
+            } catch (eAn) { console.warn('[Knuut] remote analyser:', eAn); }
           };
 
           pc.oniceconnectionstatechange = () => {
@@ -1162,25 +1184,27 @@
 
           try {
             const bars = document.querySelectorAll('#voice-bars .vb');
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const src = ctx.createMediaStreamSource(micStream);
-            const analyser = ctx.createAnalyser();
+            if (micAnalyserCtx) { try { micAnalyserCtx.close(); } catch (e) {} micAnalyserCtx = null; }
+            micAnalyserCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (micAnalyserCtx.state === 'suspended') await micAnalyserCtx.resume();
+            const src = micAnalyserCtx.createMediaStreamSource(micStream);
+            const analyser = micAnalyserCtx.createAnalyser();
             analyser.fftSize = 256;
             src.connect(analyser);
             const buf = new Uint8Array(analyser.frequencyBinCount);
             const tick = () => {
               analyser.getByteFrequencyData(buf);
-              const level = buf.reduce((a,b)=>a+b,0) / (buf.length*255);
+              const level = buf.reduce((a, b) => a + b, 0) / (buf.length * 255);
               bars.forEach((el, i) => {
-                const scale = 0.4 + Math.min(1, level*4) * (0.6 + 0.4*Math.sin((Date.now()/120)+i));
+                const scale = 0.4 + Math.min(1, level * 4) * (0.6 + 0.4 * Math.sin((Date.now() / 120) + i));
                 el.style.transform = 'scaleY(' + scale.toFixed(2) + ')';
                 el.style.transformOrigin = 'bottom';
-                el.style.opacity = (0.7 + level*0.3).toFixed(2);
+                el.style.opacity = (0.7 + level * 0.3).toFixed(2);
               });
               requestAnimationFrame(tick);
             };
             tick();
-          } catch {}
+          } catch (eMic) { console.warn('[Knuut] mic analyser:', eMic); }
 
           sessionTranscript = '';
           sessionStartTime = Date.now();
@@ -1243,8 +1267,6 @@
             } catch (e) {}
           };
 
-          try { pc.addTransceiver('audio', { direction: 'sendrecv' }); } catch {}
-
           const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false });
           await pc.setLocalDescription(offer);
 
@@ -1282,6 +1304,8 @@
                   micStream.getTracks().forEach(function(t) { t.stop(); });
                   micStream = null;
                 }
+                if (micAnalyserCtx) { try { micAnalyserCtx.close(); } catch (e) {} micAnalyserCtx = null; }
+                if (remoteAnalyserCtx) { try { remoteAnalyserCtx.close(); } catch (e) {} remoteAnalyserCtx = null; }
                 clearAuthAndRedirectToLogin();
                 return;
               }
@@ -1302,6 +1326,9 @@
             baseSessionInstructions = data.instructions || '';
             sessionInstructions = baseSessionInstructions;
             await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+            if (remoteAudioEl && remoteAudioEl.srcObject) {
+              try { await remoteAudioEl.play(); } catch (ePlay2) { console.warn('[Knuut] play after SDP:', ePlay2); }
+            }
           } catch (sessionErr) {
             console.error(sessionErr);
             document.getElementById('yki-banner').classList.remove('visible');
@@ -1313,6 +1340,8 @@
               micStream.getTracks().forEach(function(t) { t.stop(); });
               micStream = null;
             }
+            if (micAnalyserCtx) { try { micAnalyserCtx.close(); } catch (e) {} micAnalyserCtx = null; }
+            if (remoteAnalyserCtx) { try { remoteAnalyserCtx.close(); } catch (e) {} remoteAnalyserCtx = null; }
             if (remoteAudioEl) remoteAudioEl.srcObject = null;
             document.querySelectorAll('#voice-bars .vb').forEach(function(el) {
               el.style.transform = 'scaleY(1)';
@@ -1321,8 +1350,6 @@
             activateTextChatFallback(sessionErr);
             return;
           }
-
-          try { await remoteAudioEl.play(); } catch (e3) {}
 
           isActive = true;
           btn.textContent = 'Stop Knuut';
@@ -1389,6 +1416,8 @@
         pc = null;
         if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
         if (remoteAudioEl) remoteAudioEl.srcObject = null;
+        if (micAnalyserCtx) { try { micAnalyserCtx.close(); } catch (e) {} micAnalyserCtx = null; }
+        if (remoteAnalyserCtx) { try { remoteAnalyserCtx.close(); } catch (e) {} remoteAnalyserCtx = null; }
         document.querySelectorAll('#voice-bars .vb').forEach(el => {
           el.style.transform = 'scaleY(1)';
           el.style.opacity = '0.5';
