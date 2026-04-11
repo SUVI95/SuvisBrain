@@ -781,10 +781,7 @@
               content: [{ type: 'input_text', text: 'Kortti "' + word + '" suljettu. Voit opettaa seuraavan sanan ja näyttää seuraavan kortin.' }]
             }
           }));
-          oaiChannel.send(JSON.stringify({
-            type: 'response.create',
-            response: { modalities: ['audio', 'text'], conversation: 'auto' }
-          }));
+          sendResponseCreate();
         } catch (e) { console.error('Notify card closed failed:', e); }
       }
 
@@ -909,10 +906,7 @@
               content: [{ type: 'input_text', text: msg }]
             }
           }));
-          oaiChannel.send(JSON.stringify({
-            type: 'response.create',
-            response: { modalities: ['audio', 'text'], conversation: 'auto' }
-          }));
+          sendResponseCreate();
         } catch (e) { console.error('Card feedback send failed:', e); }
       }
 
@@ -927,10 +921,7 @@
               content: [{ type: 'input_text', text: 'Sano uudestaan: ' + word }]
             }
           }));
-          oaiChannel.send(JSON.stringify({
-            type: 'response.create',
-            response: { modalities: ['audio', 'text'], conversation: 'auto' }
-          }));
+          sendResponseCreate();
         } catch (e) { console.error('Repeat send failed:', e); }
       }
       let ykiTimeLeft = 15 * 60;
@@ -943,6 +934,8 @@
       var sdpAnswerApplied = false;
       var dataChannelOpen = false;
       var realtimeConversationKicked = false;
+      /** OpenAI only: one client-side session.update with instructions (no voice) per voice session. */
+      var sessionClientInstructionUpdateSent = false;
       async function ensureRtcHints() {
         if (ensureRtcHints._done) return;
         try {
@@ -958,25 +951,50 @@
         return rtcHints.provider === 'azure';
       }
 
-      /** Fire only after setRemoteDescription(answer) AND datachannel.onopen — both completed. */
-      function tryKickRealtimeConversation() {
+      /** Azure GA sample uses bare { type: 'response.create' }; nested response.* can be ignored or rejected. */
+      function sendResponseCreate() {
+        if (!oaiChannel || oaiChannel.readyState !== 'open') return;
+        try {
+          if (isAzureVoiceProvider()) {
+            oaiChannel.send(JSON.stringify({ type: 'response.create' }));
+          } else {
+            oaiChannel.send(JSON.stringify({
+              type: 'response.create',
+              response: { modalities: ['audio', 'text'], conversation: 'auto' }
+            }));
+          }
+        } catch (e) {
+          console.error('[Knuut] sendResponseCreate:', e);
+        }
+      }
+
+      /** OpenAI: push instructions from the browser once (Azure gets instructions from client_secrets only). */
+      function sendSessionInstructionsClientUpdate() {
+        if (sessionClientInstructionUpdateSent) return;
+        if (isAzureVoiceProvider()) return;
+        if (!oaiChannel || oaiChannel.readyState !== 'open' || !sessionInstructions) return;
+        sessionClientInstructionUpdateSent = true;
+        try {
+          oaiChannel.send(JSON.stringify({
+            type: 'session.update',
+            session: { instructions: sessionInstructions }
+          }));
+        } catch (e) {
+          console.error('[Knuut] sendSessionInstructionsClientUpdate:', e);
+          sessionClientInstructionUpdateSent = false;
+        }
+      }
+
+      /** Send response.create only after SDP answer is applied and the data channel is open. */
+      function tryKickConversation() {
         if (realtimeConversationKicked) return;
         if (!oaiChannel || oaiChannel.readyState !== 'open') return;
         if (!sdpAnswerApplied || !dataChannelOpen) return;
         realtimeConversationKicked = true;
         try {
-          if (!isAzureVoiceProvider() && sessionInstructions) {
-            oaiChannel.send(JSON.stringify({
-              type: 'session.update',
-              session: { instructions: sessionInstructions, voice: 'verse' }
-            }));
-          }
-          oaiChannel.send(JSON.stringify({
-            type: 'response.create',
-            response: { modalities: ['audio', 'text'], conversation: 'auto' }
-          }));
+          sendResponseCreate();
         } catch (e) {
-          console.error('[Knuut] tryKickRealtimeConversation:', e);
+          console.error('[Knuut] tryKickConversation:', e);
         }
       }
 
@@ -1143,6 +1161,7 @@
           sdpAnswerApplied = false;
           dataChannelOpen = false;
           realtimeConversationKicked = false;
+          sessionClientInstructionUpdateSent = false;
           // Unlock AudioContext while still in the click gesture (Safari / strict autoplay).
           try {
             const AC = window.AudioContext || window.webkitAudioContext;
@@ -1173,7 +1192,8 @@
           }
 
           pc.ontrack = async function (event) {
-            const stream = event.streams && event.streams[0];
+            var stream = event.streams && event.streams[0];
+            if (!stream && event.track) stream = new MediaStream([event.track]);
             if (!stream) return;
             remoteAudioEl.srcObject = stream;
             remoteAudioEl.muted = false;
@@ -1255,14 +1275,21 @@
           baseSessionInstructions = '';
           oaiChannel = pc.createDataChannel(rtcHints.dataChannelLabel);
           const channel = oaiChannel;
+          channel.onerror = function(ev) {
+            console.warn('[Knuut] data channel error', ev);
+          };
           channel.onopen = function() {
             dataChannelOpen = true;
-            tryKickRealtimeConversation();
+            sendSessionInstructionsClientUpdate();
+            tryKickConversation();
           };
           channel.onmessage = function(event) {
             try {
               const obj = JSON.parse(event.data || '{}');
-              if (obj.error) {
+              if (obj.type === 'session.error' && obj.error) {
+                console.warn('[Knuut realtime] session.error', obj.error);
+                if (obj.error.message) showToast(String(obj.error.message).slice(0, 140));
+              } else if (obj.error) {
                 console.warn('[Knuut realtime]', obj);
                 if (obj.error.message) showToast(String(obj.error.message).slice(0, 140));
               }
@@ -1296,7 +1323,9 @@
             } catch (e) {}
           };
 
-          const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false });
+          const offer = isAzureVoiceProvider()
+            ? await pc.createOffer()
+            : await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false });
           await pc.setLocalDescription(offer);
 
           const focusData = await getSessionFocus();
@@ -1359,7 +1388,8 @@
             sessionInstructions = baseSessionInstructions;
             await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
             sdpAnswerApplied = true;
-            tryKickRealtimeConversation();
+            sendSessionInstructionsClientUpdate();
+            tryKickConversation();
             if (remoteAudioEl && remoteAudioEl.srcObject) {
               try { await remoteAudioEl.play(); } catch (ePlay2) { console.warn('[Knuut] play after SDP:', ePlay2); }
             }
@@ -1473,10 +1503,7 @@
             var panicSession = { instructions: baseSessionInstructions + panicHelpAppendix(mt) };
             if (!isAzureVoiceProvider()) panicSession.voice = 'verse';
             oaiChannel.send(JSON.stringify({ type: 'session.update', session: panicSession }));
-            oaiChannel.send(JSON.stringify({
-              type: 'response.create',
-              response: { modalities: ['audio', 'text'], conversation: 'auto' }
-            }));
+            sendResponseCreate();
             updateStatus('Help — explaining in your language…', true);
           } catch (err) { console.error(err); }
         });
