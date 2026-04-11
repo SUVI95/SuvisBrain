@@ -49,7 +49,7 @@ export function getWebRtcClientHints() {
  * @param {object} p
  * @param {string} p.sdpOffer - WebRTC offer SDP
  * @param {string} p.systemPrompt - Knuut instructions
- * @returns {Promise<{ answerSdp: string, instructions: string, dataChannelLabel: string, sessionId: string | null }>}
+ * @returns {Promise<{ answerSdp: string, instructions: string, dataChannelLabel: string, sessionId: string | null, voiceProvider: 'azure'|'openai' }>}
  */
 export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
   const endpoint = normalizeAzureEndpoint(trimEnv('AZURE_OPENAI_ENDPOINT'));
@@ -58,27 +58,24 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
 
   if (endpoint && azureKey && deployment) {
     const secretUrl = `${endpoint}/openai/v1/realtime/client_secrets`;
-    const minimalAudio = trimEnv('AZURE_OPENAI_REALTIME_MINIMAL_AUDIO') === '1';
     const sessionPayload = {
       session: {
         type: 'realtime',
         model: deployment,
         instructions: systemPrompt,
-        audio: minimalAudio
-          ? { output: { voice: 'verse' } }
-          : {
-              input: {
-                format: { type: 'pcm16', rate: 24000 },
-                turn_detection: {
-                  type: 'server_vad',
-                  threshold: 0.5,
-                  prefix_padding_ms: 300,
-                  silence_duration_ms: 500,
-                  create_response: true,
-                },
-              },
-              output: { voice: 'verse' },
+        audio: {
+          input: {
+            format: { type: 'pcm16', rate: 24000 },
+            turn_detection: {
+              type: 'server_vad',
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 500,
+              create_response: true,
             },
+          },
+          output: { voice: 'verse' },
+        },
       },
     };
 
@@ -106,13 +103,8 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
       throw err;
     }
 
-    let callsUrl = `${endpoint}/openai/v1/realtime/calls`;
-    // GA WebRTC audio path: Microsoft samples use webrtcfilter=on; disable with AZURE_OPENAI_WEBRTC_FILTER=0
-    const filterRaw = trimEnv('AZURE_OPENAI_WEBRTC_FILTER');
-    const filterOff = /^(0|false|off|no)$/i.test(filterRaw);
-    if (!filterOff) {
-      callsUrl += `${callsUrl.includes('?') ? '&' : '?'}webrtcfilter=on`;
-    }
+    // GA WebRTC: webrtcfilter=on is required for correct media handling on /realtime/calls (always append).
+    const callsUrl = `${endpoint}/openai/v1/realtime/calls?webrtcfilter=on`;
 
     const sdpRes = await fetch(callsUrl, {
       method: 'POST',
@@ -141,6 +133,7 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
       instructions: systemPrompt,
       dataChannelLabel: DATA_CHANNEL_AZURE,
       sessionId,
+      voiceProvider: 'azure',
     };
   }
 
@@ -202,6 +195,7 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
     instructions: systemPrompt,
     dataChannelLabel: DATA_CHANNEL_OPENAI,
     sessionId,
+    voiceProvider: 'openai',
   };
 }
 

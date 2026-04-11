@@ -233,6 +233,7 @@ async function handleVoice(pathname, req, res) {
         answer: realtimeResult.answerSdp,
         instructions: realtimeResult.instructions,
         dataChannelLabel: realtimeResult.dataChannelLabel,
+        voice_provider: realtimeResult.voiceProvider,
         remaining_seconds: voiceQuotaSnapshot.applies
           ? voiceQuotaSnapshot.remainingSeconds
           : getDailyCapSeconds(),

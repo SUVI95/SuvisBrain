@@ -939,7 +939,9 @@
       let voiceCapCheckInterval = null;
       const SERVER_URL = window.location.origin;
       var rtcHints = { dataChannelLabel: 'oai-events', provider: 'openai' };
-      var rtcSessionReady = false;
+      /** Both must be true before response.create (order can be either way). */
+      var sdpAnswerApplied = false;
+      var dataChannelOpen = false;
       var realtimeConversationKicked = false;
       async function ensureRtcHints() {
         if (ensureRtcHints._done) return;
@@ -952,12 +954,18 @@
         ensureRtcHints._done = true;
       }
 
-      function kickRealtimeConversation() {
+      function isAzureVoiceProvider() {
+        return rtcHints.provider === 'azure';
+      }
+
+      /** Fire only after setRemoteDescription(answer) AND datachannel.onopen — both completed. */
+      function tryKickRealtimeConversation() {
         if (realtimeConversationKicked) return;
-        if (!oaiChannel || oaiChannel.readyState !== 'open' || !rtcSessionReady) return;
+        if (!oaiChannel || oaiChannel.readyState !== 'open') return;
+        if (!sdpAnswerApplied || !dataChannelOpen) return;
         realtimeConversationKicked = true;
         try {
-          if (rtcHints.provider !== 'azure' && sessionInstructions) {
+          if (!isAzureVoiceProvider() && sessionInstructions) {
             oaiChannel.send(JSON.stringify({
               type: 'session.update',
               session: { instructions: sessionInstructions, voice: 'verse' }
@@ -968,7 +976,7 @@
             response: { modalities: ['audio', 'text'], conversation: 'auto' }
           }));
         } catch (e) {
-          console.error('[Knuut] kickRealtimeConversation:', e);
+          console.error('[Knuut] tryKickRealtimeConversation:', e);
         }
       }
 
@@ -1132,7 +1140,8 @@
         updateStatus(examMode ? 'Connecting (YKI exam mode)...' : 'Connecting...');
 
         try {
-          rtcSessionReady = false;
+          sdpAnswerApplied = false;
+          dataChannelOpen = false;
           realtimeConversationKicked = false;
           // Unlock AudioContext while still in the click gesture (Safari / strict autoplay).
           try {
@@ -1247,7 +1256,8 @@
           oaiChannel = pc.createDataChannel(rtcHints.dataChannelLabel);
           const channel = oaiChannel;
           channel.onopen = function() {
-            kickRealtimeConversation();
+            dataChannelOpen = true;
+            tryKickRealtimeConversation();
           };
           channel.onmessage = function(event) {
             try {
@@ -1338,6 +1348,9 @@
             }
 
             const data = await resp.json();
+            if (data.voice_provider === 'azure' || data.voice_provider === 'openai') {
+              rtcHints.provider = data.voice_provider;
+            }
             voiceSessionCapSec = (typeof data.remaining_seconds === 'number' && data.remaining_seconds >= 0)
               ? data.remaining_seconds
               : (30 * 60);
@@ -1345,8 +1358,8 @@
             baseSessionInstructions = data.instructions || '';
             sessionInstructions = baseSessionInstructions;
             await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
-            rtcSessionReady = true;
-            kickRealtimeConversation();
+            sdpAnswerApplied = true;
+            tryKickRealtimeConversation();
             if (remoteAudioEl && remoteAudioEl.srcObject) {
               try { await remoteAudioEl.play(); } catch (ePlay2) { console.warn('[Knuut] play after SDP:', ePlay2); }
             }
@@ -1457,10 +1470,9 @@
           if (!oaiChannel || oaiChannel.readyState !== 'open' || !baseSessionInstructions) return;
           var mt = (user && user.mother_tongue) || '';
           try {
-            oaiChannel.send(JSON.stringify({
-              type: 'session.update',
-              session: { instructions: baseSessionInstructions + panicHelpAppendix(mt), voice: 'verse' }
-            }));
+            var panicSession = { instructions: baseSessionInstructions + panicHelpAppendix(mt) };
+            if (!isAzureVoiceProvider()) panicSession.voice = 'verse';
+            oaiChannel.send(JSON.stringify({ type: 'session.update', session: panicSession }));
             oaiChannel.send(JSON.stringify({
               type: 'response.create',
               response: { modalities: ['audio', 'text'], conversation: 'auto' }
