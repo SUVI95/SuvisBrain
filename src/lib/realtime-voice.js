@@ -58,14 +58,27 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
 
   if (endpoint && azureKey && deployment) {
     const secretUrl = `${endpoint}/openai/v1/realtime/client_secrets`;
+    const minimalAudio = trimEnv('AZURE_OPENAI_REALTIME_MINIMAL_AUDIO') === '1';
     const sessionPayload = {
       session: {
         type: 'realtime',
         model: deployment,
         instructions: systemPrompt,
-        audio: {
-          output: { voice: 'verse' },
-        },
+        audio: minimalAudio
+          ? { output: { voice: 'verse' } }
+          : {
+              input: {
+                format: { type: 'pcm16', rate: 24000 },
+                turn_detection: {
+                  type: 'server_vad',
+                  threshold: 0.5,
+                  prefix_padding_ms: 300,
+                  silence_duration_ms: 500,
+                  create_response: true,
+                },
+              },
+              output: { voice: 'verse' },
+            },
       },
     };
 
@@ -94,8 +107,10 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
     }
 
     let callsUrl = `${endpoint}/openai/v1/realtime/calls`;
-    const filter = process.env.AZURE_OPENAI_WEBRTC_FILTER;
-    if (filter === '1' || filter === 'true' || filter === 'on') {
+    // GA WebRTC audio path: Microsoft samples use webrtcfilter=on; disable with AZURE_OPENAI_WEBRTC_FILTER=0
+    const filterRaw = trimEnv('AZURE_OPENAI_WEBRTC_FILTER');
+    const filterOff = /^(0|false|off|no)$/i.test(filterRaw);
+    if (!filterOff) {
       callsUrl += `${callsUrl.includes('?') ? '&' : '?'}webrtcfilter=on`;
     }
 
@@ -150,6 +165,7 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
       input_audio_format: 'pcm16',
       output_audio_format: 'pcm16',
       instructions: systemPrompt,
+      turn_detection: { type: 'server_vad' },
     }),
   });
 

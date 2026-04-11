@@ -938,15 +938,38 @@
       let voiceSessionCapSec = 30 * 60;
       let voiceCapCheckInterval = null;
       const SERVER_URL = window.location.origin;
-      var rtcHints = { dataChannelLabel: 'oai-events' };
+      var rtcHints = { dataChannelLabel: 'oai-events', provider: 'openai' };
+      var rtcSessionReady = false;
+      var realtimeConversationKicked = false;
       async function ensureRtcHints() {
         if (ensureRtcHints._done) return;
         try {
           var r = await fetch(SERVER_URL + '/api/realtime-client-hints');
           var j = await r.json();
           if (j && j.dataChannelLabel) rtcHints.dataChannelLabel = j.dataChannelLabel;
+          if (j && j.provider) rtcHints.provider = j.provider;
         } catch (e) {}
         ensureRtcHints._done = true;
+      }
+
+      function kickRealtimeConversation() {
+        if (realtimeConversationKicked) return;
+        if (!oaiChannel || oaiChannel.readyState !== 'open' || !rtcSessionReady) return;
+        realtimeConversationKicked = true;
+        try {
+          if (rtcHints.provider !== 'azure' && sessionInstructions) {
+            oaiChannel.send(JSON.stringify({
+              type: 'session.update',
+              session: { instructions: sessionInstructions, voice: 'verse' }
+            }));
+          }
+          oaiChannel.send(JSON.stringify({
+            type: 'response.create',
+            response: { modalities: ['audio', 'text'], conversation: 'auto' }
+          }));
+        } catch (e) {
+          console.error('[Knuut] kickRealtimeConversation:', e);
+        }
       }
 
       document.querySelectorAll('.mode-tab').forEach((btn) => {
@@ -1109,6 +1132,8 @@
         updateStatus(examMode ? 'Connecting (YKI exam mode)...' : 'Connecting...');
 
         try {
+          rtcSessionReady = false;
+          realtimeConversationKicked = false;
           // Unlock AudioContext while still in the click gesture (Safari / strict autoplay).
           try {
             const AC = window.AudioContext || window.webkitAudioContext;
@@ -1180,7 +1205,10 @@
             if (pc.iceConnectionState === 'connected') updateStatus('Connected', true);
           };
 
-          micStream.getTracks().forEach(t => pc.addTrack(t, micStream));
+          micStream.getTracks().forEach(function (t) {
+            t.enabled = true;
+            pc.addTrack(t, micStream);
+          });
 
           try {
             const bars = document.querySelectorAll('#voice-bars .vb');
@@ -1219,24 +1247,15 @@
           oaiChannel = pc.createDataChannel(rtcHints.dataChannelLabel);
           const channel = oaiChannel;
           channel.onopen = function() {
-            if (sessionInstructions) {
-              try {
-                channel.send(JSON.stringify({
-                  type: 'session.update',
-                  session: { instructions: sessionInstructions, voice: 'verse' }
-                }));
-              } catch (e) {}
-            }
-            try {
-              channel.send(JSON.stringify({
-                type: 'response.create',
-                response: { modalities: ['audio','text'], conversation: 'auto' }
-              }));
-            } catch (e) {}
+            kickRealtimeConversation();
           };
           channel.onmessage = function(event) {
             try {
               const obj = JSON.parse(event.data || '{}');
+              if (obj.error) {
+                console.warn('[Knuut realtime]', obj);
+                if (obj.error.message) showToast(String(obj.error.message).slice(0, 140));
+              }
               const t = obj.transcript || obj.item?.transcript;
               if (obj.type === 'response.output_audio_transcript.done' && t) {
                 sessionTranscript += '\n[Knuut]: ' + t;
@@ -1326,6 +1345,8 @@
             baseSessionInstructions = data.instructions || '';
             sessionInstructions = baseSessionInstructions;
             await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+            rtcSessionReady = true;
+            kickRealtimeConversation();
             if (remoteAudioEl && remoteAudioEl.srcObject) {
               try { await remoteAudioEl.play(); } catch (ePlay2) { console.warn('[Knuut] play after SDP:', ePlay2); }
             }
