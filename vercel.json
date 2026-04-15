@@ -6,6 +6,8 @@
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api?path=$1" },
+    { "src": "^/$", "dest": "/public/duunijobs-knuut.html" },
+    { "src": "/duunijobs", "dest": "/public/duunijobs-knuut.html" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ],
   "crons": [
