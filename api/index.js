@@ -91,12 +91,20 @@ function getPathParam(req) {
 
 export default async function handler(req, res) {
   try {
-    setSecurityHeaders(req, res);
-    if (req.method === 'OPTIONS') return res.status(200).end();
-
     const pathParam = getPathParam(req);
     const pathSegs = (Array.isArray(pathParam) ? pathParam.join('/') : String(pathParam)).split('/').filter(Boolean);
     const route = pathSegs[0] || '';
+
+    const publicRoutes = ['duunijobs-session', 'realtime-client-hints'];
+    if (publicRoutes.includes(route)) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      if (req.method === 'OPTIONS') return res.status(204).end();
+    } else {
+      setSecurityHeaders(req, res);
+      if (req.method === 'OPTIONS') return res.status(200).end();
+    }
     const ip = getClientIp(req);
     const limitPath = route === 'auth' ? 'auth' : 'api';
     const limit = checkLimit(ip, limitPath, LIMITS[limitPath]);
@@ -107,7 +115,6 @@ export default async function handler(req, res) {
 
     if (route === 'realtime-client-hints' && req.method === 'GET') {
       res.setHeader('Cache-Control', 'public, max-age=60');
-      res.setHeader('Access-Control-Allow-Origin', '*');
       return res.status(200).json(getWebRtcClientHints());
     }
 
@@ -124,10 +131,6 @@ export default async function handler(req, res) {
       return;
     }
     if (route === 'duunijobs-session') {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-      if (req.method === 'OPTIONS') return res.status(204).end();
       const sessionBody = req.method === 'POST' ? body : {};
       const nresD = toNodeRes(res);
       await duunijobsSessionHandler(wrappedReq, nresD, sessionBody);
