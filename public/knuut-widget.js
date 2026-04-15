@@ -131,12 +131,45 @@
       sendResponseCreate();
     }
 
+    async function acquireMicStream(){
+      if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+        throw new Error('Selain ei tue mikrofonia / Browser does not support microphone');
+      }
+      var tryList=[
+        {audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}},
+        {audio:true},
+        {audio:{channelCount:1}}
+      ];
+      var lastErr;
+      for(var i=0;i<tryList.length;i++){
+        try{return await navigator.mediaDevices.getUserMedia(tryList[i]);}catch(e){lastErr=e;}
+      }
+      throw lastErr;
+    }
+
+    function micErrorMessage(err){
+      var n=(err&&err.name)||'';
+      if(n==='NotAllowedError'||n==='PermissionDeniedError'){
+        return 'Mikrofoni estetty — salli mikki selaimen asetuksista. / Microphone blocked — allow in browser settings.';
+      }
+      if(n==='NotReadableError'||n==='TrackStartError'){
+        return 'Mikrofonia ei voi k\u00e4ynnist\u00e4\u00e4 — sulje muut v\u00e4lilehdet/sovellukset jotka k\u00e4ytt\u00e4v\u00e4t mikki\u00e4. / Mic in use or unavailable — close other tabs or apps using the microphone.';
+      }
+      if(n==='NotFoundError'||n==='DevicesNotFoundError'){
+        return 'Mikrofonia ei l\u00f6ytynyt. / No microphone found.';
+      }
+      return (err&&err.message)||'Mikrofoni-virhe / Microphone error';
+    }
+
     async function startSession(){
       if(isActive||isStarting) return;
       isStarting=true; btn.disabled=true;
-      updateStatus('Yhdistet\u00e4\u00e4n...','');
+      updateStatus('Pyydet\u00e4\u00e4n mikrofonia...','');
       try{
         sdpAnswerApplied=false; dataChannelOpen=false; conversationKicked=false; sessionInstructionsSent=false; serverInstructions='';
+
+        micStream = await acquireMicStream();
+        updateStatus('Yhdistet\u00e4\u00e4n...','');
 
         try{ var AC=window.AudioContext||window.webkitAudioContext; if(AC){var u=new AC();if(u.state==='suspended')await u.resume();u.close();} }catch(e){}
 
@@ -149,7 +182,6 @@
           if(hj.provider) voiceProvider=hj.provider;
         }catch(e){}
 
-        micStream = await navigator.mediaDevices.getUserMedia({audio:true});
         updateStatus('Mikrofoni yhdistetty','');
 
         pc = new RTCPeerConnection({iceServers:[{urls:['stun:stun.l.google.com:19302']}]});
@@ -247,7 +279,9 @@
       }catch(e){
         console.error(e);
         cleanup();
-        updateStatus(e.message||'Virhe','error');
+        var errMsg=e&&e.message;
+        var isMicErr=e&&(e.name==='NotAllowedError'||e.name==='PermissionDeniedError'||e.name==='NotReadableError'||e.name==='TrackStartError'||e.name==='NotFoundError'||e.name==='DevicesNotFoundError'||(errMsg&&/Could not start audio source/i.test(errMsg)));
+        updateStatus(isMicErr?micErrorMessage(e):(errMsg||'Virhe'),'error');
       }finally{
         isStarting=false; btn.disabled=false;
       }
