@@ -27,23 +27,23 @@
 .knuut-btn:disabled{opacity:.6;cursor:wait;}\
 .knuut-btn.active{background:linear-gradient(135deg,#ff6b6b 0%,#c0392b 100%);box-shadow:0 0 40px rgba(255,107,107,.3);}\
 .knuut-btn .knuut-icon{flex-shrink:0;}\
-.knuut-subtitle{color:rgba(0,0,0,.5);font-size:11px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;}\
+.knuut-subtitle{color:rgba(255,255,255,.5);font-size:11px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;}\
 .knuut-timer-wrap{display:none;flex-direction:column;align-items:center;gap:6px;margin-top:10px;}\
 .knuut-timer-wrap.visible{display:flex;}\
-.knuut-timer{font-family:"Inter",monospace;font-size:42px;font-weight:300;letter-spacing:.06em;color:rgba(0,0,0,.7);transition:color .4s;}\
+.knuut-timer{font-family:"Inter",monospace;font-size:42px;font-weight:300;letter-spacing:.06em;color:rgba(255,255,255,.85);transition:color .4s;}\
 .knuut-timer.warn{color:#ff6b6b;animation:knuut-pulse 1s ease-in-out infinite;}\
 @keyframes knuut-pulse{0%,100%{opacity:1}50%{opacity:.6}}\
-.knuut-timer-label{font-size:10px;text-transform:uppercase;letter-spacing:.2em;color:rgba(0,0,0,.35);}\
-.knuut-status{margin-top:8px;font-size:12px;color:rgba(0,0,0,.4);letter-spacing:.05em;min-height:18px;text-align:center;}\
-.knuut-status.active{color:#1a73e8;}\
+.knuut-timer-label{font-size:10px;text-transform:uppercase;letter-spacing:.2em;color:rgba(255,255,255,.35);}\
+.knuut-status{margin-top:8px;font-size:12px;color:rgba(255,255,255,.4);letter-spacing:.05em;min-height:18px;text-align:center;}\
+.knuut-status.active{color:rgba(255,255,255,.8);}\
 .knuut-status.error{color:#ff6b6b;}\
 .knuut-voice-bars{display:none;align-items:center;gap:3px;height:18px;}\
 .knuut-btn.active .knuut-voice-bars{display:flex;}\
 .knuut-btn.active .knuut-icon{display:none;}\
 .knuut-vb{width:3px;border-radius:2px;background:#fff;transition:transform .08s;}\
-.knuut-branding{font-size:11px;letter-spacing:.12em;color:rgba(0,0,0,.35);text-transform:uppercase;margin-top:12px;}\
-.knuut-branding a{color:rgba(0,0,0,.5);text-decoration:none;}\
-.knuut-branding a:hover{color:#1a73e8;}\
+.knuut-branding{font-size:11px;letter-spacing:.12em;color:rgba(255,255,255,.25);text-transform:uppercase;margin-top:12px;}\
+.knuut-branding a{color:rgba(255,255,255,.35);text-decoration:none;}\
+.knuut-branding a:hover{color:rgba(255,255,255,.6);}\
 @media(max-width:480px){.knuut-btn{padding:16px 36px;font-size:13px;}.knuut-timer{font-size:36px;}}\
 ';
 
