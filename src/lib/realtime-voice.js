@@ -8,8 +8,6 @@
 const DATA_CHANNEL_AZURE = 'realtime-channel';
 const DATA_CHANNEL_OPENAI = 'oai-events';
 
-let lastAzureFailed = false;
-
 function normalizeAzureEndpoint(raw) {
   if (!raw) return '';
   let u = String(raw).trim().replace(/\/$/, '');
@@ -40,8 +38,7 @@ export function isVoiceProviderConfigured() {
 }
 
 /** Hints for the browser (data channel label must match the provider before createOffer).
- *  When both Azure and OpenAI are configured, default to OpenAI (reliable fallback)
- *  unless Azure has recently succeeded. */
+ *  When OPENAI_API_KEY is set, always use OpenAI — server uses the same rule so SDP matches. */
 export function getWebRtcClientHints() {
   const azureReady = isAzureVoiceConfigured();
   const hasFallback = !!trimEnv('OPENAI_API_KEY');
@@ -64,7 +61,10 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
   const deployment = trimEnv('AZURE_OPENAI_REALTIME_DEPLOYMENT');
 
   const hasFallbackKey = !!trimEnv('OPENAI_API_KEY');
-  if (endpoint && azureKey && deployment && !(lastAzureFailed && hasFallbackKey)) {
+  // Must match getWebRtcClientHints(): when OPENAI_API_KEY exists, the browser always
+  // uses oai-events + OpenAI-style offer. If we answer with Azure here, SDP/data-channel
+  // mismatch breaks mic + remote audio with no obvious error.
+  if (endpoint && azureKey && deployment && !hasFallbackKey) {
     try {
       const secretUrl = `${endpoint}/openai/v1/realtime/client_secrets`;
       const sessionPayload = {
@@ -136,7 +136,6 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
         secretJson.id ||
         null;
 
-      lastAzureFailed = false;
       return {
         answerSdp,
         instructions: systemPrompt,
@@ -145,10 +144,7 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
         voiceProvider: 'azure',
       };
     } catch (azureErr) {
-      const fallbackKey = trimEnv('OPENAI_API_KEY');
-      if (!fallbackKey) throw azureErr;
-      lastAzureFailed = true;
-      console.warn(`[voice] Azure failed (${azureErr.message}), falling back to OpenAI`);
+      throw azureErr;
     }
   }
 
