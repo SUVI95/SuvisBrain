@@ -29,6 +29,7 @@ import lmsHandler from './lms.js';
 import teacherWorkflowRouter from './teacher-workflow.js';
 import { query } from './db.js';
 import { getWebRtcClientHints, checkVoiceProviderReachable } from '../src/lib/realtime-voice.js';
+import duunijobsSessionHandler from './duunijobs-session.js';
 
 function toNodeRes(res) {
   return {
@@ -106,6 +107,7 @@ export default async function handler(req, res) {
 
     if (route === 'realtime-client-hints' && req.method === 'GET') {
       res.setHeader('Cache-Control', 'public, max-age=60');
+      res.setHeader('Access-Control-Allow-Origin', '*');
       return res.status(200).json(getWebRtcClientHints());
     }
 
@@ -119,6 +121,17 @@ export default async function handler(req, res) {
       } else {
         await authHandler(wrappedReq, nres);
       }
+      return;
+    }
+    if (route === 'duunijobs-session') {
+      const origin = (req.headers && req.headers.origin) || '*';
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      if (req.method === 'OPTIONS') return res.status(204).end();
+      const sessionBody = req.method === 'POST' ? body : {};
+      const nresD = toNodeRes(res);
+      await duunijobsSessionHandler(wrappedReq, nresD, sessionBody);
       return;
     }
     if (route === 'session') {

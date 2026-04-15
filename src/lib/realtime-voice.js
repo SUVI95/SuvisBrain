@@ -8,6 +8,8 @@
 const DATA_CHANNEL_AZURE = 'realtime-channel';
 const DATA_CHANNEL_OPENAI = 'oai-events';
 
+let lastAzureFailed = false;
+
 function normalizeAzureEndpoint(raw) {
   if (!raw) return '';
   let u = String(raw).trim().replace(/\/$/, '');
@@ -37,11 +39,16 @@ export function isVoiceProviderConfigured() {
   return isAzureVoiceConfigured() || !!trimEnv('OPENAI_API_KEY');
 }
 
-/** Hints for the browser (data channel label must match the provider before createOffer). */
+/** Hints for the browser (data channel label must match the provider before createOffer).
+ *  When both Azure and OpenAI are configured, default to OpenAI (reliable fallback)
+ *  unless Azure has recently succeeded. */
 export function getWebRtcClientHints() {
+  const azureReady = isAzureVoiceConfigured();
+  const hasFallback = !!trimEnv('OPENAI_API_KEY');
+  const useAzure = azureReady && !hasFallback;
   return {
-    dataChannelLabel: isAzureVoiceConfigured() ? DATA_CHANNEL_AZURE : DATA_CHANNEL_OPENAI,
-    provider: isAzureVoiceConfigured() ? 'azure' : 'openai',
+    dataChannelLabel: useAzure ? DATA_CHANNEL_AZURE : DATA_CHANNEL_OPENAI,
+    provider: useAzure ? 'azure' : 'openai',
   };
 }
 
@@ -56,85 +63,93 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
   const azureKey = trimEnv('AZURE_OPENAI_API_KEY');
   const deployment = trimEnv('AZURE_OPENAI_REALTIME_DEPLOYMENT');
 
-  if (endpoint && azureKey && deployment) {
-    const secretUrl = `${endpoint}/openai/v1/realtime/client_secrets`;
-    const sessionPayload = {
-      session: {
-        type: 'realtime',
-        model: deployment,
-        instructions: systemPrompt,
-        audio: {
-          input: {
-            format: { type: 'pcm16', rate: 24000 },
-            turn_detection: {
-              type: 'server_vad',
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 500,
-              create_response: true,
+  const hasFallbackKey = !!trimEnv('OPENAI_API_KEY');
+  if (endpoint && azureKey && deployment && !(lastAzureFailed && hasFallbackKey)) {
+    try {
+      const secretUrl = `${endpoint}/openai/v1/realtime/client_secrets`;
+      const sessionPayload = {
+        session: {
+          type: 'realtime',
+          model: deployment,
+          instructions: systemPrompt,
+          temperature: 1.1,
+          audio: {
+            input: {
+              format: { type: 'pcm16', rate: 24000 },
+              turn_detection: {
+                type: 'server_vad',
+                threshold: 0.4,
+                prefix_padding_ms: 200,
+                silence_duration_ms: 300,
+                create_response: true,
+              },
             },
+            output: { voice: 'verse', speed: 1.0 },
           },
-          output: { voice: 'verse' },
         },
-      },
-    };
+      };
 
-    const secretRes = await fetch(secretUrl, {
-      method: 'POST',
-      headers: {
-        'api-key': azureKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(sessionPayload),
-    });
+      const secretRes = await fetch(secretUrl, {
+        method: 'POST',
+        headers: {
+          'api-key': azureKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sessionPayload),
+        signal: AbortSignal.timeout(3000),
+      });
 
-    if (!secretRes.ok) {
-      const errText = await secretRes.text();
-      const err = new Error(`Azure client_secrets failed: ${secretRes.status} ${errText.slice(0, 400)}`);
-      err.statusCode = secretRes.status;
-      throw err;
+      if (!secretRes.ok) {
+        const errText = await secretRes.text();
+        throw new Error(`Azure client_secrets failed: ${secretRes.status} ${errText.slice(0, 400)}`);
+      }
+
+      const secretJson = await secretRes.json();
+      const ephemeral = secretJson.value;
+      if (!ephemeral || typeof ephemeral !== 'string') {
+        throw new Error('Azure client_secrets: missing ephemeral token (value)');
+      }
+
+      const filterRaw = String(trimEnv('AZURE_OPENAI_WEBRTC_FILTER') || 'on').toLowerCase();
+      const filterOff = filterRaw === 'off' || filterRaw === '0' || filterRaw === 'false' || filterRaw === 'no';
+      const callsUrl = filterOff
+        ? `${endpoint}/openai/v1/realtime/calls`
+        : `${endpoint}/openai/v1/realtime/calls?webrtcfilter=on`;
+
+      const sdpRes = await fetch(callsUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${ephemeral}`,
+          'Content-Type': 'application/sdp',
+        },
+        body: sdpOffer,
+      });
+
+      if (!sdpRes.ok) {
+        const errText = await sdpRes.text();
+        throw new Error(`Azure realtime calls failed: ${sdpRes.status} ${errText.slice(0, 400)}`);
+      }
+
+      const answerSdp = await sdpRes.text();
+      const sessionId =
+        (secretJson.session && secretJson.session.id) ||
+        secretJson.id ||
+        null;
+
+      lastAzureFailed = false;
+      return {
+        answerSdp,
+        instructions: systemPrompt,
+        dataChannelLabel: DATA_CHANNEL_AZURE,
+        sessionId,
+        voiceProvider: 'azure',
+      };
+    } catch (azureErr) {
+      const fallbackKey = trimEnv('OPENAI_API_KEY');
+      if (!fallbackKey) throw azureErr;
+      lastAzureFailed = true;
+      console.warn(`[voice] Azure failed (${azureErr.message}), falling back to OpenAI`);
     }
-
-    const secretJson = await secretRes.json();
-    const ephemeral = secretJson.value;
-    if (!ephemeral || typeof ephemeral !== 'string') {
-      const err = new Error('Azure client_secrets: missing ephemeral token (value)');
-      err.statusCode = 502;
-      throw err;
-    }
-
-    // GA WebRTC: webrtcfilter=on is required for correct media handling on /realtime/calls (always append).
-    const callsUrl = `${endpoint}/openai/v1/realtime/calls?webrtcfilter=on`;
-
-    const sdpRes = await fetch(callsUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${ephemeral}`,
-        'Content-Type': 'application/sdp',
-      },
-      body: sdpOffer,
-    });
-
-    if (!sdpRes.ok) {
-      const errText = await sdpRes.text();
-      const err = new Error(`Azure realtime calls failed: ${sdpRes.status} ${errText.slice(0, 400)}`);
-      err.statusCode = sdpRes.status;
-      throw err;
-    }
-
-    const answerSdp = await sdpRes.text();
-    const sessionId =
-      (secretJson.session && secretJson.session.id) ||
-      secretJson.id ||
-      null;
-
-    return {
-      answerSdp,
-      instructions: systemPrompt,
-      dataChannelLabel: DATA_CHANNEL_AZURE,
-      sessionId,
-      voiceProvider: 'azure',
-    };
   }
 
   const openaiKey = trimEnv('OPENAI_API_KEY');
@@ -146,45 +161,58 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
     throw err;
   }
 
-  const createResp = await fetch('https://api.openai.com/v1/realtime/sessions', {
+  // Step 1: Create client_secret with session config (voice + instructions baked in)
+  const secretResp = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${openaiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-realtime-1.5',
-      voice: 'verse',
-      input_audio_format: 'pcm16',
-      output_audio_format: 'pcm16',
-      instructions: systemPrompt,
-      turn_detection: { type: 'server_vad' },
+      session: {
+        type: 'realtime',
+        model: 'gpt-realtime-1.5',
+        instructions: systemPrompt,
+        audio: {
+          output: { voice: 'verse', speed: 1.0 },
+          input: {
+            turn_detection: {
+              type: 'server_vad',
+              threshold: 0.4,
+              prefix_padding_ms: 200,
+              silence_duration_ms: 300,
+              create_response: true,
+            },
+          },
+        },
+      },
     }),
   });
 
-  if (!createResp.ok) {
-    const errText = await createResp.text();
-    const err = new Error(`OpenAI realtime sessions failed: ${createResp.status} ${errText.slice(0, 200)}`);
-    err.statusCode = createResp.status;
+  if (!secretResp.ok) {
+    const errText = await secretResp.text();
+    const err = new Error(`OpenAI client_secrets failed: ${secretResp.status} ${errText.slice(0, 200)}`);
+    err.statusCode = secretResp.status;
     throw err;
   }
 
-  const created = await createResp.json();
-  const sessionId = created.id;
-  const apiUrl = `https://api.openai.com/v1/realtime?model=gpt-realtime-1.5&session=${encodeURIComponent(sessionId)}`;
-  const oaiResp = await fetch(apiUrl, {
+  const secretData = await secretResp.json();
+  const ephemeralKey = secretData.value;
+  console.log('[voice] OpenAI client_secret created, voice: verse, instructions:', systemPrompt.length, 'chars');
+
+  // Step 2: SDP exchange using ephemeral key
+  const oaiResp = await fetch('https://api.openai.com/v1/realtime/calls', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${openaiKey}`,
+      Authorization: `Bearer ${ephemeralKey}`,
       'Content-Type': 'application/sdp',
-      'OpenAI-Beta': 'realtime=v1',
     },
     body: sdpOffer,
   });
 
   if (!oaiResp.ok) {
     const errText = await oaiResp.text();
-    const err = new Error(`OpenAI SDP exchange failed: ${oaiResp.status} ${errText.slice(0, 200)}`);
+    const err = new Error(`OpenAI realtime/calls failed: ${oaiResp.status} ${errText.slice(0, 200)}`);
     err.statusCode = oaiResp.status;
     throw err;
   }
@@ -194,7 +222,7 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
     answerSdp,
     instructions: systemPrompt,
     dataChannelLabel: DATA_CHANNEL_OPENAI,
-    sessionId,
+    sessionId: secretData.session?.id || null,
     voiceProvider: 'openai',
   };
 }

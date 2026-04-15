@@ -45,6 +45,7 @@ import {
   checkVoiceProviderReachable,
 } from './src/lib/realtime-voice.js';
 import { assertVoiceSessionAllowed, getDailyCapSeconds } from './src/lib/voice-daily-quota.js';
+import duunijobsSessionHandler from './api/duunijobs-session.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PORT = 3000;
@@ -81,6 +82,36 @@ async function handleVoice(pathname, req, res) {
     return true;
   }
 
+  if (pathname === '/api/duunijobs-session' && req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': req.headers.origin || '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400',
+    });
+    res.end();
+    return true;
+  }
+
+  if (pathname === '/api/duunijobs-session' && req.method === 'POST') {
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    try {
+      const rawBody = await collectBody(req);
+      const body = (() => { try { return JSON.parse(rawBody); } catch { return {}; } })();
+      const wrappedRes = {
+        writeHead: (code, headers) => { res.writeHead(code, headers || {}); return wrappedRes; },
+        end: (data) => { res.end(data); return wrappedRes; },
+      };
+      await duunijobsSessionHandler({ method: req.method, headers: req.headers }, wrappedRes, body);
+    } catch (err) {
+      console.error('[duunijobs-voice]', err);
+      sendError(res, 500);
+    }
+    return true;
+  }
+
   if ((pathname === '/session' || pathname === '/api/session') && req.method === 'POST') {
     try {
       const token = getTokenFromRequest(req);
@@ -91,7 +122,7 @@ async function handleVoice(pathname, req, res) {
       }
       if (!isVoiceProviderConfigured()) {
         sendError(res, 500);
-        return;
+        return true;
       }
       const contentType = req.headers['content-type'] || '';
       const rawBody = await collectBody(req);
@@ -223,7 +254,7 @@ async function handleVoice(pathname, req, res) {
       } catch (voiceErr) {
         console.error('[voice]', voiceErr.message || voiceErr);
         sendError(res, 500);
-        return;
+        return true;
       }
 
       const headers = { 'Content-Type': 'application/json' };
@@ -269,6 +300,7 @@ async function handleApi(pathname, req, res, body) {
     res.writeHead(200, {
       'Content-Type': 'application/json',
       'Cache-Control': 'public, max-age=60',
+      'Access-Control-Allow-Origin': '*',
     });
     res.end(JSON.stringify(getWebRtcClientHints()));
     return true;
@@ -542,6 +574,7 @@ const server = createServer(async (req, res) => {
     '/onboarding': 'onboarding.html',
     '/login': 'login.html',
     '/student': 'student-dashboard.html',
+    '/duunijobs': 'duunijobs-knuut.html',
   };
   const staticPath = routeRewrites[pathname] || pathname;
   if (!serveStatic(staticPath, res)) {
