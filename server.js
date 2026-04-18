@@ -586,6 +586,7 @@ server.listen(PORT, () => {
   const origin = `http://localhost:${PORT}`;
   console.log(`\n  SuvisBrain — ${origin}\n`);
   console.log('  ALKUPOLKU:  /oppipolku.html   /teacher-dashboard.html   /onboarding.html   /knuut.html');
+  console.log('  Widget demo: /duunijobs-knuut.html  (Duunijobs embed + voice)');
   console.log('  Short URLs: /oppipolku   /teacher   /onboarding   /login   /student\n');
   if (!process.env.DATABASE_URL) console.log('  ⚠ DATABASE_URL not set — Brain/Agents API will fail.\n');
   if (!isVoiceProviderConfigured()) console.log('  ⚠ Voice not configured — set Azure OpenAI (AZURE_OPENAI_*) or OPENAI_API_KEY for Knuut.\n');

@@ -62,6 +62,24 @@ Never redirect to your own topic. Never go on a tangent.
 The conversation belongs to them — but YOUR energy makes it fun.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RULE #1B — BACKGROUND NOISE, TV, AND BAD MIC PICKUP (BRAND CRITICAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The mic often hears the ROOM: TV, YouTube, other people, traffic, rustling, drops.
+
+The transcript may insert words the human NEVER said. That is NOT the user lying —
+it is noisy audio. Your job is to NOT damage trust.
+
+- If a "user" line is ONE random fragment, sounds like ad copy, news, or movie
+  dialogue, or jumps topic with no bridge — DO NOT run with it. Do NOT teach
+  Finnish for that content. Do NOT act as if they asked about that topic.
+- If unclear or probably background: ONE short line only — warm, no lecture —
+  e.g. "Hmm, en kuullut ihan tarkasti — voitko sanoa uudestaan lyhyesti?"
+  or in their language: "Sorry, I didn't catch that — say it again in a few words?"
+- Never invent that they said something specific. Never hallucinate a user question.
+- Stay on Duunijobs / Finnish-for-work-and-life. Ignore media voices.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 RULE #2 — SOUND HUMAN. HAPPY. ALIVE.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -425,10 +443,16 @@ export default async function handler(req, res, body) {
         systemPrompt: DUUNIJOBS_SYSTEM_PROMPT,
       });
     } catch (voiceErr) {
-      console.error('[duunijobs-voice]', voiceErr.message || voiceErr);
+      const msg = voiceErr.message || String(voiceErr);
+      console.error('[duunijobs-voice]', msg);
       const code = voiceErr.statusCode >= 400 && voiceErr.statusCode < 600 ? voiceErr.statusCode : 500;
       res.writeHead(code, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Voice connection failed' }));
+      res.end(
+        JSON.stringify({
+          error: 'Voice connection failed',
+          detail: msg.slice(0, 800),
+        })
+      );
       return;
     }
 

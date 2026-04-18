@@ -65,8 +65,23 @@ function getRawBody(req) {
 
 async function collectBody(req) {
   if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) return req.body;
-  const raw = typeof req.body === 'string' ? req.body : (req.text ? await req.text() : '') || '';
-  try { return JSON.parse(raw || '{}'); } catch (e) { return {}; }
+  let raw = '';
+  if (typeof req.body === 'string') raw = req.body;
+  else if (Buffer.isBuffer(req.body)) raw = req.body.toString('utf8');
+  else if (typeof req.text === 'function') {
+    try {
+      raw = await req.text();
+    } catch (e) {
+      raw = '';
+    }
+  } else {
+    raw = await getRawBody(req);
+  }
+  try {
+    return JSON.parse(raw || '{}');
+  } catch (e) {
+    return {};
+  }
 }
 
 function getPathParam(req) {

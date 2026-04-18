@@ -8,6 +8,54 @@
 const DATA_CHANNEL_AZURE = 'realtime-channel';
 const DATA_CHANNEL_OPENAI = 'oai-events';
 
+/** Tunable via env for noisy rooms (TV, laptop mic, embedded widget). */
+function realtimeVadConfig() {
+  const threshold = parseFloat(trimEnv('REALTIME_VAD_THRESHOLD'));
+  const silenceMs = parseInt(trimEnv('REALTIME_VAD_SILENCE_MS'), 10);
+  const prefixMs = parseInt(trimEnv('REALTIME_VAD_PREFIX_MS'), 10);
+  return {
+    type: 'server_vad',
+    threshold: Number.isFinite(threshold) ? Math.min(0.95, Math.max(0.35, threshold)) : 0.65,
+    prefix_padding_ms: Number.isFinite(prefixMs) ? prefixMs : 280,
+    silence_duration_ms: Number.isFinite(silenceMs) ? silenceMs : 650,
+    create_response: true,
+  };
+}
+
+/** far_field suits laptop / room mics; near_field for headsets. off = omit noise reduction. */
+function realtimeInputNoiseReduction() {
+  const v = String(trimEnv('REALTIME_INPUT_NOISE_REDUCTION') || 'far_field').toLowerCase();
+  if (v === 'off' || v === 'none' || v === 'false' || v === '0') return null;
+  if (v === 'near_field') return { type: 'near_field' };
+  return { type: 'far_field' };
+}
+
+/**
+ * @param {'azure' | 'openai'} provider Azure uses explicit pcm16; OpenAI WebRTC often works without input.format (defaults).
+ */
+function realtimeAudioInputBase(provider) {
+  const nr = realtimeInputNoiseReduction();
+  const input = {
+    turn_detection: realtimeVadConfig(),
+  };
+  if (provider === 'azure') {
+    input.format = { type: 'pcm16', rate: 24000 };
+  }
+  if (nr) input.noise_reduction = nr;
+  return input;
+}
+
+function realtimeSessionTemperature() {
+  const t = parseFloat(trimEnv('REALTIME_TEMPERATURE'));
+  if (Number.isFinite(t)) return Math.min(1.2, Math.max(0.6, t));
+  return 0.75;
+}
+
+function openaiRealtimeModel() {
+  const m = trimEnv('OPENAI_REALTIME_MODEL');
+  return m || 'gpt-realtime-1.5';
+}
+
 function normalizeAzureEndpoint(raw) {
   if (!raw) return '';
   let u = String(raw).trim().replace(/\/$/, '');
@@ -67,23 +115,15 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
   if (endpoint && azureKey && deployment && !hasFallbackKey) {
     try {
       const secretUrl = `${endpoint}/openai/v1/realtime/client_secrets`;
+      const azureInput = realtimeAudioInputBase('azure');
       const sessionPayload = {
         session: {
           type: 'realtime',
           model: deployment,
           instructions: systemPrompt,
-          temperature: 1.1,
+          temperature: realtimeSessionTemperature(),
           audio: {
-            input: {
-              format: { type: 'pcm16', rate: 24000 },
-              turn_detection: {
-                type: 'server_vad',
-                threshold: 0.4,
-                prefix_padding_ms: 200,
-                silence_duration_ms: 300,
-                create_response: true,
-              },
-            },
+            input: azureInput,
             output: { voice: 'verse', speed: 1.0 },
           },
         },
@@ -157,6 +197,7 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
     throw err;
   }
 
+  const oaiInput = realtimeAudioInputBase('openai');
   // Step 1: Create client_secret with session config (voice + instructions baked in)
   const secretResp = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
     method: 'POST',
@@ -167,19 +208,12 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
     body: JSON.stringify({
       session: {
         type: 'realtime',
-        model: 'gpt-realtime-1.5',
+        model: openaiRealtimeModel(),
         instructions: systemPrompt,
+        temperature: realtimeSessionTemperature(),
         audio: {
           output: { voice: 'verse', speed: 1.0 },
-          input: {
-            turn_detection: {
-              type: 'server_vad',
-              threshold: 0.4,
-              prefix_padding_ms: 200,
-              silence_duration_ms: 300,
-              create_response: true,
-            },
-          },
+          input: oaiInput,
         },
       },
     }),
@@ -194,7 +228,13 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
 
   const secretData = await secretResp.json();
   const ephemeralKey = secretData.value;
-  console.log('[voice] OpenAI client_secret created, voice: verse, instructions:', systemPrompt.length, 'chars');
+  console.log(
+    '[voice] OpenAI client_secret — model:',
+    openaiRealtimeModel(),
+    '| voice: verse | instructions:',
+    systemPrompt.length,
+    'chars'
+  );
 
   // Step 2: SDP exchange using ephemeral key
   const oaiResp = await fetch('https://api.openai.com/v1/realtime/calls', {

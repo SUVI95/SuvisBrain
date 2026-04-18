@@ -1,12 +1,8 @@
 (function(){
   'use strict';
   var scriptEl = document.currentScript;
-  var API_BASE = (function(){
-    if(scriptEl && scriptEl.src){
-      try{ var u=new URL(scriptEl.src); return u.origin; }catch(e){}
-    }
-    return 'https://suvisbrain.vercel.app';
-  })();
+  /** Resolve once createWidget runs so data-api-base can override (embed on third-party sites). */
+  var API_BASE = 'https://suvisbrain.vercel.app';
 
   var FONTS_LOADED = false;
   function loadFonts(){
@@ -53,9 +49,24 @@
     document.head.appendChild(s);
   }
 
+  function resolveApiBase(container){
+    var attr = container && container.getAttribute('data-api-base');
+    if(attr && String(attr).trim()){
+      return String(attr).trim().replace(/\/$/,'');
+    }
+    if(scriptEl && scriptEl.src){
+      try{ var u=new URL(scriptEl.src); return u.origin; }catch(e){}
+    }
+    if(typeof location !== 'undefined' && location.origin && location.origin !== 'null'){
+      return location.origin;
+    }
+    return 'https://suvisbrain.vercel.app';
+  }
+
   function createWidget(container){
     loadFonts();
     injectCSS();
+    API_BASE = resolveApiBase(container);
 
     container.innerHTML = '\
 <div class="knuut-widget">\
@@ -131,12 +142,28 @@
       sendResponseCreate();
     }
 
+    function micConstraintsPrimary(){
+      var audio={
+        channelCount:{ideal:1},
+        echoCancellation:{ideal:true},
+        noiseSuppression:{ideal:true},
+        autoGainControl:{ideal:true}
+      };
+      try{
+        if(typeof MediaTrackSupportedConstraints!=='undefined'&&MediaTrackSupportedConstraints.voiceIsolation){
+          audio.voiceIsolation={ideal:true};
+        }
+      }catch(e){}
+      return {audio:audio};
+    }
+
     async function acquireMicStream(){
       if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
         throw new Error('Selain ei tue mikrofonia / Browser does not support microphone');
       }
       var tryList=[
-        {audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}},
+        micConstraintsPrimary(),
+        {audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}},
         {audio:true},
         {audio:{channelCount:1}}
       ];
@@ -245,7 +272,12 @@
           body:JSON.stringify({sdp:offer.sdp||''})
         });
         if(!resp.ok){
-          var et=await resp.text();var em;try{em=JSON.parse(et).error||et;}catch(e){em=et;}
+          var et=await resp.text();var em;
+          try{
+            var ej=JSON.parse(et);
+            em=ej.error||et;
+            if(ej.detail) em+=' — '+ej.detail;
+          }catch(e){em=et;}
           throw new Error(em);
         }
         var data = await resp.json();
