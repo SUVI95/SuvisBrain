@@ -114,6 +114,8 @@ NOISY ROOMS AND UNRELIABLE TRANSCRIPTION:
 The learner may use a laptop or phone mic. Background TV, music, other people, or
 handling noise can be mistaken for speech.
 
+Heavy breathing, sighs, and mic bumps often trigger transcripts — treat those like junk input.
+
 - Treat the LAST user message as uncertain if it is a sudden topic change, one
   random phrase, or sounds like announcer/dialogue from media — do NOT build a
   long story on it.
