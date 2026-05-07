@@ -211,12 +211,19 @@
 
         updateStatus('Mikrofoni yhdistetty','');
 
-        pc = new RTCPeerConnection({iceServers:[{urls:['stun:stun.l.google.com:19302']}]});
+        pc = new RTCPeerConnection({
+          iceServers:[
+            {urls:['stun:stun.l.google.com:19302']},
+            {urls:['stun:stun1.l.google.com:19302']}
+          ],
+          iceCandidatePoolSize:10
+        });
 
         if(!remoteAudioEl){
           remoteAudioEl=document.createElement('audio');
           remoteAudioEl.autoplay=true; remoteAudioEl.playsInline=true;
           remoteAudioEl.setAttribute('playsinline',''); remoteAudioEl.setAttribute('webkit-playsinline','');
+          remoteAudioEl.preload='none';
           remoteAudioEl.muted=false; remoteAudioEl.volume=1;
           document.body.appendChild(remoteAudioEl);
         }
@@ -238,8 +245,19 @@
           }catch(e){}
         };
 
+        pc.onconnectionstatechange=function(){
+          if(!pc) return;
+          if(pc.connectionState==='failed'){
+            console.warn('[Knuut] WebRTC failed — Wi‑Fi/VPN/firewall may block stable UDP');
+            updateStatus('Yhteys katkesi — kokeile toista verkkoa tai sulje VPN','error');
+          }
+        };
         pc.oniceconnectionstatechange = function(){
-          if(pc&&pc.iceConnectionState==='connected') updateStatus('Yhdistetty \u2014 puhu!','active');
+          if(!pc) return;
+          if(pc.iceConnectionState==='connected') updateStatus('Yhdistetty \u2014 puhu!','active');
+          if(pc.iceConnectionState==='disconnected'||pc.iceConnectionState==='failed'){
+            console.warn('[Knuut] ICE:',pc.iceConnectionState);
+          }
         };
 
         micStream.getTracks().forEach(function(t){t.enabled=true;pc.addTrack(t,micStream);});

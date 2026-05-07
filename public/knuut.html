@@ -1168,7 +1168,11 @@
           updateStatus('Microphone connected');
 
           pc = new RTCPeerConnection({
-            iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }]
+            iceServers: [
+              { urls: ['stun:stun.l.google.com:19302'] },
+              { urls: ['stun:stun1.l.google.com:19302'] }
+            ],
+            iceCandidatePoolSize: 10
           });
 
           if (!remoteAudioEl) {
@@ -1177,6 +1181,7 @@
             remoteAudioEl.playsInline = true;
             remoteAudioEl.setAttribute('playsinline', '');
             remoteAudioEl.setAttribute('webkit-playsinline', '');
+            remoteAudioEl.preload = 'none';
             remoteAudioEl.muted = false;
             remoteAudioEl.volume = 1;
             document.body.appendChild(remoteAudioEl);
@@ -1221,8 +1226,20 @@
             } catch (eAn) { console.warn('[Knuut] remote analyser:', eAn); }
           };
 
+          pc.onconnectionstatechange = () => {
+            if (!pc) return;
+            if (pc.connectionState === 'failed') {
+              console.warn('[Knuut] WebRTC failed — Wi‑Fi/VPN/firewall may block stable UDP');
+              updateStatus('Connection lost — try another network or turn off VPN', true);
+              showToast('Voice connection failed. Wi‑Fi, VPN, or strict firewalls often cause choppy audio.');
+            }
+          };
           pc.oniceconnectionstatechange = () => {
+            if (!pc) return;
             if (pc.iceConnectionState === 'connected') updateStatus('Connected', true);
+            if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+              console.warn('[Knuut] ICE:', pc.iceConnectionState);
+            }
           };
 
           micStream.getTracks().forEach(function (t) {
