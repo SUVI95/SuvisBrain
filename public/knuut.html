@@ -947,31 +947,22 @@
         ensureRtcHints._done = true;
       }
 
-      function isAzureVoiceProvider() {
-        return rtcHints.provider === 'azure';
-      }
-
-      /** Azure GA sample uses bare { type: 'response.create' }; nested response.* can be ignored or rejected. */
+      /** OpenAI Realtime only. */
       function sendResponseCreate() {
         if (!oaiChannel || oaiChannel.readyState !== 'open') return;
         try {
-          if (isAzureVoiceProvider()) {
-            oaiChannel.send(JSON.stringify({ type: 'response.create' }));
-          } else {
-            oaiChannel.send(JSON.stringify({
-              type: 'response.create',
-              response: { modalities: ['audio', 'text'], conversation: 'auto' }
-            }));
-          }
+          oaiChannel.send(JSON.stringify({
+            type: 'response.create',
+            response: { modalities: ['audio', 'text'], conversation: 'auto' }
+          }));
         } catch (e) {
           console.error('[Knuut] sendResponseCreate:', e);
         }
       }
 
-      /** OpenAI: push instructions from the browser once (Azure gets instructions from client_secrets only). */
+      /** Push instructions from the browser once (supplements server client_secrets). */
       function sendSessionInstructionsClientUpdate() {
         if (sessionClientInstructionUpdateSent) return;
-        if (isAzureVoiceProvider()) return;
         if (!oaiChannel || oaiChannel.readyState !== 'open' || !sessionInstructions) return;
         sessionClientInstructionUpdateSent = true;
         try {
@@ -1323,9 +1314,7 @@
             } catch (e) {}
           };
 
-          const offer = isAzureVoiceProvider()
-            ? await pc.createOffer()
-            : await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false });
+          const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false });
           await pc.setLocalDescription(offer);
 
           const focusData = await getSessionFocus();
@@ -1377,7 +1366,7 @@
             }
 
             const data = await resp.json();
-            if (data.voice_provider === 'azure' || data.voice_provider === 'openai') {
+            if (data.voice_provider === 'openai') {
               rtcHints.provider = data.voice_provider;
             }
             voiceSessionCapSec = (typeof data.remaining_seconds === 'number' && data.remaining_seconds >= 0)
@@ -1500,8 +1489,7 @@
           if (!oaiChannel || oaiChannel.readyState !== 'open' || !baseSessionInstructions) return;
           var mt = (user && user.mother_tongue) || '';
           try {
-            var panicSession = { instructions: baseSessionInstructions + panicHelpAppendix(mt) };
-            if (!isAzureVoiceProvider()) panicSession.voice = 'verse';
+            var panicSession = { instructions: baseSessionInstructions + panicHelpAppendix(mt), voice: 'verse' };
             oaiChannel.send(JSON.stringify({ type: 'session.update', session: panicSession }));
             sendResponseCreate();
             updateStatus('Help — explaining in your language…', true);

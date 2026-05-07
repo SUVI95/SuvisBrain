@@ -261,9 +261,7 @@
           }catch(e){}
         };
 
-        var offer = (voiceProvider==='azure')
-          ? await pc.createOffer()
-          : await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:false});
+        var offer = await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:false});
         await pc.setLocalDescription(offer);
 
         var resp = await fetch(API_BASE+'/api/duunijobs-session',{

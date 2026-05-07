@@ -1,6 +1,6 @@
 /**
  * SuvisBrain dev server — static files + API routes + voice
- * Knuut voice: verse
+ * Knuut voice: OpenAI Realtime only — verse (default character voice via OPENAI_REALTIME_VOICE)
  * Run: node server.js
  */
 
@@ -589,7 +589,7 @@ server.listen(PORT, () => {
   console.log('  Widget demo: /duunijobs-knuut.html  (Duunijobs embed + voice)');
   console.log('  Short URLs: /oppipolku   /teacher   /onboarding   /login   /student\n');
   if (!process.env.DATABASE_URL) console.log('  ⚠ DATABASE_URL not set — Brain/Agents API will fail.\n');
-  if (!isVoiceProviderConfigured()) console.log('  ⚠ Voice not configured — set Azure OpenAI (AZURE_OPENAI_*) or OPENAI_API_KEY for Knuut.\n');
+  if (!isVoiceProviderConfigured()) console.log('  ⚠ Voice not configured — set OPENAI_API_KEY for Knuut realtime voice.\n');
   const azureChatReady = process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_API_KEY && process.env.AZURE_OPENAI_CHAT_DEPLOYMENT;
   if (!azureChatReady && !process.env.OPENROUTER_API_KEY) {
     console.log('  ⚠ No session-complete LLM: set Azure chat vars or OPENROUTER_API_KEY.\n');
