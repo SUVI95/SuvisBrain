@@ -59,7 +59,7 @@ function realtimeSessionTemperature() {
 
 function openaiRealtimeModel() {
   const m = trimEnv('OPENAI_REALTIME_MODEL');
-  return m || 'gpt-realtime-1.5';
+  return m || 'gpt-realtime-2';
 }
 
 /** Default verse — matches Knuut character; override with OPENAI_REALTIME_VOICE. */
