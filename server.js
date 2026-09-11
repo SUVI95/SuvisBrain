@@ -46,7 +46,7 @@ import {
 } from './src/lib/realtime-voice.js';
 import { assertVoiceSessionAllowed, getDailyCapSeconds } from './src/lib/voice-daily-quota.js';
 import duunijobsSessionHandler from './api/duunijobs-session.js';
-import hsbridgeSessionHandler from './api/hsbridge-session.js';
+import { handleHsbridgeSession } from './api/hsbridge-session.js';
 import conversationEndHandler from './api/conversation-end.js';
 import widgetSmokeHandler from './api/widget-smoke.js';
 

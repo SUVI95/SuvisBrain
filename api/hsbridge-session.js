@@ -43,7 +43,7 @@ export function extractOfferSdp(req, body, rawBody) {
   return '';
 }
 
-async function handleHsbridgeSession(req, res, body, rawBody) {
+export async function handleHsbridgeSession(req, res, body, rawBody) {
   if (req.method !== 'POST') {
     res.writeHead(405, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Method not allowed' }));
