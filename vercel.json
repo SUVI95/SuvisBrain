@@ -2,11 +2,18 @@
   "version": 2,
   "builds": [
     { "src": "api/index.js", "use": "@vercel/node" },
+    { "src": "api/hsbridge-session.js", "use": "@vercel/node" },
+    { "src": "api/widget-smoke.js", "use": "@vercel/node" },
+    { "src": "api/duunijobs-session.js", "use": "@vercel/node" },
+    { "src": "api/conversation/end.js", "use": "@vercel/node" },
     { "src": "public/**", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/session", "dest": "/api?path=hsbridge-session" },
-    { "src": "/api/conversation/end", "dest": "/api?path=conversation/end" },
+    { "src": "/session", "dest": "/api/hsbridge-session" },
+    { "src": "/api/hsbridge-session", "dest": "/api/hsbridge-session" },
+    { "src": "/api/widget-smoke", "dest": "/api/widget-smoke" },
+    { "src": "/api/duunijobs-session", "dest": "/api/duunijobs-session" },
+    { "src": "/api/conversation/end", "dest": "/api/conversation/end" },
     { "src": "/api/(.*)", "dest": "/api?path=$1" },
     { "src": "^/$", "dest": "/public/duunijobs-knuut.html" },
     { "src": "/duunijobs", "dest": "/public/duunijobs-knuut.html" },

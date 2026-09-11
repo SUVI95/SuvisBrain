@@ -1,11 +1,38 @@
-// POST /session — Legacy HSBridge / Framer embed (raw SDP in, raw SDP out).
-// Matches old knuut-ai-demo-page.onrender.com/session contract for minimal Framer edits.
+// POST /api/hsbridge-session and POST /session (via vercel rewrite)
+// Legacy HSBridge / Framer embed — raw SDP in, raw SDP out.
 
 import { exchangePublicKnuutVoice } from './duunijobs-session.js';
+
+export const config = { api: { bodyParser: false } };
+
+function setCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
 
 function isSdpContentType(req) {
   const ct = String(req.headers?.['content-type'] || req.headers?.['Content-Type'] || '').toLowerCase();
   return ct.includes('application/sdp') || ct.includes('text/plain');
+}
+
+async function readRawBody(req) {
+  if (typeof req.body === 'string') return req.body;
+  if (Buffer.isBuffer(req.body)) return req.body.toString('utf8');
+  if (req.body && typeof req.body === 'object' && req.body.sdp) return String(req.body.sdp);
+  if (typeof req.text === 'function') {
+    try {
+      return await req.text();
+    } catch (e) {
+      return '';
+    }
+  }
+  return new Promise((resolve) => {
+    const chunks = [];
+    req.on('data', (c) => chunks.push(c));
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', () => resolve(''));
+  });
 }
 
 export function extractOfferSdp(req, body, rawBody) {
@@ -16,7 +43,7 @@ export function extractOfferSdp(req, body, rawBody) {
   return '';
 }
 
-export default async function handler(req, res, body, rawBody) {
+async function handleHsbridgeSession(req, res, body, rawBody) {
   if (req.method !== 'POST') {
     res.writeHead(405, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Method not allowed' }));
@@ -46,4 +73,22 @@ export default async function handler(req, res, body, rawBody) {
     res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Something went wrong');
   }
+}
+
+/** Vercel / standalone entry */
+export default async function handler(req, res) {
+  setCors(res);
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+  const rawBody = req.method === 'POST' ? await readRawBody(req) : '';
+  let body = {};
+  try {
+    body = rawBody ? JSON.parse(rawBody) : {};
+  } catch (e) {
+    body = {};
+  }
+  await handleHsbridgeSession(req, res, body, rawBody);
 }
