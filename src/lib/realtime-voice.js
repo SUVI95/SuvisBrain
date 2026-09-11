@@ -74,6 +74,8 @@ function trimEnv(name) {
   return v.trim();
 }
 
+export const VOICE_SDP_EXCHANGE = 'ephemeral-raw';
+
 /** Voice WebRTC requires OpenAI API key. */
 export function isVoiceProviderConfigured() {
   return !!trimEnv('OPENAI_API_KEY');
