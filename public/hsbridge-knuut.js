@@ -21,6 +21,48 @@
     return DEFAULT_ORIGIN;
   })();
 
+  var FONT_HREFS = [
+    'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap',
+    'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,600&family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap',
+  ];
+
+  function extractGoogleFontUrl(raw) {
+    var d = String(raw || '')
+      .replace(/&#x27;|&#39;|&apos;|%27/gi, "'");
+    var m = d.match(/https:\/\/fonts\.googleapis\.com\/css2[^'"\s>]*/);
+    return m ? m[0].replace(/&amp;/g, '&') : '';
+  }
+
+  function patchBrokenFontLinks() {
+    document.querySelectorAll('link[rel="stylesheet"]').forEach(function (el) {
+      var href = el.getAttribute('href') || el.href || '';
+      if (href.indexOf('fonts.googleapis.com') === -1) return;
+      if (href.charAt(0) === "'" || href.indexOf("&#") !== -1 || href.indexOf("/'") !== -1 || href.indexOf("%27") !== -1) {
+        var ok = extractGoogleFontUrl(href);
+        if (ok) el.href = ok;
+        else el.parentNode && el.parentNode.removeChild(el);
+      }
+    });
+  }
+
+  function injectFonts() {
+    FONT_HREFS.forEach(function (h) {
+      if (document.querySelector('link[rel="stylesheet"][href="' + h + '"]')) return;
+      var l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = h;
+      document.head.appendChild(l);
+    });
+    patchBrokenFontLinks();
+  }
+  injectFonts();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectFonts);
+  }
+  try {
+    new MutationObserver(patchBrokenFontLinks).observe(document.documentElement, { childList: true, subtree: true });
+  } catch (e) {}
+
   var pc, mic, active, connecting, sid, startedAt, transcripts, dc, remoteAudio;
 
   function instructions() {
