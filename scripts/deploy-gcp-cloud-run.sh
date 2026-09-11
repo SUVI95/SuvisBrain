@@ -49,7 +49,35 @@ gcloud services enable \
   cloudbuild.googleapis.com \
   artifactregistry.googleapis.com \
   secretmanager.googleapis.com \
+  storage.googleapis.com \
   --quiet
+
+PROJECT_NUMBER="$(gcloud projects describe "$GCP_PROJECT" --format='value(projectNumber)')"
+COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+CLOUDBUILD_SA="${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com"
+
+echo "==> Granting IAM for Cloud Build + Cloud Run source deploy..."
+for ROLE in \
+  roles/storage.admin \
+  roles/artifactregistry.writer \
+  roles/logging.logWriter; do
+  gcloud projects add-iam-policy-binding "$GCP_PROJECT" \
+    --member="serviceAccount:${COMPUTE_SA}" \
+    --role="$ROLE" \
+    --quiet >/dev/null 2>&1 || true
+  gcloud projects add-iam-policy-binding "$GCP_PROJECT" \
+    --member="serviceAccount:${CLOUDBUILD_SA}" \
+    --role="$ROLE" \
+    --quiet >/dev/null 2>&1 || true
+done
+for ROLE in roles/run.admin roles/iam.serviceAccountUser; do
+  gcloud projects add-iam-policy-binding "$GCP_PROJECT" \
+    --member="serviceAccount:${CLOUDBUILD_SA}" \
+    --role="$ROLE" \
+    --quiet >/dev/null 2>&1 || true
+done
+echo "    (IAM bindings applied — may take ~30s to propagate)"
+sleep 30
 
 echo "==> Storing OpenAI key in Secret Manager ($SECRET_NAME)..."
 if gcloud secrets describe "$SECRET_NAME" --project="$GCP_PROJECT" >/dev/null 2>&1; then
@@ -58,8 +86,7 @@ else
   printf '%s' "$OPENAI_API_KEY" | gcloud secrets create "$SECRET_NAME" --data-file=-
 fi
 
-PROJECT_NUMBER="$(gcloud projects describe "$GCP_PROJECT" --format='value(projectNumber)')"
-RUN_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+RUN_SA="${COMPUTE_SA}"
 gcloud secrets add-iam-policy-binding "$SECRET_NAME" \
   --member="serviceAccount:${RUN_SA}" \
   --role="roles/secretmanager.secretAccessor" \
