@@ -67,6 +67,14 @@ gcloud secrets add-iam-policy-binding "$SECRET_NAME" \
 
 ALLOWED_ORIGINS="${ALLOWED_ORIGINS:-https://www.hsbridgeai.fi,https://hsbridgeai.fi,https://suvisbrain.vercel.app}"
 
+ENV_FILE="$(mktemp)"
+trap 'rm -f "$ENV_FILE"' EXIT
+cat > "$ENV_FILE" <<EOF
+ALLOWED_ORIGINS: "${ALLOWED_ORIGINS}"
+OPENAI_REALTIME_MODEL: "gpt-realtime-2"
+OPENAI_REALTIME_VOICE: "verse"
+EOF
+
 echo "==> Deploying to Cloud Run (min 1 instance = always warm)..."
 gcloud run deploy "$SERVICE_NAME" \
   --source="$ROOT" \
@@ -81,7 +89,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --concurrency=80 \
   --port=8080 \
   --set-secrets="OPENAI_API_KEY=${SECRET_NAME}:latest" \
-  --set-env-vars="ALLOWED_ORIGINS=${ALLOWED_ORIGINS},OPENAI_REALTIME_MODEL=gpt-realtime-2,OPENAI_REALTIME_VOICE=verse" \
+  --env-vars-file="$ENV_FILE" \
   --quiet
 
 VOICE_URL="$(gcloud run services describe "$SERVICE_NAME" --region="$GCP_REGION" --format='value(status.url)')"
