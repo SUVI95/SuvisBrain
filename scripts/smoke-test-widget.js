@@ -82,7 +82,10 @@ async function main() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
     });
-    if (res.status === 400 && data.error === 'Missing SDP offer') {
+    if (
+      res.status === 400 &&
+      (data.error === 'Missing SDP offer' || String(data.detail || '').includes('Missing SDP offer'))
+    ) {
       pass('POST /api/duunijobs-session (no SDP)', 'returns 400 as expected');
     } else if (res.status === 500 && data.error === 'Voice not available') {
       fail('POST /api/duunijobs-session (no SDP)', 'OPENAI_API_KEY not set on server');
@@ -131,7 +134,7 @@ async function main() {
   }
 
   // 6. Static widget assets
-  for (const asset of ['/knuut-widget.js', '/duunijobs-knuut.html']) {
+  for (const asset of ['/knuut-widget.js', '/duunijobs-knuut.html', '/hsbridge-knuut.js']) {
     try {
       const res = await fetch(`${BASE}${asset}`);
       if (res.ok) pass(`GET ${asset}`, `HTTP ${res.status}`);

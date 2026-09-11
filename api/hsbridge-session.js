@@ -43,6 +43,12 @@ export function extractOfferSdp(req, body, rawBody) {
   return '';
 }
 
+const HSBRIDGE_DEFAULT_PROMPT = `
+Olet Knuut, HSBridge Oy:n konsultti ja myyntihenkilö. Puhu lämmintä, rentoa suomea.
+Max 2-3 lausetta per vuoro. Vain yksi kysymys kerrallaan. Älä myönnä olevasi AI.
+Aloita: "Hei! Täällä Knuut HSBridgeltä — kiva kun soitit! Miten voin auttaa?"
+`.trim();
+
 export async function handleHsbridgeSession(req, res, body, rawBody) {
   if (req.method !== 'POST') {
     res.writeHead(405, { 'Content-Type': 'application/json' });
@@ -52,9 +58,13 @@ export async function handleHsbridgeSession(req, res, body, rawBody) {
 
   try {
     const offerSdp = extractOfferSdp(req, body, rawBody);
+    const instructions = String(
+      (body && (body.instructions || body.systemPrompt)) || HSBRIDGE_DEFAULT_PROMPT
+    ).slice(0, 12000);
+    console.log('[hsbridge-session] sdp bytes=', offerSdp.length, 'has m=audio=', /m=audio/i.test(offerSdp));
     let realtimeResult;
     try {
-      realtimeResult = await exchangePublicKnuutVoice(offerSdp);
+      realtimeResult = await exchangePublicKnuutVoice(offerSdp, instructions);
     } catch (voiceErr) {
       const msg = voiceErr.message || String(voiceErr);
       console.error('[hsbridge-session]', msg);
@@ -64,7 +74,7 @@ export async function handleHsbridgeSession(req, res, body, rawBody) {
       return;
     }
 
-    const headers = { 'Content-Type': 'application/sdp' };
+    const headers = { 'Content-Type': 'application/sdp', 'Access-Control-Expose-Headers': 'X-Session-Id' };
     if (realtimeResult.sessionId) headers['X-Session-Id'] = realtimeResult.sessionId;
     res.writeHead(200, headers);
     res.end(realtimeResult.answerSdp);

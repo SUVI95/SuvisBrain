@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Knuut HSBridge voice test</title>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #fff; padding: 40px; }
+    button { font-size: 18px; padding: 14px 28px; border-radius: 999px; border: 0; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Knuut voice test</h1>
+  <p>Click, allow microphone, speak. This uses the same hosted script as Framer.</p>
+  <button type="button" id="talk">Puhu Knuut AI:lle</button>
+  <script>
+    var KNUUT_INST = 'Olet Knuut. Sano lyhyesti hei suomeksi ja kysy miten voit auttaa.';
+  </script>
+  <script src="/hsbridge-knuut.js"></script>
+  <script>
+    document.getElementById('talk').onclick = function () {
+      if (window.knuutStart) window.knuutStart();
+    };
+  </script>
+</body>
+</html>
