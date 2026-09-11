@@ -35,13 +35,22 @@
 
   function patchBrokenFontLinks() {
     document.querySelectorAll('link[rel="stylesheet"]').forEach(function (el) {
-      var href = el.getAttribute('href') || el.href || '';
-      if (href.indexOf('fonts.googleapis.com') === -1) return;
-      if (href.charAt(0) === "'" || href.indexOf("&#") !== -1 || href.indexOf("/'") !== -1 || href.indexOf("%27") !== -1) {
-        var ok = extractGoogleFontUrl(href);
+      var href = el.getAttribute('href') || '';
+      var decoded = href.replace(/&#x27;|&#39;|&apos;|%27/gi, "'");
+      if (decoded.indexOf('fonts.googleapis.com') === -1) return;
+      if (decoded.charAt(0) === "'" || decoded.indexOf("/'") !== -1 || href.indexOf('&#') !== -1) {
+        var ok = extractGoogleFontUrl(href) || extractGoogleFontUrl(el.href);
         if (ok) el.href = ok;
-        else el.parentNode && el.parentNode.removeChild(el);
+        else if (el.parentNode) el.parentNode.removeChild(el);
       }
+    });
+    document.querySelectorAll('style').forEach(function (el) {
+      var t = el.textContent || '';
+      if (t.indexOf('fonts.googleapis.com') === -1) return;
+      var n = t
+        .replace(/url\(\s*(?:&#x27;|&#39;|&apos;|')/g, 'url(')
+        .replace(/(?:&#x27;|&#39;|&apos;|')\s*\)/g, ')');
+      if (n !== t) el.textContent = n;
     });
   }
 
