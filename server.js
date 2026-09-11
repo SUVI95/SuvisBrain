@@ -46,6 +46,8 @@ import {
 } from './src/lib/realtime-voice.js';
 import { assertVoiceSessionAllowed, getDailyCapSeconds } from './src/lib/voice-daily-quota.js';
 import duunijobsSessionHandler from './api/duunijobs-session.js';
+import hsbridgeSessionHandler from './api/hsbridge-session.js';
+import conversationEndHandler from './api/conversation-end.js';
 import widgetSmokeHandler from './api/widget-smoke.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -83,7 +85,10 @@ async function handleVoice(pathname, req, res) {
     return true;
   }
 
-  if (pathname === '/api/duunijobs-session' && req.method === 'OPTIONS') {
+  if (
+    (pathname === '/api/duunijobs-session' || pathname === '/session' || pathname === '/api/conversation/end')
+    && req.method === 'OPTIONS'
+  ) {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': req.headers.origin || '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -91,6 +96,49 @@ async function handleVoice(pathname, req, res) {
       'Access-Control-Max-Age': '86400',
     });
     res.end();
+    return true;
+  }
+
+  if (pathname === '/session' && req.method === 'POST') {
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    try {
+      const rawBody = await collectBody(req);
+      let body = {};
+      try {
+        body = rawBody ? JSON.parse(rawBody) : {};
+      } catch (e) {
+        body = {};
+      }
+      const wrappedRes = {
+        writeHead: (code, headers) => { res.writeHead(code, headers || {}); return wrappedRes; },
+        end: (data) => { res.end(data); return wrappedRes; },
+      };
+      await hsbridgeSessionHandler({ method: req.method, headers: req.headers }, wrappedRes, body, rawBody);
+    } catch (err) {
+      console.error('[hsbridge-session]', err);
+      sendError(res, 500);
+    }
+    return true;
+  }
+
+  if (pathname === '/api/conversation/end' && req.method === 'POST') {
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    try {
+      const rawBody = await collectBody(req);
+      const body = (() => { try { return JSON.parse(rawBody); } catch { return {}; } })();
+      const wrappedRes = {
+        writeHead: (code, headers) => { res.writeHead(code, headers || {}); return wrappedRes; },
+        end: (data) => { res.end(data); return wrappedRes; },
+      };
+      await conversationEndHandler({ method: req.method, headers: req.headers }, wrappedRes, body);
+    } catch (err) {
+      console.error('[conversation-end]', err);
+      sendError(res, 500);
+    }
     return true;
   }
 

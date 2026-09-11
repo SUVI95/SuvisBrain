@@ -113,7 +113,6 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
         type: 'realtime',
         model: openaiRealtimeModel(),
         instructions: systemPrompt,
-        temperature: realtimeSessionTemperature(),
         audio: {
           output: { voice: realtimeOutputVoice(), speed: 1.0 },
           input: oaiInput,

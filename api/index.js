@@ -30,6 +30,8 @@ import teacherWorkflowRouter from './teacher-workflow.js';
 import { query } from './db.js';
 import { getWebRtcClientHints, checkVoiceProviderReachable } from '../src/lib/realtime-voice.js';
 import duunijobsSessionHandler from './duunijobs-session.js';
+import hsbridgeSessionHandler from './hsbridge-session.js';
+import conversationEndHandler from './conversation-end.js';
 import widgetSmokeHandler from './widget-smoke.js';
 
 function toNodeRes(res) {
@@ -111,8 +113,9 @@ export default async function handler(req, res) {
     const pathSegs = (Array.isArray(pathParam) ? pathParam.join('/') : String(pathParam)).split('/').filter(Boolean);
     const route = pathSegs[0] || '';
 
-    const publicRoutes = ['duunijobs-session', 'realtime-client-hints', 'widget-smoke'];
-    if (publicRoutes.includes(route)) {
+    const publicRoutes = ['duunijobs-session', 'hsbridge-session', 'realtime-client-hints', 'widget-smoke'];
+    const isPublicConversationEnd = pathSegs[0] === 'conversation' && pathSegs[1] === 'end';
+    if (publicRoutes.includes(route) || isPublicConversationEnd) {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -136,6 +139,35 @@ export default async function handler(req, res) {
     if (route === 'widget-smoke' && req.method === 'GET') {
       const nresW = toNodeRes(res);
       await widgetSmokeHandler({ method: req.method, url: req.url || req.originalUrl || '' }, nresW);
+      return;
+    }
+
+    if (pathSegs[0] === 'conversation' && pathSegs[1] === 'end') {
+      const endBody = req.method === 'POST' ? await collectBody(req) : {};
+      const nresEnd = toNodeRes(res);
+      await conversationEndHandler(
+        { method: req.method, headers: req.headers || {}, body: endBody, user: null, url: req.url || req.originalUrl || '' },
+        nresEnd,
+        endBody
+      );
+      return;
+    }
+
+    if (route === 'hsbridge-session') {
+      const rawBody = req.method === 'POST' ? await getRawBody(req) : '';
+      let sessionBody = {};
+      try {
+        sessionBody = rawBody ? JSON.parse(rawBody) : {};
+      } catch (e) {
+        sessionBody = {};
+      }
+      const nresH = toNodeRes(res);
+      await hsbridgeSessionHandler(
+        { method: req.method, headers: req.headers || {}, body: sessionBody, user: null, url: req.url || req.originalUrl || '' },
+        nresH,
+        sessionBody,
+        rawBody
+      );
       return;
     }
 

@@ -420,6 +420,25 @@ A mother from Thailand, a nurse from Brazil, an engineer from Morocco —
 you meet everyone where they are and walk with them toward Finnish.
 `.trim();
 
+/** Shared public voice exchange for embed widgets (JSON + legacy SDP routes). */
+export async function exchangePublicKnuutVoice(offerSdp) {
+  if (!isVoiceProviderConfigured()) {
+    const err = new Error('Voice not available');
+    err.statusCode = 500;
+    throw err;
+  }
+  const sdp = String(offerSdp || '').trim();
+  if (!sdp) {
+    const err = new Error('Missing SDP offer');
+    err.statusCode = 400;
+    throw err;
+  }
+  return exchangeRealtimeWebRtc({
+    sdpOffer: sdp,
+    systemPrompt: DUUNIJOBS_SYSTEM_PROMPT,
+  });
+}
+
 export default async function handler(req, res, body) {
   if (req.method !== 'POST') {
     res.writeHead(405, { 'Content-Type': 'application/json' });
@@ -428,25 +447,10 @@ export default async function handler(req, res, body) {
   }
 
   try {
-    if (!isVoiceProviderConfigured()) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Voice not available' }));
-      return;
-    }
-
     const offerSdp = (body && body.sdp) ? String(body.sdp) : '';
-    if (!offerSdp) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Missing SDP offer' }));
-      return;
-    }
-
     let realtimeResult;
     try {
-      realtimeResult = await exchangeRealtimeWebRtc({
-        sdpOffer: offerSdp,
-        systemPrompt: DUUNIJOBS_SYSTEM_PROMPT,
-      });
+      realtimeResult = await exchangePublicKnuutVoice(offerSdp);
     } catch (voiceErr) {
       const msg = voiceErr.message || String(voiceErr);
       console.error('[duunijobs-voice]', msg);

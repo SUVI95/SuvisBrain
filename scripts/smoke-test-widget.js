@@ -112,7 +112,25 @@ async function main() {
     fail('OPTIONS /api/duunijobs-session (CORS)', e.message);
   }
 
-  // 5. Static widget assets
+  // 5. Legacy HSBridge /session route (Framer embed)
+  try {
+    const { res } = await fetchJson('/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/sdp', Origin: 'https://www.hsbridgeai.fi' },
+      body: 'v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
+    });
+    if (res.status === 400 || res.status === 500) {
+      pass('POST /session (legacy Framer)', `route reachable (HTTP ${res.status}, invalid SDP expected without WebRTC)`);
+    } else if (res.status === 404) {
+      fail('POST /session (legacy Framer)', 'route not deployed — merge hsbridge-session + vercel.json routes');
+    } else {
+      pass('POST /session (legacy Framer)', `HTTP ${res.status}`);
+    }
+  } catch (e) {
+    fail('POST /session (legacy Framer)', e.message);
+  }
+
+  // 6. Static widget assets
   for (const asset of ['/knuut-widget.js', '/duunijobs-knuut.html']) {
     try {
       const res = await fetch(`${BASE}${asset}`);
