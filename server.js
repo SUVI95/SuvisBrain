@@ -46,6 +46,7 @@ import {
 } from './src/lib/realtime-voice.js';
 import { assertVoiceSessionAllowed, getDailyCapSeconds } from './src/lib/voice-daily-quota.js';
 import duunijobsSessionHandler from './api/duunijobs-session.js';
+import widgetSmokeHandler from './api/widget-smoke.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PORT = 3000;
@@ -303,6 +304,16 @@ async function handleApi(pathname, req, res, body) {
       'Access-Control-Allow-Origin': '*',
     });
     res.end(JSON.stringify(getWebRtcClientHints()));
+    return true;
+  }
+
+  if (route === 'widget-smoke' && req.method === 'GET') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    const wrappedRes = {
+      writeHead: (code, headers) => { res.writeHead(code, headers || {}); return wrappedRes; },
+      end: (data) => { res.end(data); return wrappedRes; },
+    };
+    await widgetSmokeHandler(wrappedReq, wrappedRes);
     return true;
   }
 

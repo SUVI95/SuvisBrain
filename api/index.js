@@ -30,6 +30,7 @@ import teacherWorkflowRouter from './teacher-workflow.js';
 import { query } from './db.js';
 import { getWebRtcClientHints, checkVoiceProviderReachable } from '../src/lib/realtime-voice.js';
 import duunijobsSessionHandler from './duunijobs-session.js';
+import widgetSmokeHandler from './widget-smoke.js';
 
 function toNodeRes(res) {
   return {
@@ -110,7 +111,7 @@ export default async function handler(req, res) {
     const pathSegs = (Array.isArray(pathParam) ? pathParam.join('/') : String(pathParam)).split('/').filter(Boolean);
     const route = pathSegs[0] || '';
 
-    const publicRoutes = ['duunijobs-session', 'realtime-client-hints'];
+    const publicRoutes = ['duunijobs-session', 'realtime-client-hints', 'widget-smoke'];
     if (publicRoutes.includes(route)) {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -131,6 +132,11 @@ export default async function handler(req, res) {
     if (route === 'realtime-client-hints' && req.method === 'GET') {
       res.setHeader('Cache-Control', 'public, max-age=60');
       return res.status(200).json(getWebRtcClientHints());
+    }
+    if (route === 'widget-smoke' && req.method === 'GET') {
+      const nresW = toNodeRes(res);
+      await widgetSmokeHandler({ method: req.method, url: req.url || req.originalUrl || '' }, nresW);
+      return;
     }
 
     const body = (req.method === 'POST' || req.method === 'PATCH') ? await collectBody(req) : {};

@@ -9,6 +9,8 @@
     "seed": "node api/seed-brain.js",
     "set-teacher-password": "node scripts/set-demo-teacher-password.js",
     "seed-demo": "node scripts/seed-demo.js",
+    "smoke:widget": "node scripts/smoke-test-widget.js",
+    "smoke:widget:prod": "node scripts/smoke-test-widget.js --base https://suvisbrain.vercel.app",
     "build": "echo 'Static + serverless'"
   },
   "dependencies": {

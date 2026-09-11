@@ -182,3 +182,58 @@ export async function checkVoiceProviderReachable() {
   }
   return 'skipped';
 }
+
+/**
+ * Deep smoke check: can OpenAI issue a realtime client secret for the configured model/voice?
+ * Does not open a WebRTC call — validates the first hop of the widget voice pipeline.
+ */
+export async function checkRealtimeClientSecrets() {
+  const openaiKey = trimEnv('OPENAI_API_KEY');
+  if (!openaiKey) {
+    return { ok: false, reason: 'OPENAI_API_KEY not set' };
+  }
+
+  const model = openaiRealtimeModel();
+  const voice = realtimeOutputVoice();
+
+  try {
+    const resp = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        session: {
+          type: 'realtime',
+          model,
+          instructions: 'Smoke test — no conversation.',
+          audio: {
+            output: { voice, speed: 1.0 },
+            input: realtimeAudioInputBase(),
+          },
+        },
+      }),
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      return {
+        ok: false,
+        reason: `client_secrets ${resp.status}: ${errText.slice(0, 300)}`,
+        model,
+        voice,
+      };
+    }
+
+    const data = await resp.json();
+    return {
+      ok: true,
+      model,
+      voice,
+      session_id: data.session?.id || null,
+    };
+  } catch (e) {
+    return { ok: false, reason: e.message || String(e), model, voice };
+  }
+}
