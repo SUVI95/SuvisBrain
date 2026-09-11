@@ -51,7 +51,7 @@ import conversationEndHandler from './api/conversation-end.js';
 import widgetSmokeHandler from './api/widget-smoke.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 const MIME = {
   '.html': 'text/html',

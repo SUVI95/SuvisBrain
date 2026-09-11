@@ -2,7 +2,13 @@
  * Security headers, CORS, safe error responses
  */
 
-const DEFAULT_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://suvisbrain.vercel.app'];
+const DEFAULT_ORIGINS = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'https://suvisbrain.vercel.app',
+  'https://www.hsbridgeai.fi',
+  'https://hsbridgeai.fi',
+];
 
 function getAllowedOrigins() {
   const env = process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL;

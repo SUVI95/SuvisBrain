@@ -11,6 +11,7 @@
     "seed-demo": "node scripts/seed-demo.js",
     "smoke:widget": "node scripts/smoke-test-widget.js",
     "smoke:widget:prod": "node scripts/smoke-test-widget.js --base https://suvisbrain.vercel.app",
+    "deploy:gcp": "bash scripts/deploy-gcp-cloud-run.sh",
     "build": "echo 'Static + serverless'"
   },
   "dependencies": {
