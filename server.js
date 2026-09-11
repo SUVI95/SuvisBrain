@@ -42,6 +42,7 @@ import {
   exchangeRealtimeWebRtc,
   getWebRtcClientHints,
   isVoiceProviderConfigured,
+  VOICE_SDP_EXCHANGE,
   checkVoiceProviderReachable,
 } from './src/lib/realtime-voice.js';
 import { assertVoiceSessionAllowed, getDailyCapSeconds } from './src/lib/voice-daily-quota.js';
@@ -100,7 +101,11 @@ function serveStatic(pathname, res) {
 async function handleVoice(pathname, req, res) {
   if (pathname === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ ok: true, voice: isVoiceProviderConfigured() }));
+    res.end(JSON.stringify({
+      ok: true,
+      voice: isVoiceProviderConfigured(),
+      sdp_exchange: VOICE_SDP_EXCHANGE,
+    }));
     return true;
   }
 
