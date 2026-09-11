@@ -67,6 +67,25 @@ async function collectBody(req) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
+/** Minimal Node response adapter for Vercel-style API handlers in server.js */
+function createWrappedRes(res) {
+  const wrapped = {
+    setHeader: (key, value) => {
+      res.setHeader(key, value);
+      return wrapped;
+    },
+    writeHead: (code, headers) => {
+      res.writeHead(code, headers || {});
+      return wrapped;
+    },
+    end: (data) => {
+      res.end(data);
+      return wrapped;
+    },
+  };
+  return wrapped;
+}
+
 function serveStatic(pathname, res) {
   let file = join(__dirname, 'public', pathname === '/' ? 'index.html' : pathname);
   if (!extname(file)) file = join(file, 'index.html');
@@ -111,11 +130,12 @@ async function handleVoice(pathname, req, res) {
       } catch (e) {
         body = {};
       }
-      const wrappedRes = {
-        writeHead: (code, headers) => { res.writeHead(code, headers || {}); return wrappedRes; },
-        end: (data) => { res.end(data); return wrappedRes; },
-      };
-      await hsbridgeSessionHandler({ method: req.method, headers: req.headers }, wrappedRes, body, rawBody);
+      await handleHsbridgeSession(
+        { method: req.method, headers: req.headers },
+        createWrappedRes(res),
+        body,
+        rawBody
+      );
     } catch (err) {
       console.error('[hsbridge-session]', err);
       sendError(res, 500);
@@ -130,11 +150,11 @@ async function handleVoice(pathname, req, res) {
     try {
       const rawBody = await collectBody(req);
       const body = (() => { try { return JSON.parse(rawBody); } catch { return {}; } })();
-      const wrappedRes = {
-        writeHead: (code, headers) => { res.writeHead(code, headers || {}); return wrappedRes; },
-        end: (data) => { res.end(data); return wrappedRes; },
-      };
-      await conversationEndHandler({ method: req.method, headers: req.headers }, wrappedRes, body);
+      await conversationEndHandler(
+        { method: req.method, headers: req.headers },
+        createWrappedRes(res),
+        body
+      );
     } catch (err) {
       console.error('[conversation-end]', err);
       sendError(res, 500);
@@ -149,11 +169,11 @@ async function handleVoice(pathname, req, res) {
     try {
       const rawBody = await collectBody(req);
       const body = (() => { try { return JSON.parse(rawBody); } catch { return {}; } })();
-      const wrappedRes = {
-        writeHead: (code, headers) => { res.writeHead(code, headers || {}); return wrappedRes; },
-        end: (data) => { res.end(data); return wrappedRes; },
-      };
-      await duunijobsSessionHandler({ method: req.method, headers: req.headers }, wrappedRes, body);
+      await duunijobsSessionHandler(
+        { method: req.method, headers: req.headers },
+        createWrappedRes(res),
+        body
+      );
     } catch (err) {
       console.error('[duunijobs-voice]', err);
       sendError(res, 500);
@@ -357,11 +377,7 @@ async function handleApi(pathname, req, res, body) {
 
   if (route === 'widget-smoke' && req.method === 'GET') {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    const wrappedRes = {
-      writeHead: (code, headers) => { res.writeHead(code, headers || {}); return wrappedRes; },
-      end: (data) => { res.end(data); return wrappedRes; },
-    };
-    await widgetSmokeHandler(wrappedReq, wrappedRes);
+    await widgetSmokeHandler(wrappedReq, createWrappedRes(res));
     return true;
   }
 
