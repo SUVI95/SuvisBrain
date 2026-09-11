@@ -421,7 +421,7 @@ you meet everyone where they are and walk with them toward Finnish.
 `.trim();
 
 /** Shared public voice exchange for embed widgets (JSON + legacy SDP routes). */
-export async function exchangePublicKnuutVoice(offerSdp) {
+export async function exchangePublicKnuutVoice(offerSdp, systemPrompt) {
   if (!isVoiceProviderConfigured()) {
     const err = new Error('Voice not available');
     err.statusCode = 500;
@@ -435,7 +435,7 @@ export async function exchangePublicKnuutVoice(offerSdp) {
   }
   return exchangeRealtimeWebRtc({
     sdpOffer: sdp,
-    systemPrompt: DUUNIJOBS_SYSTEM_PROMPT,
+    systemPrompt: systemPrompt || DUUNIJOBS_SYSTEM_PROMPT,
   });
 }
 

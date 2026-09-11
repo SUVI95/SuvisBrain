@@ -87,6 +87,51 @@ export function getWebRtcClientHints() {
   };
 }
 
+export function isCompleteSdpOffer(sdp) {
+  const s = String(sdp || '').trim();
+  return s.startsWith('v=0') && /m=audio/i.test(s) && s.length >= 200;
+}
+
+function realtimeSessionConfig(systemPrompt) {
+  return {
+    type: 'realtime',
+    model: openaiRealtimeModel(),
+    instructions: systemPrompt,
+    audio: {
+      output: { voice: realtimeOutputVoice(), speed: 1.0 },
+      input: realtimeAudioInputBase(),
+    },
+  };
+}
+
+/** Multipart body matching OpenAI's GA /v1/realtime/calls backend proxy. */
+function buildRealtimeCallsMultipart(sdpOffer, session) {
+  const boundary = `----KnuutForm${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`;
+  const sessionJson = JSON.stringify(session);
+  const body =
+    `--${boundary}\r\n` +
+    `Content-Disposition: form-data; name="sdp"\r\n` +
+    `Content-Type: application/sdp\r\n\r\n` +
+    `${sdpOffer}\r\n` +
+    `--${boundary}\r\n` +
+    `Content-Disposition: form-data; name="session"\r\n` +
+    `Content-Type: application/json\r\n\r\n` +
+    `${sessionJson}\r\n` +
+    `--${boundary}--\r\n`;
+  return {
+    body,
+    contentType: `multipart/form-data; boundary=${boundary}`,
+  };
+}
+
+function sessionIdFromCallsResponse(resp, text) {
+  const loc = resp.headers.get('location') || resp.headers.get('Location') || '';
+  const fromLoc = loc.match(/\/calls\/([^/?#]+)/);
+  if (fromLoc) return fromLoc[1];
+  const fromBody = String(text || '').match(/sess_[A-Za-z0-9]+/);
+  return fromBody ? fromBody[0] : null;
+}
+
 /**
  * @param {object} p
  * @param {string} p.sdpOffer - WebRTC offer SDP
@@ -101,67 +146,56 @@ export async function exchangeRealtimeWebRtc({ sdpOffer, systemPrompt }) {
     throw err;
   }
 
-  const oaiInput = realtimeAudioInputBase();
-  const secretResp = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${openaiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      session: {
-        type: 'realtime',
-        model: openaiRealtimeModel(),
-        instructions: systemPrompt,
-        audio: {
-          output: { voice: realtimeOutputVoice(), speed: 1.0 },
-          input: oaiInput,
-        },
-      },
-    }),
-  });
-
-  if (!secretResp.ok) {
-    const errText = await secretResp.text();
-    const err = new Error(`OpenAI client_secrets failed: ${secretResp.status} ${errText.slice(0, 200)}`);
-    err.statusCode = secretResp.status;
+  const offer = String(sdpOffer || '').trim();
+  if (!isCompleteSdpOffer(offer)) {
+    const err = new Error(
+      `Incomplete SDP offer (${offer.length} bytes). Browser must send a full WebRTC offer with m=audio.`
+    );
+    err.statusCode = 400;
     throw err;
   }
 
-  const secretData = await secretResp.json();
-  const ephemeralKey = secretData.value;
+  const session = realtimeSessionConfig(systemPrompt);
   console.log(
-    '[voice] OpenAI client_secret — model:',
-    openaiRealtimeModel(),
+    '[voice] realtime/calls multipart — model:',
+    session.model,
     '| voice:',
     realtimeOutputVoice(),
-    '| instructions:',
-    systemPrompt.length,
+    '| sdp:',
+    offer.length,
+    'bytes | instructions:',
+    String(systemPrompt || '').length,
     'chars'
   );
 
+  const mp = buildRealtimeCallsMultipart(offer, session);
   const oaiResp = await fetch('https://api.openai.com/v1/realtime/calls', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${ephemeralKey}`,
-      'Content-Type': 'application/sdp',
+      Authorization: `Bearer ${openaiKey}`,
+      Accept: 'application/sdp',
+      'Content-Type': mp.contentType,
     },
-    body: sdpOffer,
+    body: mp.body,
   });
 
+  const answerSdp = await oaiResp.text();
   if (!oaiResp.ok) {
-    const errText = await oaiResp.text();
-    const err = new Error(`OpenAI realtime/calls failed: ${oaiResp.status} ${errText.slice(0, 200)}`);
+    const err = new Error(`OpenAI realtime/calls failed: ${oaiResp.status} ${answerSdp.slice(0, 400)}`);
     err.statusCode = oaiResp.status;
     throw err;
   }
+  if (!String(answerSdp).includes('v=0')) {
+    const err = new Error(`OpenAI realtime/calls returned a non-SDP body: ${answerSdp.slice(0, 200)}`);
+    err.statusCode = 502;
+    throw err;
+  }
 
-  const answerSdp = await oaiResp.text();
   return {
     answerSdp,
     instructions: systemPrompt,
     dataChannelLabel: DATA_CHANNEL_OPENAI,
-    sessionId: secretData.session?.id || null,
+    sessionId: sessionIdFromCallsResponse(oaiResp, answerSdp),
     voiceProvider: 'openai',
   };
 }
